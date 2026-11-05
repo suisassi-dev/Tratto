@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <style>
-:root{--bg:#0e0e10;--panel:#18181b;--panel2:#222226;--panel3:#2c2c31;--line:#2a2a2f;--tx:#ececef;--tx2:#8f8f99;--acc:#ff9f0a;--accbg:rgba(255,159,10,.17);
+:root{--bg:#0e0e10;--panel:#18181b;--panel2:#222226;--panel3:#2c2c31;--line:#2a2a2f;--sep:#3d3d46;--tx:#ececef;--tx2:#8f8f99;--acc:#ff9f0a;--accbg:rgba(255,159,10,.17);
 --st:env(safe-area-inset-top,0px);--sb:env(safe-area-inset-bottom,0px);--sl:env(safe-area-inset-left,0px);--sr:env(safe-area-inset-right,0px)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--tx);font:13px/1.35 -apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;overscroll-behavior:none;-webkit-text-size-adjust:100%}
@@ -52,12 +52,32 @@ input[type=number],input.hex,input.txt{-webkit-user-select:text;user-select:text
 #ctx input[type=range]{width:110px;flex:none}
 #panel{width:300px;background:var(--panel);border-left:1px solid var(--line);display:flex;flex-direction:column;padding-right:var(--sr);flex:none;min-height:0}
 #panel.closed{display:none}
-#ptabs{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--line);flex:none}
+#ptabs{display:flex;gap:4px;padding:8px;border-bottom:1px solid var(--sep);flex:none}
 #ptabs button{flex:1;height:32px;border:0;border-radius:9px;background:none;color:var(--tx2)}
 #ptabs button.on{background:var(--panel3);color:var(--tx)}
 #pbody{overflow-y:auto;flex:1;padding:4px 12px calc(var(--sb) + 16px);-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .ptitle{color:var(--tx2);font-size:11px;text-transform:uppercase;letter-spacing:.06em;padding:10px 0 2px}
-.sec{padding:10px 0;border-bottom:1px solid var(--line)}
+.sec{padding:4px 0 10px;border-bottom:1px solid var(--sep)}
+.sec.col{padding-bottom:4px}.sec.col>.secb{display:none}
+.sech[data-col]{cursor:pointer;margin:0;padding:8px 0;min-height:36px}
+.sech[data-col]+.secb{padding-top:2px}
+.sech .ttl{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
+.chev{width:9px;height:9px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);transform:rotate(45deg) translate(-2px,-2px);transition:transform .15s;flex:none}
+.sec.col .chev{transform:rotate(-45deg)}
+.lgrip{width:30px;height:36px;display:grid;place-items:center;color:var(--tx2);touch-action:none;cursor:grab}
+.lgrip .ic{width:18px;height:18px}
+.lrow.drag{position:relative;z-index:5;box-shadow:0 8px 24px rgba(0,0,0,.5);background:var(--panel3)}
+.swb{position:relative;width:46px;height:62px;flex:none;margin-top:auto;margin-bottom:4px}
+.swb .sw{position:absolute;width:31px;height:31px;border-radius:7px;border:2px solid #e9e9ec;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+.swb .sw input{position:absolute;inset:-8px;width:calc(100% + 16px);height:calc(100% + 16px);opacity:0;border:0;padding:0}
+.swb .swF{left:3px;top:3px;z-index:2}
+.swb .swS{left:14px;top:22px;z-index:1}
+.swb .swS::after{content:'';position:absolute;inset:5px;border-radius:3px;background:var(--panel);border:1px solid rgba(255,255,255,.25)}
+.swb .sw.none{background:#fff!important}
+.swb .sw.none::before{content:'';position:absolute;left:-4px;right:-4px;top:50%;height:2px;background:#ff3b30;transform:rotate(-45deg);z-index:3}
+.swb .swx{position:absolute;right:-2px;top:-2px;width:18px;height:18px;border:0;background:none;color:var(--tx2);padding:0;display:grid;place-items:center;z-index:3}
+.swb .swx .ic{width:14px;height:14px}
+.swb button.sw{padding:0;cursor:pointer}
 .sec:last-child{border-bottom:0}
 .sech{display:flex;align-items:center;justify-content:space-between;gap:8px;font-weight:600;margin-bottom:8px;min-height:28px}
 .row{display:flex;align-items:center;gap:8px;margin:7px 0;min-height:32px}
@@ -184,6 +204,8 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
  .tool .ic{width:27px;height:27px}
  .tool .tri{right:8px;bottom:7px}
  #clean{left:8px;right:8px;width:auto;transform:none}
+ .swb{margin-top:0;margin-left:2px;height:52px;width:52px}
+ .swb .swF{left:6px;top:6px}.swb .swS{left:18px;top:18px}
  #ctx .lab{display:none}
  #ctx .cb{padding:0 5px;min-width:32px;gap:3px}
  #ctx .csep{margin:0 1px}
@@ -333,6 +355,14 @@ const ICONS={
  unmask:[[C(10,10,6.5)],['M13 13h8v8h-8z']],
  inside:[['M3 5h18v14H3z'],[C(12,12,3.5),1]],
  layers:[['M12 3l9 5-9 5-9-5z'],['M3 13l9 5 9-5']],
+ group:[['M3 3h5M3 3v5M21 3h-5M21 3v5M3 21h5M3 21v-5M21 21h-5M21 21v-5'],['M7 7h6v6H7z',1],['M12 12h5v5h-5z']],
+ ungroup:[['M3 3h8v8H3z'],['M13 13h8v8h-8z']],
+ outline:[['M4 18C8 6 16 6 20 18'],['M4 13C8 1 16 1 20 13'],['M4 13v5M20 13v5']],
+ addpt:[['M4 17C7 7 17 7 20 17'],['M10 10h4v4h-4z',1],['M12 2v4M10 4h4']],
+ multisel:[['M5 3l9 6.5-4.2 1L7.5 15z'],['M14 13h7M17.5 9.5v7']],
+ selall:[['M4 4h3M10 4h4M17 4h3v3M20 10v4M20 17v3h-3M14 20h-4M7 20H4v-3M4 14v-4M4 7V4']],
+ grip:[['M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01']],
+ swapc:[['M7 4l-3 3 3 3M4 7h11a4 4 0 0 1 4 4v1']],
  breakN:[['M12 13L4 18M12 13l6-9'],['M10 11h4v4h-4z',1],[C(4,18,1.6)],[C(18,4,1.6)]],
  alignN:[['M3 18L21 6'],['M10 10h4v4h-4z',1],[C(3,18,1.6)],[C(21,6,1.6)]],
  shapes:[['M3 13h8v8H3z'],[C(17,17,4)],['M12 3l4.5 7.5h-9z']],
@@ -347,7 +377,7 @@ function ic(n){const p=ICONS[n];if(!p)return'';return`<svg viewBox="0 0 24 24" c
 function newDoc(w=1080,h=1080){return{name:'Senza titolo',w,h,bg:'#ffffff',guides:[],layers:[{id:uid('L'),name:'Livello 1',visible:true,locked:false,opacity:1,items:[]}]}}
 const S={doc:newDoc(),assets:{},assetsDirty:true,sel:[],nsel:[],tool:'select',view:{x:0,y:0,z:1},activeLayer:null,undo:[],redo:[],penId:null,hover:null,ov:{},
  def:{fill:{t:'solid',c:'#ff6a3d'},stroke:{t:'solid',c:'#1a1a1a'},sw:3,fo:1,so:1,cap:'round',join:'round'},
- opt:{starN:5,starR:.45,polyN:6,rectR:0,prop:false,smooth:3,multi:false,alignTo:'sel',sym:false,symAxis:'v',pencilOnly:false,propScale:true,rulers:true,guides:true,lockGuides:false,snap:true,penHover:false,freeHandles:false},lastShape:'rect',
+ opt:{starN:5,starR:.45,polyN:6,rectR:0,prop:false,smooth:3,multi:false,alignTo:'sel',sym:false,symAxis:'v',pencilOnly:false,propScale:true,rulers:true,guides:true,lockGuides:false,snap:true,penHover:false,freeHandles:false,pencilOutline:false,addPt:false,col:{}},lastShape:'rect',
  tab:'style',panelOpen:innerWidth>=900,ptarget:'fill',gstop:{fill:0,stroke:0},
  recent:['#1a1a1a','#ffffff','#ff6a3d','#ffc83d','#2bb673','#3d7bff','#8a5cff','#ff4d8d']};
 const TOOLS=[['select','Seleziona','v'],['node','Modifica punti','a'],'|',['pen','Penna','p'],['pencil','Matita','n'],['shape','Forme',''],'|',['gradient','Gradiente','g'],['hand','Mano','h']];
@@ -363,7 +393,7 @@ function selItems(){return S.sel.map(find).filter(Boolean).map(r=>r.it)}
 function replace(it){const r=find(it.id);if(r)r.L.items[r.i]=it}
 function canDraw(){const L=layer();if(!L||!L.visible||L.locked){toast('Livello attivo bloccato o nascosto');return false}return true}
 function validateSel(){S.sel=S.sel.filter(id=>find(id));S.nsel=S.nsel.filter(k=>getNode(k));if(S.penId&&!find(S.penId))S.penId=null;if(!S.doc.layers.find(l=>l.id===S.activeLayer))S.activeLayer=S.doc.layers[S.doc.layers.length-1].id}
-function fixUID(){let m=0;const chk=id=>{const n=parseInt(String(id).slice(1),36);if(n>m)m=n};const ck=i=>{chk(i.id);if(i.type==='mask'){ck(i.mask);i.kids.forEach(ck)}};S.doc.layers.forEach(L=>{chk(L.id);L.items.forEach(ck)});(S.doc.guides||[]).forEach(g=>chk(g.id));Object.keys(S.assets).forEach(chk);UID=Math.max(UID,m+1)}
+function fixUID(){let m=0;const chk=id=>{const n=parseInt(String(id).slice(1),36);if(n>m)m=n};const ck=i=>{chk(i.id);if(i.type==='mask')ck(i.mask);if(i.kids)i.kids.forEach(ck)};S.doc.layers.forEach(L=>{chk(L.id);L.items.forEach(ck)});(S.doc.guides||[]).forEach(g=>chk(g.id));Object.keys(S.assets).forEach(chk);UID=Math.max(UID,m+1)}
 
 /* ---------- geometry ---------- */
 const pt=(x,y)=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false});
@@ -381,7 +411,7 @@ const T=(x,y)=>[1,0,0,1,x,y];
 const scaleAbout=(sx,sy,ox,oy)=>[sx,0,0,sy,ox-sx*ox,oy-sy*oy];
 const rotAbout=(a,ox,oy)=>{const c=Math.cos(a),s=Math.sin(a);return[c,s,-s,c,ox-c*ox+s*oy,oy-s*ox-c*oy]};
 function imgCorners(it){return[[0,0],[it.w,0],[it.w,it.h],[0,it.h]].map(([x,y])=>mx(it.m,x,y))}
-function bboxItem(it){if(it.type==='mask')return bboxItem(it.mask);let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;const add=(a,b,c,d)=>{if(a<x0)x0=a;if(b>x1)x1=b;if(c<y0)y0=c;if(d>y1)y1=d};
+function bboxItem(it){if(it.type==='mask')return bboxItem(it.mask);if(it.type==='group')return bboxOf(it.kids);let x0=Infinity,y0=Infinity,x1=-Infinity,y1=-Infinity;const add=(a,b,c,d)=>{if(a<x0)x0=a;if(b>x1)x1=b;if(c<y0)y0=c;if(d>y1)y1=d};
  if(it.type==='image'){for(const[x,y]of imgCorners(it))add(x,x,y,y)}
  else for(const sp of it.subs){if(sp.pts.length===1){const q=sp.pts[0];add(q.x,q.x,q.y,q.y)}segs(sp,(a,b)=>{const ex=cubExt(a.x,a.ox,b.ix,b.x),ey=cubExt(a.y,a.oy,b.iy,b.y);add(ex[0],ex[1],ey[0],ey[1])})}
  if(x0===Infinity)return null;return{x:x0,y:y0,w:x1-x0,h:y1-y0}}
@@ -392,6 +422,7 @@ function flatten(it){return it.subs.map(sp=>{const P=sp.pts,o=[];if(!P.length)re
 function dSeg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;let t=l?((px-ax)*dx+(py-ay)*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-ax-t*dx,py-ay-t*dy)}
 function insideFill(it,x,y){let w=0,c=0;for(const f of flatten(it)){const p=f.pts,n=p.length;for(let i=0;i<n;i++){const a=p[i],b=p[(i+1)%n];if((a[1]<=y)!==(b[1]<=y)){const xx=a[0]+(y-a[1])/(b[1]-a[1])*(b[0]-a[0]);if(xx>x){c++;w+=b[1]>a[1]?1:-1}}}}return it.rule==='evenodd'?c%2===1:w!==0}
 function hitItem(it,x,y,tol){
+ if(it.type==='group')return it.kids.some(k=>hitItem(k,x,y,tol));
  if(it.type==='mask'){if((it.showFill&&it.mask.style.fill)||(it.showStroke&&it.mask.style.stroke)){const v={...it.mask,style:{...it.mask.style,fill:it.showFill?it.mask.style.fill:null,stroke:it.showStroke?it.mask.style.stroke:null}};if(hitItem(v,x,y,tol))return true}return insideFill(it.mask,x,y)&&it.kids.some(k=>hitItem(k,x,y,tol))}
  if(it.type==='image'){const[u,v]=mx(inv(it.m),x,y);return u>=0&&v>=0&&u<=it.w&&v<=it.h}
  const F=flatten(it);
@@ -401,15 +432,16 @@ function hitItem(it,x,y,tol){
  for(const f of F){const p=f.pts,n=p.length;if(n===1&&Math.hypot(p[0][0]-x,p[0][1]-y)<=hw)return true;for(let i=0;i<n-1+(f.closed?1:0);i++){const a=p[i],b=p[(i+1)%n];if(dSeg(x,y,a[0],a[1],b[0],b[1])<=hw)return true}}
  return false}
 function hitTest(x,y,tol){const L=S.doc.layers;for(let l=L.length-1;l>=0;l--){if(!L[l].visible||L[l].locked)continue;const its=L[l].items;for(let i=its.length-1;i>=0;i--)if(hitItem(its[i],x,y,tol))return its[i]}return null}
-function applyM(it,m){if(it.type==='mask'){const n=clone(it);n.mask=applyM(it.mask,m);n.kids=it.kids.map(k=>applyM(k,m));return n}const n=clone(it);
+function applyM(it,m){if(it.type==='group'){const n=clone(it);n.kids=it.kids.map(k=>applyM(k,m));return n}if(it.type==='mask'){const n=clone(it);n.mask=applyM(it.mask,m);n.kids=it.kids.map(k=>applyM(k,m));return n}const n=clone(it);
  if(n.type==='image'){n.m=mul(m,n.m);return n}
  n.subs.forEach(sp=>sp.pts.forEach(q=>{[q.x,q.y]=mx(m,q.x,q.y);[q.ix,q.iy]=mx(m,q.ix,q.iy);[q.ox,q.oy]=mx(m,q.ox,q.oy)}));
  ['fill','stroke'].forEach(k=>{const g=n.style[k];if(g&&g.t!=='solid'){[g.x1,g.y1]=mx(m,g.x1,g.y1);[g.x2,g.y2]=mx(m,g.x2,g.y2)}});return n}
 const maskFillCopy=m=>({...m.mask,style:{...m.mask.style,stroke:null}});
 const maskStrokeCopy=m=>({...m.mask,id:m.mask.id+'k',style:{...m.mask.style,fill:null}});
 const itemBlend=it=>(it.style&&it.style.blend&&it.style.blend!=='normal')?it.style.blend:'normal';
-function reId(it){it.id=uid('i');if(it.type==='mask'){reId(it.mask);it.kids.forEach(reId)}return it}
-function itemAssets(it,set){if(it.type==='image')set.add(it.asset);if(it.type==='mask'){itemAssets(it.mask,set);it.kids.forEach(k=>itemAssets(k,set))}return set}
+function reId(it){it.id=uid('i');if(it.type==='mask')reId(it.mask);if(it.kids)it.kids.forEach(reId);return it}
+function itemAssets(it,set){if(it.type==='image')set.add(it.asset);if(it.type==='mask')itemAssets(it.mask,set);if(it.kids)it.kids.forEach(k=>itemAssets(k,set));return set}
+const stylePaths=it=>it.type==='path'?[it]:it.type==='mask'?[it.mask]:it.type==='group'?it.kids.flatMap(stylePaths):[];
 const nkey=(id,si,pi)=>id+'|'+si+'|'+pi;
 function getNode(k){const[id,si,pi]=k.split('|');const r=find(id);if(!r||r.it.type!=='path')return null;const sp=r.it.subs[+si];if(!sp)return null;const q=sp.pts[+pi];return q?{it:r.it,sp,q,si:+si,pi:+pi}:null}
 function smoothNode(sp,i){const P=sp.pts,n=P.length,q=P[i];const pv=P[i-1]||(sp.closed?P[n-1]:null),nx=P[i+1]||(sp.closed?P[0]:null);let tx,ty;
@@ -448,6 +480,7 @@ function pathSVG(it){const s=it.style,fp=paintRef(s.fill,'gf'+it.id),sp=paintRef
 function imageSVG(it,exp){return`<image${exp?` id="${it.id}"`:''} ${exp?'xlink:href':'href'}="${S.assets[it.asset]||''}" width="${it.w}" height="${it.h}" preserveAspectRatio="none" transform="matrix(${it.m.map(f2).join(' ')})"${it.style.op<1?` opacity="${f2(it.style.op)}"`:''}/>`}
 function pathExp(it){const x=pathSVG(it);return x.startsWith('<defs>')?x.replace('<path ',`<path id="${it.id}" `):`<path id="${it.id}" `+x.slice(6)}
 function itemMarkup(it,exp,nested,noBlend){let m;if(it.type==='image')m=imageSVG(it,exp);else if(it.type==='path')m=exp?pathExp(it):pathSVG(it);
+ else if(it.type==='group')m=`<g${exp?` id="${it.id}"`:''}>${it.kids.map(k=>itemMarkup(k,exp,true)).join('')}</g>`;
  else{// ritaglio applicato a ogni oggetto: così il metodo di fusione di ciascuno agisce anche su ciò che sta sotto la maschera
   const cp=`url(#cm${it.id})`,clipped=k=>{const bm=itemBlend(k);return`<g clip-path="${cp}"${bm!=='normal'?` style="mix-blend-mode:${bm}"`:''}>${itemMarkup(k,exp,true,true)}</g>`};
   const fc=it.showFill&&it.mask.style.fill?clipped(maskFillCopy(it)):'',ks=it.kids.map(clipped).join('');const parts=it.fillPos==='over'?ks+fc:fc+ks;
@@ -477,7 +510,7 @@ function renderContent(){const seen=new Set();let prevL=null;
    if(it.type==='image'){if(!c.img){c.el.innerHTML='';c.sig=null;c.img=document.createElementNS(NS,'image');c.img.setAttribute('preserveAspectRatio','none');c.el.appendChild(c.img)}
     const src=S.assets[it.asset];if(c.src!==src){c.img.setAttribute('href',src);c.src=src}
     c.img.setAttribute('width',it.w);c.img.setAttribute('height',it.h);c.img.setAttribute('transform',`matrix(${it.m.join(' ')})`);c.img.setAttribute('opacity',it.style.op)}
-   else{const me=S.doc.maskEdit,sig=it.type==='mask'?itemMarkup(it):(me&&me.pathId===it.id)?`<path d="${pathD(it)}" fill="none" stroke="#ff9f0a" stroke-width="1.5" stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`:pathSVG(it);if(sig!==c.sig){c.el.innerHTML=sig;c.sig=sig;c.img=null}}
+   else{const me=S.doc.maskEdit,sig=(it.type==='mask'||it.type==='group')?itemMarkup(it):(me&&me.pathId===it.id)?`<path d="${pathD(it)}" fill="none" stroke="#ff9f0a" stroke-width="1.5" stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`:pathSVG(it);if(sig!==c.sig){c.el.innerHTML=sig;c.sig=sig;c.img=null}}
    {const bm=itemBlend(it);c.el.style.mixBlendMode=bm==='normal'?'':bm}
    if(c.el.parentNode!==g||c.el.previousSibling!==prev)g.insertBefore(c.el,prev?prev.nextSibling:g.firstChild);prev=c.el}}
  for(const[k,c]of cache)if(!seen.has(k)){c.el.remove();cache.delete(k)}
@@ -498,7 +531,7 @@ function pickGrip(sx,sy,tol){let best=null,bd=tol;const pr={hin:0,hout:0,g1:0,g2
 function renderOverlay(){const d=S.doc;let w='',s='';
  if(S.opt.guides)(d.guides||[]).forEach(g=>{w+=g.a==='v'?`<line x1="${g.p}" y1="-100000" x2="${g.p}" y2="100000" class="guide${S.ov.guide===g.id?' sel':''}"/>`:`<line x1="-100000" y1="${g.p}" x2="100000" y2="${g.p}" class="guide${S.ov.guide===g.id?' sel':''}"/>`});
  if(S.opt.sym)w+=S.opt.symAxis==='v'?`<line x1="${d.w/2}" y1="${-d.h*.05}" x2="${d.w/2}" y2="${d.h*1.05}" class="axis"/>`:`<line x1="${-d.w*.05}" y1="${d.h/2}" x2="${d.w*1.05}" y2="${d.h/2}" class="axis"/>`;
- if(S.tool!=='hand')for(const it of selItems()){if(it.type==='path')w+=`<path d="${pathD(it)}" class="ol"/>`;else if(it.type==='mask')w+=`<path d="${pathD(it.mask)}" class="ol"/>`;else w+=`<polygon points="${imgCorners(it).map(p=>p.join(',')).join(' ')}" class="ol"/>`}
+ if(S.tool!=='hand')for(const it of selItems()){if(it.type==='path')w+=`<path d="${pathD(it)}" class="ol"/>`;else if(it.type==='mask')w+=`<path d="${pathD(it.mask)}" class="ol"/>`;else if(it.type==='group'){const b=bboxItem(it);if(b)w+=`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" class="ol" stroke-dasharray="6 4"/>`}else w+=`<polygon points="${imgCorners(it).map(p=>p.join(',')).join(' ')}" class="ol"/>`}
  if(S.ov.pencil){const st=S.def.stroke;w+=`<polyline points="${S.ov.pencil.map(p=>f2(p[0])+','+f2(p[1])).join(' ')}" fill="none" stroke="${st&&st.t==='solid'?st.c:'#1a1a1a'}" stroke-width="${S.def.sw||2}" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`}
  if(S.tool==='pen'&&S.penId&&S.hover){const r=find(S.penId);if(r){const P=r.it.subs[0].pts,l=P[P.length-1];w+=`<path d="M${l.x} ${l.y}C${l.ox} ${l.oy} ${S.hover.x} ${S.hover.y} ${S.hover.x} ${S.hover.y}" class="prev"/>`}}
  if(S.ov.marquee){const m=S.ov.marquee;s+=`<rect x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}" class="mq"/>`}
@@ -531,7 +564,11 @@ let saveT=0;function scheduleSave(){clearTimeout(saveT);saveT=setTimeout(()=>{ID
 /* ---------- UI build ---------- */
 function buildTools(){$('#tools').innerHTML=TOOLS.map(t=>{if(t==='|')return'<div class="tsep"></div>';
  if(t[0]==='shape'){const sh=SHAPES.find(x=>x[0]===S.lastShape)||SHAPES[0];return`<button class="tool${isShape(S.tool)?' on':''}" data-tool="shape" title="Forme · ${sh[1]}" aria-label="Forme">${ic(sh[0])}<span class="tri"></span></button>`}
- return`<button class="tool${S.tool===t[0]?' on':''}" data-tool="${t[0]}" title="${t[1]} (${t[2].toUpperCase()})" aria-label="${t[1]}">${ic(t[0])}</button>`}).join('')}
+ return`<button class="tool${S.tool===t[0]?' on':''}" data-tool="${t[0]}" title="${t[1]} (${t[2].toUpperCase()})" aria-label="${t[1]}">${ic(t[0])}</button>`}).join('')+swatchHTML()}
+function swatchHTML(){const{st}=curTarget();const s=st||S.def;const box=(k,cls)=>{const p=s[k];if(p&&p.t!=='solid')return`<button class="sw ${cls}" data-act="openStyle" style="background:${gcss(p)}" title="${k==='fill'?'Riempimento':'Tratto'} (gradiente)"></button>`;
+  const c=p?p.c:'#ffffff';return`<label class="sw ${cls}${p?'':' none'}" style="background:${c}" title="${k==='fill'?'Riempimento':'Tratto'}"><input type="color" data-swc="${k}" value="${c}"></label>`};
+ return`<div class="swb">${box('fill','swF')}${box('stroke','swS')}<button class="swx" data-act="swapFS" title="Scambia riempimento e tratto">${ic('swapc')}</button></div>`}
+function refreshSwatch(){const el=$('#tools .swb');if(el)el.outerHTML=swatchHTML()}
 function setTool(t){if(S.tool==='pen'&&t!=='pen')endPen();if(isShape(t))S.lastShape=t;S.tool=t;S.nsel=[];S.ov={};S.hover=null;buildTools();updateUI();render()}
 function openFly(btn){const f=$('#fly');f.dataset.for='shape';f.classList.remove('list');f.innerHTML=SHAPES.map(([k,l])=>`<button data-shape="${k}" class="${S.tool===k?'on':''}">${ic(k)}<span>${l}</span></button>`).join('');f.hidden=false;
  const r=btn.getBoundingClientRect(),fw=f.offsetWidth,fh=f.offsetHeight,vert=innerWidth>760;
@@ -539,10 +576,11 @@ function openFly(btn){const f=$('#fly');f.dataset.for='shape';f.classList.remove
  else{f.style.left=Math.max(8,Math.min(innerWidth-fw-8,r.left+r.width/2-fw/2))+'px';f.style.top=(r.top-fh-8)+'px'}}
 function updateUI(){document.querySelectorAll('.tool').forEach(b=>b.classList.toggle('on',b.dataset.tool===S.tool||(b.dataset.tool==='shape'&&isShape(S.tool))));
  $('#bUndo').disabled=S.undo.length<2;$('#bRedo').disabled=!S.redo.length;$('#bSym').classList.toggle('on',S.opt.sym);$('#docName').textContent=S.doc.name;
- buildCtx();buildPanel()}
+ buildCtx();buildPanel();refreshSwatch()}
 const FLY={
  mirror:()=>[['flipH','flipH','Orizzontale'],['flipV','flipV','Verticale'],['mirdup','mirdup','Copia specchiata']],
- bool:()=>[['unite','unite','Unisci'],['subtract','subtract','Sottrai'],['intersect','intersect','Interseca'],['exclude','exclude','Escludi']],
+ bool:()=>{const n=S.sel.length,hs=selItems().some(i=>i.type==='path'&&i.style.stroke&&i.style.sw>0);return[['unite','unite','Unisci',n<2],['subtract','subtract','Sottrai',n<2],['intersect','intersect','Interseca',n<2],['exclude','exclude','Escludi',n<2],['outline','outline','Contorno tratto',!hs]]},
+ groupm:()=>{const n=S.sel.length,hg=selItems().some(i=>i.type==='group');return[['group','group','Raggruppa',n<2],['ungroup','ungroup','Separa',!hg],['editgroup','edit','Modifica',!hg]]},
  maskm:()=>{const n=S.sel.length,hm=selItems().some(i=>i.type==='mask');return[['mask','mask','Maschera',n<2],['inside','inside','Metti dentro',n<2],['editmask','edit','Modifica',!hm],['unmask','unmask','Rilascia',!hm]]},
  layer:()=>{const cur=new Set(selItems().map(it=>find(it.id).L.id));return[...S.doc.layers.slice().reverse().map(l=>['mvl:'+l.id,'layers',l.name+(l.locked?' 🔒':''),l.locked||(cur.size===1&&cur.has(l.id))]),['mvl:new','plus','Nuovo livello']]},
  point:()=>[['corner','corner','Angolo'],['smooth','smooth','Curva'],['breakN','breakN','Spezza'],['alignN','alignN','Allinea']]};
@@ -551,19 +589,19 @@ function openCtxFly(btn,id){const f=$('#fly');if(!f.hidden&&f.dataset.for===id){
  const r=btn.getBoundingClientRect(),fw=f.offsetWidth;f.style.left=Math.max(8,Math.min(innerWidth-fw-8,r.left+r.width/2-fw/2))+'px';f.style.top=(r.bottom+8)+'px';f.style.bottom=''}
 function buildCtx(){const t=S.tool,n=S.sel.length;let h='';const sep='<div class="csep"></div>';
  const F=(id,icon,label)=>`<button class="cb" data-fly="${id}" title="${label}">${ic(icon)}<span class="lab">${label}</span><span class="car"></span></button>`;
- if(S.doc.maskEdit)h+=`<button class="cb on" data-act="exitmask" title="Chiudi la modifica della maschera">${ic('mask')}<span>Fine maschera</span></button>`+sep;
+ if(S.doc.maskEdit){const gk=S.doc.maskEdit.kind==='group';h+=`<button class="cb on" data-act="exitmask" title="Chiudi la modifica">${ic(gk?'group':'mask')}<span>${gk?'Fine gruppo':'Fine maschera'}</span></button>`+sep}
  const B=(a,label,icon,on,title)=>`<button class="cb${on?' on':''}" data-act="${a}" title="${title||label||''}">${icon?ic(icon):''}${label?`<span>${label}</span>`:''}</button>`;
  const R=(k,l,min,max,step,v)=>`<span class="clbl">${l}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-opt="${k}">`;
- if(t==='select'){h+=B('multi','Multi',null,S.opt.multi,'Selezione multipla')+B('selall','Tutto');
-  if(n){const hasMask=selItems().some(i=>i.type==='mask');h+=sep+B('dup','','dup',0,'Duplica')+B('del','','trash',0,'Elimina')+sep+F('mirror','flipH','Rifletti');
-   if(n>1)h+=F('bool','unite','Booleane');if(n>1||hasMask)h+=F('maskm','mask','Maschera');h+=F('layer','layers','Livello');
+ if(t==='select'){h+=B('multi','Multi','multisel',S.opt.multi,'Selezione multipla').replace('<span>Multi','<span class="lab">Multi')+B('selall','Tutto','selall',0,'Seleziona tutto').replace('<span>Tutto','<span class="lab">Tutto');
+  if(n){const SI=selItems(),hasMask=SI.some(i=>i.type==='mask'),hasGroup=SI.some(i=>i.type==='group'),hasPath=SI.some(i=>i.type==='path');h+=sep+B('dup','','dup',0,'Duplica')+B('del','','trash',0,'Elimina')+sep+F('mirror','flipH','Rifletti');
+   if(n>1||hasPath)h+=F('bool','unite','Booleane');if(n>1||hasMask)h+=F('maskm','mask','Maschera');if(n>1||hasGroup)h+=F('groupm','group','Gruppo');h+=F('layer','layers','Livello');
    if(selItems().some(i=>i.type==='path'))h+=sep+B('clean','Pulisci','simplify',0,'Riduci i punti').replace('<span>Pulisci','<span class="lab">Pulisci');if(innerWidth>760)h+=sep+B('propScale','Prop.',null,S.opt.propScale,'Scala proporzionale dagli angoli')}}
- else if(t==='node'){h+=B('multi','Multi',null,S.opt.multi)+B('freeHandles','Libere',null,S.opt.freeHandles,'Maniglie sempre indipendenti');
+ else if(t==='node'){h+=B('multi','Multi',null,S.opt.multi)+B('freeHandles','Libere',null,S.opt.freeHandles,'Maniglie sempre indipendenti')+B('addPt','','addpt',S.opt.addPt,'Aggiungi punto: tocca il tracciato');
   if(S.nsel.length)h+=sep+B('delnode','','trash',0,'Elimina punti')+F('point','smooth','Punto');
   if(n)h+=sep+B('closeToggle','','close',0,'Chiudi/apri tracciato')+B('clean','Pulisci','simplify',0,'Riduci i punti');
-  if(!S.nsel.length)h+=`<span class="clbl">Doppio tap: punto ↔ curva / aggiungi punto</span>`;}
+  if(!S.nsel.length)h+=`<span class="clbl lab">Doppio tap o tieni premuto sul tracciato = nuovo punto</span>`;}
  else if(t==='pen'){h+=S.penId?B('penDone','Fine',null,1):'';h+=`<span class="clbl">Tap = punto · trascina = curva · tocca il 1° punto per chiudere</span>`}
- else if(t==='pencil')h+=R('smooth','Levigatura',1,12,1,S.opt.smooth);
+ else if(t==='pencil')h+=R('smooth','Levigatura',1,12,1,S.opt.smooth)+sep+B('pencilOutline','Contorno','outline',S.opt.pencilOutline,'Crea il tratto come forma piena (contorno), pronta per le booleane');
  else if(t==='rect')h+=R('rectR','Raggio',0,300,1,S.opt.rectR)+`<span class="cval" id="cv_rectR">${S.opt.rectR}</span>`+sep+B('prop','1:1',null,S.opt.prop);
  else if(t==='ellipse')h+=B('prop','Cerchio 1:1',null,S.opt.prop);
  else if(t==='star')h+=`<span class="clbl">Punte</span>`+B('starM','','minus')+`<span class="cval">${S.opt.starN}</span>`+B('starP','','plus')+sep+R('starR','Rientro',.1,.9,.01,S.opt.starR);
@@ -572,32 +610,35 @@ function buildCtx(){const t=S.tool,n=S.sel.length;let h='';const sep='<div class
  const el=$('#ctx');el.innerHTML=h;el.hidden=!h}
 
 /* ---------- panel ---------- */
+function sec(key,title,body,extra){const c=S.opt.col&&S.opt.col[key];return`<div class="sec${c?' col':''}"><div class="sech" data-col="${key}"><span class="ttl"><span class="chev"></span>${title}</span>${extra||''}</div><div class="secb">${body}</div></div>`}
 function seg(key,opts,cur){return`<div class="seg">${opts.map(([v,l])=>`<button data-seg="${key}" data-v="${v}" class="${v===cur?'on':''}">${l}</button>`).join('')}</div>`}
 const colorBox=(attr,c)=>`<label class="cbox" style="background:${c}"><input type="color" ${attr} value="${c}"></label>`;
-function curTarget(){const its=selItems(),paths=its.map(i=>i.type==='mask'?i.mask:i).filter(i=>i.type==='path'),imgs=its.filter(i=>i.type==='image');return{its,paths,imgs,st:paths.length?paths[0].style:(its.length?null:S.def)}}
+function curTarget(){const its=selItems(),paths=its.flatMap(stylePaths),imgs=its.filter(i=>i.type==='image');return{its,paths,imgs,st:paths.length?paths[0].style:(its.length?null:S.def)}}
 function buildPanel(){const P=$('#panel');P.classList.toggle('closed',!S.panelOpen);$('#bPanel').classList.toggle('on',S.panelOpen);if(!S.panelOpen)return;
  $('#ptabs').innerHTML=[['style','Stile'],['layers','Livelli'],['arrange','Disponi']].map(([k,l])=>`<button data-tab="${k}" class="${S.tab===k?'on':''}">${l}</button>`).join('');
  const b=$('#pbody'),st=b.scrollTop;b.innerHTML=S.tab==='style'?stylePanel():S.tab==='layers'?layersPanel():arrangePanel();b.scrollTop=st}
 function blendRow(){const its=selItems(),cur=its.length?((its[0].style&&its[0].style.blend)||'normal'):(S.def.blend||'normal');const opts=c=>BLENDS.map(([v,l])=>`<option value="${v}"${c===v?' selected':''}>${l}</option>`).join('');
- if(its.length===1&&its[0].type==='mask'){const m=its[0];return`<div class="sec"><div class="row"><span class="lbl">Fusione forma</span><select class="sel" data-mblend>${opts(m.mask.style.blend||'normal')}</select></div><div class="row"><span class="lbl">Fusione gruppo</span><select class="sel" data-iblend>${opts(cur)}</select></div><div class="hint">“Forma”: riempimento e tratto della forma-maschera. “Gruppo”: tutto l’insieme rispetto a ciò che sta sotto.</div></div>`}
- return`<div class="sec"><div class="row"><span class="lbl">Fusione</span><select class="sel" data-iblend>${opts(cur)}</select></div></div>`}
-function stylePanel(){const{its,paths,imgs,st}=curTarget();const masks=its.filter(i=>i.type==='mask');let h=`<div class="ptitle">${its.length?(its.length===1?(masks.length?'Maschera':paths.length?'Tracciato selezionato':'Immagine'):its.length+' oggetti'):'Stile nuovi oggetti'}</div>`;
- if(masks.length)h+=`<div class="sec"><div class="row"><span class="lbl">Riempim. forma</span>${seg('mfill',[['off','Nascosto'],['under','Sotto'],['over','Sopra']],masks[0].showFill?(masks[0].fillPos==='over'?'over':'under'):'off')}</div><label class="tog"><input type="checkbox" data-mflag="showStroke"${masks[0].showStroke?' checked':''}> Mostra il tratto della forma (sopra)</label>
- <div class="hint">Riempimento e tratto qui sotto sono quelli della forma-maschera. Doppio tap sulla maschera per modificarne forma e contenuto.</div><div class="grid g2" style="margin-top:8px"><button class="btn" data-act="editmask">Modifica</button><button class="btn" data-act="unmask">Rilascia</button></div></div>`;
- if(st){h+=paintSec('fill','Riempimento',st.fill,st.fo)+paintSec('stroke','Tratto',st.stroke,st.so);
-  h+=`<div class="sec"><div class="row"><span class="lbl">Spessore</span><input type="range" min="0" max="60" step="0.5" value="${st.sw}" data-sw><input class="num" type="number" inputmode="decimal" min="0" step="0.5" value="${st.sw}" data-swn></div>
+ if(its.length===1&&its[0].type==='mask'){const m=its[0];return`<div class="row"><span class="lbl">Forma</span><select class="sel" data-mblend>${opts(m.mask.style.blend||'normal')}</select></div><div class="row"><span class="lbl">Insieme</span><select class="sel" data-iblend>${opts(cur)}</select></div><div class="hint">“Forma”: riempimento e tratto della forma-maschera. “Insieme”: tutta la maschera rispetto a ciò che sta sotto.</div>`}
+ return`<div class="row"><span class="lbl">Metodo</span><select class="sel" data-iblend>${opts(cur)}</select></div>`}
+function stylePanel(){const{its,paths,imgs,st}=curTarget();const masks=its.filter(i=>i.type==='mask'),groups=its.filter(i=>i.type==='group');
+ let h=`<div class="ptitle">${its.length?(its.length===1?(masks.length?'Maschera':groups.length?'Gruppo':paths.length?'Tracciato selezionato':'Immagine'):its.length+' oggetti'):'Stile nuovi oggetti'}</div>`;
+ if(masks.length)h+=sec('s-mask','Maschera',`<div class="row"><span class="lbl">Riempim. forma</span>${seg('mfill',[['off','Nascosto'],['under','Sotto'],['over','Sopra']],masks[0].showFill?(masks[0].fillPos==='over'?'over':'under'):'off')}</div><label class="tog"><input type="checkbox" data-mflag="showStroke"${masks[0].showStroke?' checked':''}> Mostra il tratto della forma (sopra)</label>
+ <div class="hint">Riempimento e tratto qui sotto sono quelli della forma-maschera. Doppio tap sulla maschera per modificarne forma e contenuto.</div><div class="grid g2" style="margin-top:8px"><button class="btn" data-act="editmask">Modifica</button><button class="btn" data-act="unmask">Rilascia</button></div>`);
+ if(groups.length)h+=sec('s-group','Gruppo',`<div class="hint">Le modifiche di colore qui sotto si applicano a tutti i tracciati del gruppo. Doppio tap sul gruppo per modificarne gli oggetti.</div><div class="grid g2" style="margin-top:8px"><button class="btn" data-act="editgroup">Modifica</button><button class="btn" data-act="ungroup">Separa</button></div>`);
+ if(st){h+=sec('s-fill','Riempimento',paintBody('fill',st.fill,st.fo));
+  h+=sec('s-stroke','Tratto',paintBody('stroke',st.stroke,st.so)+`<div class="row"><span class="lbl">Spessore</span><input type="range" min="0" max="60" step="0.5" value="${st.sw}" data-sw><input class="num" type="number" inputmode="decimal" min="0" step="0.5" value="${st.sw}" data-swn></div>
   <div class="row"><span class="lbl">Estremi</span>${seg('cap',[['butt','Piatti'],['round','Tondi'],['square','Quadri']],st.cap)}</div>
-  <div class="row"><span class="lbl">Giunzioni</span>${seg('join',[['miter','Vive'],['round','Tonde'],['bevel','Smussate']],st.join)}</div></div>
-  <div class="sec"><div class="row"><span class="lbl">Sfocatura</span><input type="range" min="0" max="100" step="0.5" value="${st.blur||0}" data-blur><input class="num" type="number" inputmode="decimal" min="0" step="0.5" value="${st.blur||0}" data-blurn></div></div>`}
- if(imgs.length){const op=Math.round(imgs[0].style.op*100);h+=`<div class="sec"><div class="sech">Immagine</div><div class="row"><span class="lbl">Opacità</span><input type="range" min="0" max="100" value="${op}" data-imgop><span class="val">${op}%</span></div></div>`}
- h+=blendRow();
- if(st)h+=`<div class="sec"><div class="sech"><span>Colori</span>${seg('ptarget',[['fill','Riemp.'],['stroke','Tratto']],S.ptarget)}</div><div class="swatches">${S.recent.map(c=>`<button class="swc" data-rc="${c}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div></div>`;
+  <div class="row"><span class="lbl">Giunzioni</span>${seg('join',[['miter','Vive'],['round','Tonde'],['bevel','Smussate']],st.join)}</div>${its.some(i=>i.type==='path')?`<button class="btn wide" data-act="outline">Converti tratto in contorno</button>`:''}`);
+  h+=sec('s-blur','Sfocatura',`<div class="row"><span class="lbl">Quantità</span><input type="range" min="0" max="100" step="0.5" value="${st.blur||0}" data-blur><input class="num" type="number" inputmode="decimal" min="0" step="0.5" value="${st.blur||0}" data-blurn></div>`)}
+ if(imgs.length){const op=Math.round(imgs[0].style.op*100);h+=sec('s-img','Immagine',`<div class="row"><span class="lbl">Opacità</span><input type="range" min="0" max="100" value="${op}" data-imgop><span class="val">${op}%</span></div>`)}
+ h+=sec('s-blend','Fusione',blendRow());
+ if(st)h+=sec('s-col','Colori',`<div class="swatches">${S.recent.map(c=>`<button class="swc" data-rc="${c}" style="background:${c}" aria-label="${c}"></button>`).join('')}</div>`,seg('ptarget',[['fill','Riemp.'],['stroke','Tratto']],S.ptarget));
  return h}
-function paintSec(k,label,p,op){const t=p?p.t:'none';let h=`<div class="sec"><div class="sech"><span>${label}</span></div>${seg('pt-'+k,[['none','Nessuno'],['solid','Tinta'],['lin','Lineare'],['rad','Radiale']],t)}`;
+function paintBody(k,p,op){const t=p?p.t:'none';let h=seg('pt-'+k,[['none','Nessuno'],['solid','Tinta'],['lin','Lineare'],['rad','Radiale']],t);
  if(p&&p.t==='solid')h+=`<div class="row">${colorBox(`data-color="${k}"`,p.c)}<input class="hex" data-hex="${k}" value="${p.c}" maxlength="7" autocapitalize="off" autocomplete="off" spellcheck="false"></div>`;
  if(p&&p.t!=='solid')h+=gradEd(k,p);
  if(p){const o=Math.round(op*100);h+=`<div class="row"><span class="lbl">Opacità</span><input type="range" min="0" max="100" value="${o}" data-op="${k}"><span class="val">${o}%</span></div>`}
- return h+'</div>'}
+ return h}
 const gcss=p=>`linear-gradient(90deg,${sortStops(p).map(s=>rgba(s.c,s.a)+' '+f2(s.o*100)+'%').join(',')})`;
 const gAngle=p=>{let a=Math.round(Math.atan2(p.y2-p.y1,p.x2-p.x1)*180/Math.PI);return a<0?a+360:a};
 const gLen=p=>Math.round(Math.hypot(p.x2-p.x1,p.y2-p.y1));
@@ -610,7 +651,7 @@ function gradEd(k,p){const i=Math.min(S.gstop[k],p.stops.length-1);S.gstop[k]=i;
  return h+`<div class="hint">Con lo strumento Gradiente trascini direttamente sull'oggetto per direzione ed estensione.</div>`}
 const BLENDS=[['normal','Normale'],['multiply','Moltiplica'],['screen','Scolora'],['overlay','Sovrapponi'],['darken','Scurisci'],['lighten','Schiarisci'],['color-dodge','Scherma colore'],['color-burn','Brucia colore'],['hard-light','Luce intensa'],['soft-light','Luce soffusa'],['difference','Differenza'],['exclusion','Esclusione'],['hue','Tonalità'],['saturation','Saturazione'],['color','Colore'],['luminosity','Luminosità']];
 function layersPanel(){const L=S.doc.layers,A=layer();let h='<div class="layers">';
- for(let i=L.length-1;i>=0;i--){const l=L[i];h+=`<div class="lrow${l.id===A.id?' on':''}"><button class="mb" data-lvis="${l.id}" aria-label="Visibilità">${ic(l.visible?'eye':'eyeoff')}</button><span class="lname" data-lsel="${l.id}">${esc(l.name)}</span>${l.blend&&l.blend!=='normal'?`<span class="bm">${(BLENDS.find(b=>b[0]===l.blend)||['',''])[1]}</span>`:''}<span class="cnt">${l.items.length}</span><button class="mb" data-llock="${l.id}" aria-label="Blocco">${ic(l.locked?'lock':'unlock')}</button></div>`}
+ for(let i=L.length-1;i>=0;i--){const l=L[i];h+=`<div class="lrow${l.id===A.id?' on':''}"><button class="mb" data-lvis="${l.id}" aria-label="Visibilità">${ic(l.visible?'eye':'eyeoff')}</button><span class="lname" data-lsel="${l.id}">${esc(l.name)}</span>${l.blend&&l.blend!=='normal'?`<span class="bm">${(BLENDS.find(b=>b[0]===l.blend)||['',''])[1]}</span>`:''}<span class="cnt">${l.items.length}</span><button class="mb" data-llock="${l.id}" aria-label="Blocco">${ic(l.locked?'lock':'unlock')}</button><span class="lgrip" data-lgrip="${l.id}" aria-label="Trascina per riordinare">${ic('grip')}</span></div>`}
  const o=Math.round(A.opacity*100);
  h+=`</div><div class="lbtns"><button class="mini" data-act="ladd" title="Nuovo livello">${ic('plus')}</button><button class="mini" data-act="ldup" title="Duplica livello">${ic('dup')}</button><button class="mini" data-act="lup" title="Su">${ic('up')}</button><button class="mini" data-act="ldown" title="Giù">${ic('down')}</button><button class="mini" data-act="lren" title="Rinomina">${ic('edit')}</button><button class="mini" data-act="ldel" title="Elimina livello">${ic('trash')}</button></div>
  <div class="sec"><div class="row"><span class="lbl">Opacità livello</span><input type="range" min="0" max="100" value="${o}" data-lop><span class="val">${o}%</span></div>
@@ -618,22 +659,22 @@ function layersPanel(){const L=S.doc.layers,A=layer();let h='<div class="layers"
  if(S.sel.length)h+=`<button class="btn wide" data-act="tolayer">Sposta selezione in “${esc(A.name)}”</button>`;
  return h+'</div>'}
 function arrangePanel(){const TB=(a,i,l)=>`<button class="tb" data-act="${a}">${ic(i)}<span>${l}</span></button>`;
- return`<div class="sec"><div class="sech"><span>Allinea a</span>${seg('alignTo',[['sel','Selezione'],['doc','Documento']],S.opt.alignTo)}</div>
- <div class="grid g6">${TB('al','al','Sx')}${TB('ach','ach','Centro')}${TB('ar','ar','Dx')}${TB('at','at','Su')}${TB('acv','acv','Medio')}${TB('ab','ab','Giù')}</div>
- <div class="grid g2" style="margin-top:4px">${TB('distH','distH','Distribuisci H')}${TB('distV','distV','Distribuisci V')}</div></div>
- <div class="sec"><div class="sech">Rifletti</div><div class="grid g3">${TB('flipH','flipH','Orizzontale')}${TB('flipV','flipV','Verticale')}${TB('mirdup','mirdup','Copia specchiata')}</div></div>
- <div class="sec"><div class="sech">Booleane</div><div class="grid g4">${TB('unite','unite','Unisci')}${TB('subtract','subtract','Sottrai')}${TB('intersect','intersect','Interseca')}${TB('exclude','exclude','Escludi')}</div><div class="hint">Seleziona due o più tracciati. Sottrai: gli oggetti sopra vengono tolti da quello più in basso.</div></div>
- <div class="sec"><div class="sech">Maschera</div><div class="grid g3">${TB('mask','mask','Crea maschera')}${TB('inside','inside','Metti dentro')}${TB('unmask','unmask','Rilascia')}</div><div class="hint">L’oggetto più in alto della selezione diventa la forma che ritaglia gli altri. “Metti dentro” mantiene il suo riempimento (sotto) e il tratto (sopra).</div></div>
- <div class="sec"><div class="sech">Ordine</div><div class="grid g4">${TB('ztop','top','In cima')}${TB('zup','up','Su')}${TB('zdown','down','Giù')}${TB('zbottom','bottom','In fondo')}</div></div>
- <div class="sec"><div class="sech"><span>Simmetria live</span>${seg('sym',[['off','Off'],['v','Vert.'],['h','Oriz.']],S.opt.sym?S.opt.symAxis:'off')}</div><div class="hint">Penna, matita e forme generano anche la copia specchiata sull'asse del documento.</div></div>
- <div class="sec"><div class="sech">Righelli e guide</div>
- <label class="tog"><input type="checkbox" data-optc="rulers"${S.opt.rulers?' checked':''}> Mostra righelli</label>
+ return sec('a-align','Allinea',`<div class="grid g6">${TB('al','al','Sx')}${TB('ach','ach','Centro')}${TB('ar','ar','Dx')}${TB('at','at','Su')}${TB('acv','acv','Medio')}${TB('ab','ab','Giù')}</div>
+ <div class="grid g2" style="margin-top:4px">${TB('distH','distH','Distribuisci H')}${TB('distV','distV','Distribuisci V')}</div>`,seg('alignTo',[['sel','Selezione'],['doc','Documento']],S.opt.alignTo))
+ +sec('a-mirror','Rifletti',`<div class="grid g3">${TB('flipH','flipH','Orizzontale')}${TB('flipV','flipV','Verticale')}${TB('mirdup','mirdup','Copia specchiata')}</div>`)
+ +sec('a-bool','Booleane',`<div class="grid g4">${TB('unite','unite','Unisci')}${TB('subtract','subtract','Sottrai')}${TB('intersect','intersect','Interseca')}${TB('exclude','exclude','Escludi')}</div><div class="grid g2" style="margin-top:4px">${TB('outline','outline','Contorno tratto')}${TB('clean','simplify','Pulisci punti')}</div><div class="hint">Seleziona due o più tracciati. Sottrai: gli oggetti sopra vengono tolti da quello più in basso. “Contorno tratto” trasforma la linea in forma piena.</div>`)
+ +sec('a-mask','Maschera',`<div class="grid g3">${TB('mask','mask','Crea maschera')}${TB('inside','inside','Metti dentro')}${TB('unmask','unmask','Rilascia')}</div><div class="hint">L’oggetto più in alto della selezione diventa la forma che ritaglia gli altri.</div>`)
+ +sec('a-group','Gruppi',`<div class="grid g3">${TB('group','group','Raggruppa')}${TB('ungroup','ungroup','Separa')}${TB('editgroup','edit','Modifica')}</div><div class="hint">Doppio tap su un gruppo per modificarne gli oggetti. Con tastiera: ⌘G / ⇧⌘G.</div>`)
+ +sec('a-order','Ordine',`<div class="grid g4">${TB('ztop','top','In cima')}${TB('zup','up','Su')}${TB('zdown','down','Giù')}${TB('zbottom','bottom','In fondo')}</div>`)
+ +sec('a-sym','Simmetria live',`<div class="hint">Penna, matita e forme generano anche la copia specchiata sull'asse del documento.</div>`,seg('sym',[['off','Off'],['v','Vert.'],['h','Oriz.']],S.opt.sym?S.opt.symAxis:'off'))
+ +sec('a-rulers','Righelli e guide',`<label class="tog"><input type="checkbox" data-optc="rulers"${S.opt.rulers?' checked':''}> Mostra righelli</label>
  <label class="tog"><input type="checkbox" data-optc="guides"${S.opt.guides?' checked':''}> Mostra guide</label>
  <label class="tog"><input type="checkbox" data-optc="lockGuides"${S.opt.lockGuides?' checked':''}> Blocca guide</label>
  <label class="tog"><input type="checkbox" data-optc="snap"${S.opt.snap?' checked':''}> Aggancia a guide e documento</label>
  <div class="grid g3" style="margin-top:6px">${TB('gCenter','guide','Guide al centro')}${TB('gSel','guide','Guide su selezione')}${TB('gClear','trash','Cancella guide')}</div>
- <div class="hint">Trascina da un righello per creare una guida; trascinala di nuovo sul righello per eliminarla.</div></div>
- <div class="sec"><div class="sech">Input</div><label class="tog"><input type="checkbox" data-optc="pencilOnly"${S.opt.pencilOnly?' checked':''}> Solo Apple Pencil disegna (il dito sposta la vista)</label><label class="tog"><input type="checkbox" data-optc="propScale"${S.opt.propScale?' checked':''}> Scala proporzionale dagli angoli</label><label class="tog"><input type="checkbox" data-optc="penHover"${S.opt.penHover?' checked':''}> Anteprima Penna in hover (Apple Pencil sollevata)</label><div class="hint">Gesti: due dita = zoom/sposta · tap con due dita = annulla · tap con tre dita = ripeti.</div></div>`}
+ <div class="hint">Trascina da un righello per creare una guida; trascinala di nuovo sul righello per eliminarla.</div>`)
+ +sec('a-input','Input',`<label class="tog"><input type="checkbox" data-optc="pencilOnly"${S.opt.pencilOnly?' checked':''}> Solo Apple Pencil disegna (il dito sposta la vista)</label><label class="tog"><input type="checkbox" data-optc="propScale"${S.opt.propScale?' checked':''}> Scala proporzionale dagli angoli</label><label class="tog"><input type="checkbox" data-optc="penHover"${S.opt.penHover?' checked':''}> Anteprima Penna in hover (Apple Pencil sollevata)</label>
+ <div class="hint">Gesti: due dita = zoom/sposta · tap con due dita = annulla · tap con tre dita = ripeti. Maniglie: tieni premuta una maniglia ~½ s prima di trascinarla per renderla indipendente.</div>`)}
 
 /* ---------- style editing ---------- */
 function editStyle(fn,live){const{its,paths}=curTarget();if(its.length)paths.forEach(it=>fn(it.style,it));else fn(S.def,null);render();if(!live){if(its.length)commit();else{updateUI();scheduleSave()}}}
@@ -665,6 +706,14 @@ P.addEventListener('change',e=>{const t=e.target,d=t.dataset;
  else if(d.iblend!=null){const its=selItems();if(its.length){its.forEach(i=>{i.style=i.style||{};i.style.blend=t.value});commit()}else{S.def.blend=t.value;scheduleSave()}}
  else if(d.optc){S.opt[d.optc]=t.checked;if(!S.opt.penHover)S.hover=null;scheduleSave();render()}});
 function refreshGBar(k){const bar=P.querySelector(`[data-gbar="${k}"]`),it=curTarget(),st=it.st;if(!bar||!st||!st[k])return;const p=st[k];bar.querySelector('.gfill').style.background=gcss(p);bar.querySelectorAll('.gstop').forEach((el,j)=>{const s=p.stops[j];if(s){el.style.left=s.o*100+'%';el.style.background=rgba(s.c,s.a)}})}
+P.addEventListener('pointerdown',e=>{const gr=e.target.closest('[data-lgrip]');if(gr){e.preventDefault();layerDrag(gr,e);return}});
+function layerDrag(gr,e){const row=gr.closest('.lrow'),list=row.parentNode,rows=[...list.children],h=row.getBoundingClientRect().height+3,y0=e.clientY,start=rows.indexOf(row);let to=start;
+ row.classList.add('drag');try{gr.setPointerCapture(e.pointerId)}catch(_){}
+ const mv=ev=>{const dy=ev.clientY-y0;row.style.transform=`translateY(${dy}px)`;to=Math.max(0,Math.min(rows.length-1,Math.round(start+dy/h)));
+  rows.forEach((r,i)=>{if(r===row)return;let off=0;if(start<to&&i>start&&i<=to)off=-h;if(start>to&&i<start&&i>=to)off=h;r.style.transform=off?`translateY(${off}px)`:'';r.style.transition='transform .12s'})};
+ const up=()=>{gr.removeEventListener('pointermove',mv);gr.removeEventListener('pointerup',up);gr.removeEventListener('pointercancel',up);
+  if(to!==start){const L=S.doc.layers,n=L.length,from=n-1-start,dest=n-1-to,[m]=L.splice(from,1);L.splice(dest,0,m);commit()}else buildPanel()};
+ gr.addEventListener('pointermove',mv);gr.addEventListener('pointerup',up);gr.addEventListener('pointercancel',up)}
 P.addEventListener('pointerdown',e=>{const gs=e.target.closest('.gstop'),bar=e.target.closest('.gbar');if(!bar)return;e.preventDefault();const k=bar.dataset.gbar,R=bar.getBoundingClientRect();const off=x=>Math.max(0,Math.min(1,(x-R.left)/R.width));
  if(!gs){const o=off(e.clientX);editStyle(s=>{const p=s[k];if(!p||p.t==='solid')return;const st=sortStops(p);let a=st[0],b=st[st.length-1];for(let i=0;i<st.length-1;i++)if(st[i].o<=o&&st[i+1].o>=o){a=st[i];b=st[i+1]}
   const t=b.o>a.o?(o-a.o)/(b.o-a.o):0,ca=parseInt(a.c.slice(1),16),cb=parseInt(b.c.slice(1),16),mix=(sh)=>Math.round(((ca>>sh)&255)*(1-t)+((cb>>sh)&255)*t);
@@ -683,6 +732,7 @@ document.addEventListener('click',e=>{const t=e.target;
  const tool=t.closest('[data-tool]');if(tool){const k=tool.dataset.tool;if(k==='shape'){const open=!$('#fly').hidden;if(!isShape(S.tool))setTool(S.lastShape);if(open)$('#fly').hidden=true;else openFly($('[data-tool="shape"]'));return}$('#fly').hidden=true;setTool(k);return}
  const tab=t.closest('[data-tab]');if(tab){S.tab=tab.dataset.tab;buildPanel();return}
  const sg=t.closest('[data-seg]');if(sg){onSeg(sg.dataset.seg,sg.dataset.v);return}
+ const cl=t.closest('[data-col]');if(cl&&!t.closest('select,input,label')){const k=cl.dataset.col;S.opt.col=S.opt.col||{};S.opt.col[k]=!S.opt.col[k];cl.parentNode.classList.toggle('col',S.opt.col[k]);scheduleSave();return}
  const rc=t.closest('[data-rc]');if(rc){const c=rc.dataset.rc,k=S.ptarget;editStyle(s=>{s[k]=s[k]&&s[k].t!=='solid'?(s[k].stops[S.gstop[k]].c=c,s[k]):{t:'solid',c}});return}
  const ga=t.closest('[data-gadd],[data-gdel],[data-grev]');if(ga){const d=ga.dataset;
   if(d.gadd){const k=d.gadd;editStyle(s=>{const p=s[k];if(!p||p.t==='solid')return;const st=sortStops(p),i=Math.max(0,st.indexOf(p.stops[S.gstop[k]])),a=st[i],b=st[i+1]||st[i-1]||a;p.stops.push({o:(a.o+b.o)/2,c:a.c,a:a.a});S.gstop[k]=p.stops.length-1})}
@@ -694,6 +744,8 @@ document.addEventListener('click',e=>{const t=e.target;
   if(!L.visible||L.locked){const ids=new Set(L.items.map(i=>i.id));S.sel=S.sel.filter(i=>!ids.has(i))}commit();return}
  const a=t.closest('[data-act]');if(a){act(a.dataset.act);return}
  const m=t.closest('[data-m]');if(m&&modalCb){if(modalCb(m.dataset.m,m)!==false)closeModal()}});
+$('#tools').addEventListener('input',e=>{const k=e.target.dataset.swc;if(!k)return;const v=e.target.value;editStyle(s=>{if(s[k]&&s[k].t==='solid')s[k].c=v;else s[k]={t:'solid',c:v}},1);const lb=e.target.parentNode;lb.style.background=v;lb.classList.remove('none')});
+$('#tools').addEventListener('change',e=>{const k=e.target.dataset.swc;if(!k)return;addRecent(e.target.value);editStyle(()=>{})});
 $('#ctx').addEventListener('input',e=>{const k=e.target.dataset.opt;if(!k)return;S.opt[k]=+e.target.value;const v=$('#cv_'+k);if(v)v.textContent=e.target.value});
 function onSeg(k,v){
  if(k==='pt-fill'||k==='pt-stroke'){const key=k.slice(3);editStyle((s,it)=>{s[key]=convertPaint(s[key],v,it?bboxItem(it):null);if(v!=='none'&&v!=='solid')S.gstop[key]=0});return}
@@ -729,6 +781,12 @@ function act(a){if(a.startsWith('mvl:')){const id=a.slice(4);if(id==='new'){cons
  case'closeToggle':{const its=selItems().filter(i=>i.type==='path');if(!its.length)break;const c=!its[0].subs[0].closed;its.forEach(i=>i.subs.forEach(s=>s.closed=c));commit();break}
  case'simplify':selItems().filter(i=>i.type==='path').forEach(it=>{const p=toPaper(it,true);const kids=p.children||[p];kids.forEach(k=>k.simplify(2.5));it.subs=fromPaper(p)});S.nsel=[];commit();break;
  case'clean':openClean();break;
+ case'group':makeGroup();break;case'ungroup':ungroup();break;
+ case'editgroup':{const g=selItems().find(i=>i.type==='group');if(g)enterMask(g);break}
+ case'outline':outlineSel();break;case'pencilOutline':S.opt.pencilOutline=!S.opt.pencilOutline;buildCtx();scheduleSave();break;
+ case'addPt':S.opt.addPt=!S.opt.addPt;buildCtx();break;
+ case'openStyle':S.panelOpen=true;S.tab='style';buildPanel();render();break;
+ case'swapFS':editStyle(s=>{const f=s.fill,k=s.stroke;s.fill=k;s.stroke=f;const a=s.fo;s.fo=s.so;s.so=a});break;
  case'mask':makeMask();break;case'inside':makeMask(true);break;case'unmask':releaseMask();break;
  case'editmask':{const m=selItems().find(i=>i.type==='mask');if(m)enterMask(m);break}
  case'exitmask':exitMask();break;
@@ -756,14 +814,51 @@ function act(a){if(a.startsWith('mvl:')){const id=a.slice(4);if(id==='new'){cons
  case'trace':$('#fTrace').click();break;
  case'pencilOnly':S.opt.pencilOnly=!S.opt.pencilOnly;toast(S.opt.pencilOnly?'Solo Apple Pencil disegna':'Disegno anche con il dito');buildPanel();scheduleSave();break}}
 function enterMask(m){const r=find(m.id);if(!r)return;if(S.doc.maskEdit)exitMask(true);
+ if(m.type==='group'){r.L.items.splice(r.i,1,...m.kids);S.doc.maskEdit={kind:'group',id:m.id,layer:r.L.id,kids:m.kids.map(k=>k.id),pre:r.L.items.map(i=>i.id),style:m.style||null};
+  S.sel=[];S.activeLayer=r.L.id;setTool('select');commit();toast('Modifica gruppo · “Fine gruppo” per chiudere');return}
  r.L.items.splice(r.i,1,...m.kids,m.mask);S.doc.maskEdit={id:m.id,layer:r.L.id,pathId:m.mask.id,kids:m.kids.map(k=>k.id),pre:r.L.items.map(i=>i.id),style:m.style||null,sf:!!m.showFill,fp:m.fillPos||'under',ss:!!m.showStroke};
  S.sel=[];S.activeLayer=r.L.id;setTool('select');commit();toast('Modifica maschera · “Fine maschera” per chiudere')}
 function exitMask(silent){const me=S.doc.maskEdit;if(!me)return;delete S.doc.maskEdit;const L=S.doc.layers.find(l=>l.id===me.layer);
+ if(L&&me.kind==='group'){const pre=new Set(me.pre),kidSet=new Set(me.kids);const inside=L.items.filter(i=>kidSet.has(i.id)||!pre.has(i.id));
+  if(inside.length>1){const at=Math.min(...inside.map(i=>L.items.indexOf(i)));const g={id:me.id,type:'group',kids:inside};if(me.style)g.style=me.style;const rm=new Set(inside.map(i=>i.id));L.items=L.items.filter(i=>!rm.has(i.id));L.items.splice(Math.min(at,L.items.length),0,g);S.sel=[g.id]}
+  validateSel();if(!silent)commit();return}
  if(L){const pr=L.items.findIndex(i=>i.id===me.pathId);
   if(pr>=0){const pre=new Set(me.pre),kidSet=new Set(me.kids);const inside=L.items.filter(i=>i.id!==me.pathId&&(kidSet.has(i.id)||!pre.has(i.id)));
    if(inside.length){const mp=L.items[pr];const idxs=inside.map(i=>L.items.indexOf(i));const at=Math.min(...idxs,pr);const m={id:me.id,type:'mask',mask:mp,kids:inside};if(me.style)m.style=me.style;if(me.sf)m.showFill=true;if(me.fp)m.fillPos=me.fp;if(me.ss)m.showStroke=true;
     const rm=new Set([...inside.map(i=>i.id),mp.id]);L.items=L.items.filter(i=>!rm.has(i.id));L.items.splice(Math.min(at,L.items.length),0,m);S.sel=[m.id]}}}
  validateSel();if(!silent)commit()}
+/* contorno del tratto: unione di segmenti + giunzioni + estremi, poi semplificata in curve */
+function strokeOutline(it){const s=it.style;if(!s.stroke||!(s.sw>0))return null;const hw=s.sw/2,prims=[],P=pp=>new paper.Point(pp[0],pp[1]);
+ const poly=pts=>new paper.Path({segments:pts.map(P),closed:true,insert:false}),circ=(x,y)=>new paper.Path.Circle({center:[x,y],radius:hw,insert:false});
+ for(const sp of it.subs){if(!sp.pts.length)continue;const src=toPaper({subs:[sp]},true);const fl=src.clone({insert:false});fl.flatten(Math.max(.15,hw*.12));
+  let pts=fl.segments.map(g=>[g.point.x,g.point.y]);if(sp.closed&&pts.length>2){const a=pts[0],b=pts[pts.length-1];if(Math.hypot(a[0]-b[0],a[1]-b[1])<1e-6)pts.pop()}
+  pts=pts.filter((p,i)=>i===0||Math.hypot(p[0]-pts[i-1][0],p[1]-pts[i-1][1])>1e-4);
+  if(pts.length===1){if(s.cap!=='butt')prims.push(circ(pts[0][0],pts[0][1]));continue}
+  const n=pts.length,segN=sp.closed?n:n-1;
+  for(let i=0;i<segN;i++){const a=pts[i],b=pts[(i+1)%n],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy);if(l<1e-6)continue;let nx=-dy/l*hw,ny=dx/l*hw,ex=0,ey=0;
+   if(!sp.closed&&s.cap==='square'){if(i===0){ex=-dx/l*hw;ey=-dy/l*hw}}
+   let ax=a[0]+ex,ay=a[1]+ey,bx=b[0],by=b[1];if(!sp.closed&&s.cap==='square'&&i===segN-1){bx+=dx/l*hw;by+=dy/l*hw}
+   prims.push(poly([[ax+nx,ay+ny],[bx+nx,by+ny],[bx-nx,by-ny],[ax-nx,ay-ny]]))}
+  const joinAt=i=>{const p=pts[i],pv=pts[(i-1+n)%n],nx_=pts[(i+1)%n];const d1=[p[0]-pv[0],p[1]-pv[1]],d2=[nx_[0]-p[0],nx_[1]-p[1]],l1=Math.hypot(...d1),l2=Math.hypot(...d2);if(l1<1e-6||l2<1e-6)return;
+   const cr=d1[0]*d2[1]-d1[1]*d2[0],dot=(d1[0]*d2[0]+d1[1]*d2[1])/(l1*l2);if(Math.abs(cr)<1e-9&&dot>0)return;
+   if(s.join==='round'){prims.push(circ(p[0],p[1]));return}
+   const sg=cr>0?-1:1,n1=[-d1[1]/l1*hw*sg,d1[0]/l1*hw*sg],n2=[-d2[1]/l2*hw*sg,d2[0]/l2*hw*sg];const o1=[p[0]+n1[0],p[1]+n1[1]],o2=[p[0]+n2[0],p[1]+n2[1]];
+   const half=Math.acos(Math.max(-1,Math.min(1,dot)))/2;if(s.join==='miter'&&1/Math.cos(half)<=4){const mid=[n1[0]+n2[0],n1[1]+n2[1]],ml=Math.hypot(...mid)||1,L=hw/Math.cos(half);prims.push(poly([p,o1,[p[0]+mid[0]/ml*L,p[1]+mid[1]/ml*L],o2]))}
+   else prims.push(poly([p,o1,o2]))};
+  for(let i=sp.closed?0:1;i<(sp.closed?n:n-1);i++)joinAt(i);
+  if(!sp.closed&&s.cap==='round'){prims.push(circ(pts[0][0],pts[0][1]),circ(pts[n-1][0],pts[n-1][1]))}}
+ if(!prims.length)return null;
+ // unione ad albero (più veloce dell'unione in sequenza)
+ let lv=prims;while(lv.length>1){const nx=[];for(let i=0;i<lv.length;i+=2)nx.push(i+1<lv.length?lv[i].unite(lv[i+1],{insert:false}):lv[i]);lv=nx}
+ let res=lv[0];const kids=res.className==='CompoundPath'?res.children:[res];kids.forEach(k=>{if(k.segments.length>6)k.simplify(Math.max(.2,hw*.06))});
+ const subs=fromPaper(res);if(!subs.length)return null;
+ return{id:it.id,type:'path',subs,rule:'nonzero',style:{...clone(s),fill:clone(s.stroke),fo:s.so,stroke:null}}}
+function outlineSel(){const its=selItems().filter(i=>i.type==='path'&&i.style.stroke&&i.style.sw>0);if(!its.length){toast('Seleziona un tracciato con tratto');return}
+ toast('Calcolo contorno…');setTimeout(()=>{let n=0;its.forEach(it=>{try{const o=strokeOutline(it);if(o){replace(o);n++}}catch(e){console.error(e)}});commit();toast(n?`Contorno creato (${n})`:'Impossibile creare il contorno')},30)}
+function makeGroup(){const all=allItems(),its=selItems().sort((a,b)=>all.indexOf(a)-all.indexOf(b));if(its.length<2){toast('Seleziona almeno due oggetti');return}
+ const top=its[its.length-1],r=find(top.id),g={id:uid('i'),type:'group',kids:its.map(clone)};r.L.items[r.i]=g;const ids=new Set(its.map(i=>i.id));
+ S.doc.layers.forEach(l=>l.items=l.items.filter(i=>!ids.has(i.id)));S.sel=[g.id];commit();toast('Gruppo creato')}
+function ungroup(){const gs=selItems().filter(i=>i.type==='group');if(!gs.length)return;const ids=[];gs.forEach(g=>{const r=find(g.id);r.L.items.splice(r.i,1,...g.kids);ids.push(...g.kids.map(k=>k.id))});S.sel=ids;commit()}
 function makeMask(keep){const all=allItems(),its=selItems().sort((a,b)=>all.indexOf(a)-all.indexOf(b));if(its.length<2){toast('Seleziona la forma-maschera (in cima) e gli oggetti da mascherare');return}
  const top=its[its.length-1];if(top.type!=='path'){toast('L’oggetto più in alto deve essere un tracciato o una forma');return}
  const r=find(top.id),L=r.L;const kids=its.slice(0,-1).map(clone);const m={id:uid('i'),type:'mask',mask:clone(top),kids};if(keep){m.showFill=true;m.showStroke=true;m.fillPos=(top.style.blend&&top.style.blend!=='normal')?'over':'under'}
@@ -843,7 +938,7 @@ function snapDelta(b,dx,axis){if(!S.opt.snap||!b)return dx;const tol=8/S.view.z,
 
 /* ---------- pointer ops ---------- */
 let lastTap={t:0,x:0,y:0};
-function isDbl(p){const t=performance.now(),r=t-lastTap.t<380&&Math.hypot(p.sx-lastTap.x,p.sy-lastTap.y)<30;lastTap=r?{t:0,x:0,y:0}:{t,x:p.sx,y:p.sy};return r}
+function isDbl(p,e){const pen=e&&e.pointerType==='pen',t=performance.now(),r=t-lastTap.t<(pen?520:400)&&Math.hypot(p.sx-lastTap.x,p.sy-lastTap.y)<(pen?40:30);lastTap=r?{t:0,x:0,y:0}:{t,x:p.sx,y:p.sy};return r}
 const far=(P,Q,d=4)=>Math.hypot(Q.sx-P.sx,Q.sy-P.sy)>=d;
 function moveOp(P){const orig=selItems().map(clone),b0=bboxOf(orig);let moved=false;
  return{move(Q){if(!moved&&!far(P,Q))return;moved=true;const m=T(snapDelta(b0,Q.x-P.x,'x'),snapDelta(b0,Q.y-P.y,'y'));orig.forEach(o=>replace(applyM(o,m)));render()},up(){if(moved)commit()}}}
@@ -867,11 +962,13 @@ function marqueeOp(P,mode){
    updateUI();render()}}}
 function nodeMoveOp(P){const orig=S.nsel.map(k=>{const n=getNode(k);return n&&{q:n.q,o:{...n.q}}}).filter(Boolean);let moved=false;
  return{move(Q){if(!moved&&!far(P,Q))return;moved=true;let dx=Q.x-P.x,dy=Q.y-P.y;if(orig[0]){const o=orig[0].o;dx=snapVal(o.x+dx,'x')-o.x;dy=snapVal(o.y+dy,'y')-o.y}orig.forEach(({q,o})=>{q.x=o.x+dx;q.y=o.y+dy;q.ix=o.ix+dx;q.iy=o.iy+dy;q.ox=o.ox+dx;q.oy=o.oy+dy});render()},up(){if(moved)commit()}}}
-function handleOp(g){const n=getNode(g.key);if(!n)return null;const isIn=g.kind==='hin',q=n.q;
- return{move(Q){if(isIn){q.ix=Q.x;q.iy=Q.y}else{q.ox=Q.x;q.oy=Q.y}
+function handleOp(g,P){const n=getNode(g.key);if(!n)return null;const isIn=g.kind==='hin',q=n.q;let moved=false;
+ // tieni premuta la maniglia ~0,4 s prima di trascinare = maniglia indipendente (funziona anche con Apple Pencil)
+ const tm=q.s?setTimeout(()=>{if(!moved&&op){q.s=false;render();toast('Maniglia indipendente')}},420):0;
+ return{move(Q){if(P&&!moved&&far(P,Q,3)){moved=true;clearTimeout(tm)}if(isIn){q.ix=Q.x;q.iy=Q.y}else{q.ox=Q.x;q.oy=Q.y}
   if(q.s&&(S.opt.freeHandles||modActive()))q.s=false;
   if(q.s){const dx=(isIn?q.ix:q.ox)-q.x,dy=(isIn?q.iy:q.oy)-q.y,l=Math.hypot(dx,dy)||1,ol=isIn?Math.hypot(q.ox-q.x,q.oy-q.y):Math.hypot(q.ix-q.x,q.iy-q.y),L2=ol||l;
-   if(isIn){q.ox=q.x-dx/l*L2;q.oy=q.y-dy/l*L2}else{q.ix=q.x-dx/l*L2;q.iy=q.y-dy/l*L2}}render()},up(){commit()}}}
+   if(isIn){q.ox=q.x-dx/l*L2;q.oy=q.y-dy/l*L2}else{q.ix=q.x-dx/l*L2;q.iy=q.y-dy/l*L2}}render()},up(){clearTimeout(tm);commit()}}}
 function shapeOp(kind){return P=>{if(!canDraw())return null;let it=null;
  return{move(Q){if(!it&&!far(P,Q))return;if(!it){it=newPath([]);layer().items.push(it);S.sel=[it.id]}it.subs=shapeSubs(kind,P,Q);fitPaints(it);render()},
   up(){if(!it)return;finishNew(it);commit()}}}}
@@ -883,22 +980,27 @@ function shapeSubs(kind,P,Q){
 const OPS={
  hand(P){const v0={...S.view};return{move(Q){S.view.x=v0.x+Q.sx-P.sx;S.view.y=v0.y+Q.sy-P.sy;render()},up(){scheduleSave()}}},
  select(P,e,tolS){const g=pickGrip(P.sx,P.sy,tolS);if(g&&(g.kind==='scale'||g.kind==='rot'))return xformOp(P,g);
-  const dbl=isDbl(P),hit=hitTest(P.x,P.y,tolS/S.view.z);
+  const dbl=isDbl(P,e),hit=hitTest(P.x,P.y,tolS/S.view.z);
   if(hit){if(dbl&&hit.type==='path'){S.sel=[hit.id];setTool('node');return null}
-   if(dbl&&hit.type==='mask'){enterMask(hit);return null}
+   if(dbl&&(hit.type==='mask'||hit.type==='group')){enterMask(hit);return null}
    if(S.opt.multi){if(S.sel.includes(hit.id)){S.sel=S.sel.filter(i=>i!==hit.id);updateUI();render();return null}S.sel.push(hit.id)}
    else if(!S.sel.includes(hit.id))S.sel=[hit.id];updateUI();render();return moveOp(P)}
   const gd=hitGuide(P,tolS);if(gd)return guideOp(gd,P);
   const b=selBBox();if(b&&!S.opt.multi&&P.x>=b.x&&P.x<=b.x+b.w&&P.y>=b.y&&P.y<=b.y+b.h)return moveOp(P);
   if(dbl&&S.doc.maskEdit){exitMask();return null}
   if(!S.opt.multi)S.sel=[];updateUI();render();return marqueeOp(P,'items')},
- node(P,e,tolS){const tol=tolS/S.view.z,dbl=isDbl(P),g=pickGrip(P.sx,P.sy,tolS);
-  if(g&&(g.kind==='hin'||g.kind==='hout'))return handleOp(g);
+ node(P,e,tolS){const tol=tolS/S.view.z,dbl=isDbl(P,e),g=pickGrip(P.sx,P.sy,tolS);
+  if(g&&(g.kind==='hin'||g.kind==='hout'))return handleOp(g,P);
   if(g&&g.kind==='node'){if(dbl){const n=getNode(g.key);if(n){if(n.q.s)cornerNode(n.q);else smoothNode(n.sp,n.pi);S.nsel=[g.key];commit()}return null}
    if(S.opt.multi){if(S.nsel.includes(g.key)){S.nsel=S.nsel.filter(k=>k!==g.key);updateUI();render();return null}S.nsel.push(g.key)}else if(!S.nsel.includes(g.key))S.nsel=[g.key];
    updateUI();render();return nodeMoveOp(P)}
-  if(dbl)for(const it of selItems()){if(it.type!=='path')continue;const nb=nearestOnItem(it,P.x,P.y);if(nb.d<=tol+(it.style.stroke?it.style.sw/2:0)){S.nsel=[insertNode(it,nb)];commit();return null}}
-  const hit=hitTest(P.x,P.y,tol);if(hit){if(!S.sel.includes(hit.id)){S.sel=S.opt.multi?[...S.sel,hit.id]:[hit.id];S.nsel=[];updateUI();render()}return moveOp(P)}
+  let segHit=null;for(const it of selItems()){if(it.type!=='path')continue;const nb=nearestOnItem(it,P.x,P.y);if(nb.d<=tol+(it.style.stroke?it.style.sw/2:0)){segHit={it,nb};break}}
+  if(segHit&&(dbl||S.opt.addPt)){S.nsel=[insertNode(segHit.it,segHit.nb)];commit();return nodeMoveOp(P)}
+  const hit=hitTest(P.x,P.y,tol);if(hit){if(!S.sel.includes(hit.id)){S.sel=S.opt.multi?[...S.sel,hit.id]:[hit.id];S.nsel=[];updateUI();render()}
+   if(segHit){// tieni premuto fermo sul tracciato: aggiunge un punto e lo trascini
+    let inner=moveOp(P),moved=false,ins=false;const tm=setTimeout(()=>{if(moved||!op)return;S.nsel=[insertNode(segHit.it,segHit.nb)];ins=true;inner=nodeMoveOp(P);updateUI();render()},450);
+    return{move(Q){if(!moved&&far(P,Q,5)){moved=true;if(!ins)clearTimeout(tm)}inner.move(Q)},up(Q){clearTimeout(tm);inner.up(Q);if(ins)commit()}}}
+   return moveOp(P)}
   return marqueeOp(P,'nodes')},
  pen(P,e,tolS){if(!canDraw())return null;const r=S.penId&&find(S.penId);let it=r&&r.it,q,closing=false;
   const near=p=>{const[x,y]=toS(p.x,p.y);return Math.hypot(x-P.sx,y-P.sy)<=tolS};
@@ -914,7 +1016,7 @@ const OPS={
     const closeIt=pts.length>10&&Math.hypot(pts[0][0]-pts[pts.length-1][0],pts[0][1]-pts[pts.length-1][1])*S.view.z<16;
     pp.simplify(S.opt.smooth/S.view.z);if(closeIt){pp.lastSegment.remove();pp.closed=true}
     const st=clone(S.def);st.fill=null;if(!st.stroke)st.stroke={t:'solid',c:'#1a1a1a'};if(!st.sw)st.sw=2;
-    const it=newPath(fromPaper(pp),st);layer().items.push(it);finishNew(it);commit()}}},
+    let it=newPath(fromPaper(pp),st);if(S.opt.pencilOutline){const o=strokeOutline(it);if(o)it=o}layer().items.push(it);finishNew(it);commit()}}},
  rect:shapeOp('rect'),ellipse:shapeOp('ellipse'),star:shapeOp('star'),poly:shapeOp('poly'),
  gradient(P,e,tolS){const k=S.ptarget,g=pickGrip(P.sx,P.sy,tolS);
   if(g&&(g.kind==='g1'||g.kind==='g2')){const p=selItems()[0].style[k];return{move(Q){if(g.kind==='g1'){const dx=Q.x-p.x1,dy=Q.y-p.y1;p.x1=Q.x;p.y1=Q.y;if(p.t==='rad'){p.x2+=dx;p.y2+=dy}}else{p.x2=Q.x;p.y2=Q.y}render()},up(){commit()}}}
@@ -942,7 +1044,7 @@ svg.addEventListener('pointerdown',e=>{
  ptrs.set(e.pointerId,{...P,type:e.pointerType,sx0:P.sx,sy0:P.sy});
  // dito 1 fermo + dito 2 su una maniglia (Modifica punti) = maniglia indipendente, niente pinch
  if(e.pointerType==='touch'&&touchList().length===2&&!gest&&S.tool==='node'&&!CL.open){const f=op&&ptrs.get(opPid);const still=!op||(f&&Math.hypot(f.sx-f.sx0,f.sy-f.sy0)<12);
-  const g=still&&pickGrip(P.sx,P.sy,24);if(g&&(g.kind==='hin'||g.kind==='hout')){if(op){cancelOp();S.ov={}}op=handleOp(g);opPid=e.pointerId;opTool='node';render();return}}
+  const g=still&&pickGrip(P.sx,P.sy,24);if(g&&(g.kind==='hin'||g.kind==='hout')){if(op){cancelOp();S.ov={}}op=handleOp(g,P);opPid=e.pointerId;opTool='node';render();return}}
  if(e.pointerType==='touch'&&touchList().length>=2&&!(op&&ptrs.get(opPid)&&ptrs.get(opPid).type!=='touch')){if(op){cancelOp();op=null}
   if(!gest)gest={t0:performance.now(),moved:false,maxN:2,...pinchState()};else{gest.maxN=Math.max(gest.maxN,touchList().length);Object.assign(gest,pinchState())}render();return}
  if(gest||op)return;
@@ -973,6 +1075,7 @@ document.addEventListener('dblclick',e=>e.preventDefault());
 addEventListener('keydown',e=>{if(e.target.matches('input,textarea'))return;const k=e.key.toLowerCase(),mod=e.metaKey||e.ctrlKey;
  if(mod&&k==='z'){e.preventDefault();e.shiftKey?redo():undo();return}
  if(mod&&k==='d'){e.preventDefault();duplicate();return}
+ if(mod&&k==='g'){e.preventDefault();e.shiftKey?ungroup():makeGroup();return}
  if(mod&&k==='a'){e.preventDefault();act('selall');return}
  if(mod&&k==='s'){e.preventDefault();act('save');return}
  if(k==='backspace'||k==='delete'){e.preventDefault();delSel();return}
@@ -1033,6 +1136,7 @@ async function rasterize(type,scale){const d=S.doc;let k=scale;const maxPx=12e6;
  const paintFor=(cx,p)=>{if(p.t==='solid')return p.c;const g=p.t==='lin'?cx.createLinearGradient(p.x1,p.y1,p.x2,p.y2):cx.createRadialGradient(p.x1,p.y1,0,p.x1,p.y1,Math.max(.01,Math.hypot(p.x2-p.x1,p.y2-p.y1)));sortStops(p).forEach(s=>g.addColorStop(Math.max(0,Math.min(1,s.o)),rgba(s.c,s.a)));return g};
  const drawRaw=(cx,it)=>{
   if(it.type==='image'){const im=imgs[it.asset];if(!im)return;cx.save();cx.transform(...it.m);cx.globalAlpha=it.style.op;cx.drawImage(im,0,0,it.w,it.h);cx.restore();return}
+  if(it.type==='group'){it.kids.forEach(kd=>drawItem(cx,kd));return}
   if(it.type==='mask'){cx.save();cx.clip(new Path2D(pathD(it.mask)),it.mask.rule||'nonzero');const fo=it.showFill&&it.mask.style.fill;if(fo&&it.fillPos!=='over')drawItem(cx,maskFillCopy(it));it.kids.forEach(kd=>drawItem(cx,kd));if(fo&&it.fillPos==='over')drawItem(cx,maskFillCopy(it));cx.restore();if(it.showStroke&&it.mask.style.stroke)drawItem(cx,maskStrokeCopy(it));return}
   const s=it.style,p=new Path2D(pathD(it));
   if(s.fill){cx.globalAlpha=s.fo;cx.fillStyle=paintFor(cx,s.fill);cx.fill(p,it.rule||'nonzero')}
@@ -1062,7 +1166,9 @@ $('#fImg').addEventListener('change',e=>{const f=e.target.files[0];e.target.valu
  rd.onload=()=>{const img=new Image();img.onload=()=>{let w=img.naturalWidth,h=img.naturalHeight,src=rd.result;const max=2400;
   if(Math.max(w,h)>max||!/^data:image\/(png|jpeg|gif|webp)/.test(src)){const k=Math.min(1,max/Math.max(w,h));w=Math.round(w*k);h=Math.round(h*k);const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);src=c.toDataURL(f.type==='image/png'?'image/png':'image/jpeg',.9)}
   const aid=uid('a');S.assets[aid]=src;S.assetsDirty=true;const d=S.doc,k=Math.min(1,d.w*.8/w,d.h*.8/h);
-  const it={id:uid('i'),type:'image',asset:aid,w,h,m:[k,0,0,k,(d.w-w*k)/2,(d.h-h*k)/2],style:{op:1}};layer().items.push(it);S.sel=[it.id];setTool('select');commit()};
+  const it={id:uid('i'),type:'image',asset:aid,w,h,m:[k,0,0,k,(d.w-w*k)/2,(d.h-h*k)/2],style:{op:1}};
+  const nm=(f.name||'immagine').replace(/\.[^.]+$/,'').slice(0,24),L=S.doc.layers,ai=Math.max(0,L.indexOf(layer()));
+  const IL={id:uid('L'),name:'Immagine · '+nm,visible:true,locked:false,opacity:1,items:[it]};L.splice(ai,0,IL);S.sel=[it.id];setTool('select');commit();toast('Immagine in un nuovo livello sotto quello attivo')};
   img.onerror=()=>toast('Formato immagine non supportato');img.src=rd.result};rd.readAsDataURL(f)});
 $('#fOpen').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const txt=await f.text();
  if(/^\s*(<\?xml|<svg|<!DOCTYPE svg)/i.test(txt)||/\.svg$/i.test(f.name))importSVG(txt,f.name.replace(/\.svg$/i,''));
