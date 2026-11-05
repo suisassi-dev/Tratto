@@ -36,7 +36,7 @@ input[type=number],input.hex,input.txt{-webkit-user-select:text;user-select:text
 #tools::-webkit-scrollbar{display:none}
 .tool{width:44px;height:44px;border-radius:11px;border:0;background:none;display:grid;place-items:center;color:var(--tx2);flex:none}
 .tool.on{background:var(--accbg);color:var(--acc)}
-.tsep{height:1px;background:var(--line);margin:3px 6px;flex:none}
+.tsep{height:1px;background:var(--sep);margin:5px 6px;flex:none}
 #stage{flex:1;position:relative;overflow:hidden;background:var(--bg);min-width:0;min-height:0}
 #cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
 #ctx{position:absolute;top:10px;left:50%;transform:translateX(-50%);max-width:calc(100% - 16px);display:flex;align-items:center;gap:2px;padding:4px;background:rgba(28,28,31,.92);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);border:1px solid var(--line);border-radius:14px;overflow-x:auto;scrollbar-width:none;z-index:3;box-shadow:0 6px 24px rgba(0,0,0,.35)}
@@ -132,7 +132,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 #menu[hidden]{display:none}
 #menu button{display:flex;align-items:center;gap:10px;width:100%;height:42px;border:0;background:none;border-radius:9px;padding:0 10px;text-align:left}
 #menu button:active{background:var(--panel3)}
-#menu .ms{height:1px;background:var(--line);margin:4px 6px}
+#menu .ms{height:1px;background:var(--sep);margin:5px 6px}
 #menu .ck{margin-left:auto;color:var(--acc)}
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:30;display:grid;place-items:center;padding:20px}
 #modal[hidden]{display:none}
@@ -359,6 +359,7 @@ const ICONS={
  ungroup:[['M3 3h8v8H3z'],['M13 13h8v8h-8z']],
  outline:[['M4 18C8 6 16 6 20 18'],['M4 13C8 1 16 1 20 13'],['M4 13v5M20 13v5']],
  addpt:[['M4 17C7 7 17 7 20 17'],['M10 10h4v4h-4z',1],['M12 2v4M10 4h4']],
+ lasso:[['M12 5c5 0 8.5 2 8.5 4.8S16.6 14.5 12 14.5 3.5 12.6 3.5 9.8 7 5 12 5z'],['M7.5 13.5c-1 1.6-.6 3.4 1 4.2 1.2.6 1.4 1.8.6 3']],
  multisel:[['M5 3l9 6.5-4.2 1L7.5 15z'],['M14 13h7M17.5 9.5v7']],
  selall:[['M4 4h3M10 4h4M17 4h3v3M20 10v4M20 17v3h-3M14 20h-4M7 20H4v-3M4 14v-4M4 7V4']],
  grip:[['M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01']],
@@ -377,10 +378,10 @@ function ic(n){const p=ICONS[n];if(!p)return'';return`<svg viewBox="0 0 24 24" c
 function newDoc(w=1080,h=1080){return{name:'Senza titolo',w,h,bg:'#ffffff',guides:[],layers:[{id:uid('L'),name:'Livello 1',visible:true,locked:false,opacity:1,items:[]}]}}
 const S={doc:newDoc(),assets:{},assetsDirty:true,sel:[],nsel:[],tool:'select',view:{x:0,y:0,z:1},activeLayer:null,undo:[],redo:[],penId:null,hover:null,ov:{},
  def:{fill:{t:'solid',c:'#ff6a3d'},stroke:{t:'solid',c:'#1a1a1a'},sw:3,fo:1,so:1,cap:'round',join:'round'},
- opt:{starN:5,starR:.45,polyN:6,rectR:0,prop:false,smooth:3,multi:false,alignTo:'sel',sym:false,symAxis:'v',pencilOnly:false,propScale:true,rulers:true,guides:true,lockGuides:false,snap:true,penHover:false,freeHandles:false,pencilOutline:false,addPt:false,col:{}},lastShape:'rect',
+ opt:{starN:5,starR:.45,polyN:6,rectR:0,prop:false,smooth:3,multi:false,alignTo:'sel',sym:false,symAxis:'v',pencilOnly:false,propScale:true,rulers:true,guides:true,lockGuides:false,snap:true,penHover:false,freeHandles:false,pencilOutline:false,addPt:false,col:{},lassoMode:'obj',starRound:0,polyRound:0},lastShape:'rect',
  tab:'style',panelOpen:innerWidth>=900,ptarget:'fill',gstop:{fill:0,stroke:0},
  recent:['#1a1a1a','#ffffff','#ff6a3d','#ffc83d','#2bb673','#3d7bff','#8a5cff','#ff4d8d']};
-const TOOLS=[['select','Seleziona','v'],['node','Modifica punti','a'],'|',['pen','Penna','p'],['pencil','Matita','n'],['shape','Forme',''],'|',['gradient','Gradiente','g'],['hand','Mano','h']];
+const TOOLS=[['select','Seleziona','v'],['node','Modifica punti','a'],['lasso','Lazo','l'],'|',['pen','Penna','p'],['pencil','Matita','n'],['shape','Forme',''],'|',['gradient','Gradiente','g'],['hand','Mano','h']];
 const SHAPES=[['rect','Rettangolo','r'],['ellipse','Ellisse','e'],['star','Stella','s'],['poly','Poligono','y']];
 const isShape=t=>SHAPES.some(x=>x[0]===t);
 
@@ -417,6 +418,12 @@ function bboxItem(it){if(it.type==='mask')return bboxItem(it.mask);if(it.type===
  if(x0===Infinity)return null;return{x:x0,y:y0,w:x1-x0,h:y1-y0}}
 function bboxOf(its){let b=null;for(const it of its){const c=bboxItem(it);if(!c)continue;if(!b)b={...c};else{const x1=Math.max(b.x+b.w,c.x+c.w),y1=Math.max(b.y+b.h,c.y+c.h);b.x=Math.min(b.x,c.x);b.y=Math.min(b.y,c.y);b.w=x1-b.x;b.h=y1-b.y}}return b}
 const selBBox=()=>bboxOf(selItems());
+const normA=a=>{a%=2*Math.PI;if(a>Math.PI)a-=2*Math.PI;if(a<=-Math.PI)a+=2*Math.PI;return a};
+// riquadro di selezione orientato: segue la rotazione degli oggetti
+function selFrame(){const its=selItems();if(!its.length)return null;const a0=its[0].rot||0,same=its.every(i=>Math.abs(normA((i.rot||0)-a0))<1e-4),ang=same?a0:0;
+ if(Math.abs(ang)<1e-6){const b=bboxOf(its);return b&&{...b,ang:0}}const b=bboxOf(its.map(i=>applyM(i,rotAbout(-ang,0,0))));return b&&{...b,ang}}
+const fW=(f,x,y)=>f.ang?mx(rotAbout(f.ang,0,0),x,y):[x,y];
+const fL=(f,x,y)=>f.ang?mx(rotAbout(-f.ang,0,0),x,y):[x,y];
 const hitsRect=(b,r)=>b&&b.x<=r.x+r.w&&b.x+b.w>=r.x&&b.y<=r.y+r.h&&b.y+b.h>=r.y;
 function flatten(it){return it.subs.map(sp=>{const P=sp.pts,o=[];if(!P.length)return{pts:o,closed:sp.closed};o.push([P[0].x,P[0].y]);segs(sp,(a,b)=>{if(!hasOut(a)&&!hasIn(b)){o.push([b.x,b.y]);return}for(let k=1;k<=14;k++){const t=k/14;o.push([cub(a.x,a.ox,b.ix,b.x,t),cub(a.y,a.oy,b.iy,b.y,t)])}});return{pts:o,closed:sp.closed}})}
 function dSeg(px,py,ax,ay,bx,by){const dx=bx-ax,dy=by-ay,l=dx*dx+dy*dy;let t=l?((px-ax)*dx+(py-ay)*dy)/l:0;t=Math.max(0,Math.min(1,t));return Math.hypot(px-ax-t*dx,py-ay-t*dy)}
@@ -435,7 +442,7 @@ function hitTest(x,y,tol){const L=S.doc.layers;for(let l=L.length-1;l>=0;l--){if
 function applyM(it,m){if(it.type==='group'){const n=clone(it);n.kids=it.kids.map(k=>applyM(k,m));return n}if(it.type==='mask'){const n=clone(it);n.mask=applyM(it.mask,m);n.kids=it.kids.map(k=>applyM(k,m));return n}const n=clone(it);
  if(n.type==='image'){n.m=mul(m,n.m);return n}
  n.subs.forEach(sp=>sp.pts.forEach(q=>{[q.x,q.y]=mx(m,q.x,q.y);[q.ix,q.iy]=mx(m,q.ix,q.iy);[q.ox,q.oy]=mx(m,q.ox,q.oy)}));
- ['fill','stroke'].forEach(k=>{const g=n.style[k];if(g&&g.t!=='solid'){[g.x1,g.y1]=mx(m,g.x1,g.y1);[g.x2,g.y2]=mx(m,g.x2,g.y2)}});return n}
+ ['fill','stroke'].forEach(k=>{const g=n.style[k];if(g&&g.t!=='solid'){[g.x1,g.y1]=mx(m,g.x1,g.y1);[g.x2,g.y2]=mx(m,g.x2,g.y2)}});if(n.shape)n.shape.m=mul(m,n.shape.m||[1,0,0,1,0,0]);return n}
 const maskFillCopy=m=>({...m.mask,style:{...m.mask.style,stroke:null}});
 const maskStrokeCopy=m=>({...m.mask,id:m.mask.id+'k',style:{...m.mask.style,fill:null}});
 const itemBlend=it=>(it.style&&it.style.blend&&it.style.blend!=='normal')?it.style.blend:'normal';
@@ -450,7 +457,7 @@ function smoothNode(sp,i){const P=sp.pts,n=P.length,q=P[i];const pv=P[i-1]||(sp.
  q.ix=q.x-tx*dp;q.iy=q.y-ty*dp;q.ox=q.x+tx*dn;q.oy=q.y+ty*dn;q.s=true}
 function cornerNode(q){q.ix=q.ox=q.x;q.iy=q.oy=q.y;q.s=false}
 function nearestOnItem(it,x,y){let best={d:Infinity};it.subs.forEach((sp,si)=>segs(sp,(a,b,i)=>{for(let k=0;k<=40;k++){const t=k/40,px=cub(a.x,a.ox,b.ix,b.x,t),py=cub(a.y,a.oy,b.iy,b.y,t),d=Math.hypot(px-x,py-y);if(d<best.d)best={d,si,i,t}}}));return best}
-function insertNode(it,nb){const sp=it.subs[nb.si],P=sp.pts,a=P[nb.i],b=P[(nb.i+1)%P.length],t=Math.min(.98,Math.max(.02,nb.t));let q;
+function insertNode(it,nb){delete it.shape;const sp=it.subs[nb.si],P=sp.pts,a=P[nb.i],b=P[(nb.i+1)%P.length],t=Math.min(.98,Math.max(.02,nb.t));let q;
  if(!hasOut(a)&&!hasIn(b))q=pt(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t);
  else{const L=(u,v)=>[u[0]+(v[0]-u[0])*t,u[1]+(v[1]-u[1])*t];const p0=[a.x,a.y],p1=[a.ox,a.oy],p2=[b.ix,b.iy],p3=[b.x,b.y];
   const p01=L(p0,p1),p12=L(p1,p2),p23=L(p2,p3),p012=L(p01,p12),p123=L(p12,p23),m=L(p012,p123);
@@ -464,6 +471,13 @@ function rectSubs(x,y,w,h,r){r=Math.max(0,Math.min(r,w/2,h/2));if(!r)return[{clo
 function ellSubs(cx,cy,rx,ry){const kx=K*rx,ky=K*ry;const P=[[cx,cy-ry,-kx,0],[cx+rx,cy,0,-ky],[cx,cy+ry,kx,0],[cx-rx,cy,0,ky]];
  return[{closed:true,pts:P.map(([x,y,dx,dy])=>({x,y,ix:x+dx,iy:y+dy,ox:x-dx,oy:y-dy,s:true}))}]}
 function starSubs(cx,cy,R,r,n,rot){const P=[];for(let i=0;i<n*2;i++){const a=rot+i*Math.PI/n,rr=i%2?r:R;P.push(pt(cx+Math.cos(a)*rr,cy+Math.sin(a)*rr))}return[{closed:true,pts:P}]}
+function roundPoly(V,r){if(!(r>0))return[{closed:true,pts:V.map(v=>pt(v[0],v[1]))}];const n=V.length,out=[];
+ for(let i=0;i<n;i++){const v=V[i],a=V[(i-1+n)%n],b=V[(i+1)%n];let u1=[a[0]-v[0],a[1]-v[1]],u2=[b[0]-v[0],b[1]-v[1]];const l1=Math.hypot(...u1),l2=Math.hypot(...u2);if(l1<1e-6||l2<1e-6){out.push(pt(v[0],v[1]));continue}
+  u1=[u1[0]/l1,u1[1]/l1];u2=[u2[0]/l2,u2[1]/l2];const th=Math.acos(Math.max(-1,Math.min(1,u1[0]*u2[0]+u1[1]*u2[1])));if(th<1e-3||Math.PI-th<1e-3){out.push(pt(v[0],v[1]));continue}
+  let t=r/Math.tan(th/2);t=Math.min(t,l1/2,l2/2);const re=t*Math.tan(th/2),k=4/3*Math.tan((Math.PI-th)/4)*re;
+  const p1=[v[0]+u1[0]*t,v[1]+u1[1]*t],p2=[v[0]+u2[0]*t,v[1]+u2[1]*t];
+  out.push({x:p1[0],y:p1[1],ix:p1[0],iy:p1[1],ox:p1[0]-u1[0]*k,oy:p1[1]-u1[1]*k,s:false},{x:p2[0],y:p2[1],ix:p2[0]-u2[0]*k,iy:p2[1]-u2[1]*k,ox:p2[0],oy:p2[1],s:false})}
+ return[{closed:true,pts:out}]}
 function polySubs(cx,cy,R,n,rot){const P=[];for(let i=0;i<n;i++){const a=rot+i*2*Math.PI/n;P.push(pt(cx+Math.cos(a)*R,cy+Math.sin(a)*R))}return[{closed:true,pts:P}]}
 
 /* ---------- paint ---------- */
@@ -512,13 +526,14 @@ function renderContent(){const seen=new Set();let prevL=null;
     c.img.setAttribute('width',it.w);c.img.setAttribute('height',it.h);c.img.setAttribute('transform',`matrix(${it.m.join(' ')})`);c.img.setAttribute('opacity',it.style.op)}
    else{const me=S.doc.maskEdit,sig=(it.type==='mask'||it.type==='group')?itemMarkup(it):(me&&me.pathId===it.id)?`<path d="${pathD(it)}" fill="none" stroke="#ff9f0a" stroke-width="1.5" stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>`:pathSVG(it);if(sig!==c.sig){c.el.innerHTML=sig;c.sig=sig;c.img=null}}
    {const bm=itemBlend(it);c.el.style.mixBlendMode=bm==='normal'?'':bm}
+   c.el.style.opacity=S.doc.maskEdit&&!inEdit(it.id)?'.3':'';
    if(c.el.parentNode!==g||c.el.previousSibling!==prev)g.insertBefore(c.el,prev?prev.nextSibling:g.firstChild);prev=c.el}}
  for(const[k,c]of cache)if(!seen.has(k)){c.el.remove();cache.delete(k)}
  for(const[k,g]of lcache)if(!seen.has(k)){g.remove();lcache.delete(k)}}
 const toS=(x,y)=>[x*S.view.z+S.view.x,y*S.view.z+S.view.y];
 function grips(){const G=[];
- if(S.tool==='select'&&S.sel.length){const b=selBBox();if(b){for(const fx of[0,.5,1])for(const fy of[0,.5,1]){if(fx===.5&&fy===.5)continue;const[x,y]=toS(b.x+fx*b.w,b.y+fy*b.h);G.push({kind:'scale',fx,fy,x,y})}
-  const[cx,ty]=toS(b.x+b.w/2,b.y);G.push({kind:'rot',x:cx,y:ty-30})}}
+ if(S.tool==='select'&&S.sel.length){const f=selFrame();if(f){for(const fx of[0,.5,1])for(const fy of[0,.5,1]){if(fx===.5&&fy===.5)continue;const[x,y]=toS(...fW(f,f.x+fx*f.w,f.y+fy*f.h));G.push({kind:'scale',fx,fy,x,y})}
+  const[tx,ty]=toS(...fW(f,f.x+f.w/2,f.y)),ux=Math.sin(f.ang),uy=-Math.cos(f.ang);G.push({kind:'rot',x:tx+ux*30,y:ty+uy*30,bx:tx,by:ty})}}
  if(S.tool==='node'||S.tool==='pen'){const ids=S.tool==='pen'?(S.penId?[S.penId]:[]):S.sel;
   for(const id of ids){const r=find(id);if(!r||r.it.type!=='path')continue;const it=r.it;
    it.subs.forEach((sp,si)=>sp.pts.forEach((q,pi)=>{const key=nkey(id,si,pi),on=S.nsel.includes(key)||(S.tool==='pen'&&pi===sp.pts.length-1);const[ax,ay]=toS(q.x,q.y);
@@ -534,8 +549,10 @@ function renderOverlay(){const d=S.doc;let w='',s='';
  if(S.tool!=='hand')for(const it of selItems()){if(it.type==='path')w+=`<path d="${pathD(it)}" class="ol"/>`;else if(it.type==='mask')w+=`<path d="${pathD(it.mask)}" class="ol"/>`;else if(it.type==='group'){const b=bboxItem(it);if(b)w+=`<rect x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" class="ol" stroke-dasharray="6 4"/>`}else w+=`<polygon points="${imgCorners(it).map(p=>p.join(',')).join(' ')}" class="ol"/>`}
  if(S.ov.pencil){const st=S.def.stroke;w+=`<polyline points="${S.ov.pencil.map(p=>f2(p[0])+','+f2(p[1])).join(' ')}" fill="none" stroke="${st&&st.t==='solid'?st.c:'#1a1a1a'}" stroke-width="${S.def.sw||2}" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>`}
  if(S.tool==='pen'&&S.penId&&S.hover){const r=find(S.penId);if(r){const P=r.it.subs[0].pts,l=P[P.length-1];w+=`<path d="M${l.x} ${l.y}C${l.ox} ${l.oy} ${S.hover.x} ${S.hover.y} ${S.hover.x} ${S.hover.y}" class="prev"/>`}}
+ if(S.ov.lasso&&S.ov.lasso.length>1)s+=`<polygon points="${S.ov.lasso.map(p=>p.join(',')).join(' ')}" class="mq"/>`;
  if(S.ov.marquee){const m=S.ov.marquee;s+=`<rect x="${m.x}" y="${m.y}" width="${m.w}" height="${m.h}" class="mq"/>`}
- if(S.tool==='select'&&S.sel.length){const b=selBBox();if(b){const[x0,y0]=toS(b.x,b.y),[x1,y1]=toS(b.x+b.w,b.y+b.h);s+=`<rect x="${x0}" y="${y0}" width="${x1-x0}" height="${y1-y0}" class="bb"/><line x1="${(x0+x1)/2}" y1="${y0}" x2="${(x0+x1)/2}" y2="${y0-30}" class="bb"/>`}}
+ if(S.tool==='select'&&S.sel.length){const f=selFrame();if(f){const c=[[0,0],[1,0],[1,1],[0,1]].map(([a,b])=>toS(...fW(f,f.x+a*f.w,f.y+b*f.h)));const ux=Math.sin(f.ang),uy=-Math.cos(f.ang),[tx,ty]=toS(...fW(f,f.x+f.w/2,f.y));
+  s+=`<polygon points="${c.map(p=>p.join(',')).join(' ')}" class="bb"/><line x1="${tx}" y1="${ty}" x2="${tx+ux*30}" y2="${ty+uy*30}" class="bb"/>`}}
  const G=grips();
  const gg=G.filter(g=>g.kind==='g1'||g.kind==='g2');if(gg.length===2)s+=`<line x1="${gg[0].x}" y1="${gg[0].y}" x2="${gg[1].x}" y2="${gg[1].y}" class="gl"/>`;
  for(const g of G)if(g.kind==='hin'||g.kind==='hout')s+=`<line x1="${g.ax}" y1="${g.ay}" x2="${g.x}" y2="${g.y}" class="hl"/>`;
@@ -569,7 +586,7 @@ function swatchHTML(){const{st}=curTarget();const s=st||S.def;const box=(k,cls)=
   const c=p?p.c:'#ffffff';return`<label class="sw ${cls}${p?'':' none'}" style="background:${c}" title="${k==='fill'?'Riempimento':'Tratto'}"><input type="color" data-swc="${k}" value="${c}"></label>`};
  return`<div class="swb">${box('fill','swF')}${box('stroke','swS')}<button class="swx" data-act="swapFS" title="Scambia riempimento e tratto">${ic('swapc')}</button></div>`}
 function refreshSwatch(){const el=$('#tools .swb');if(el)el.outerHTML=swatchHTML()}
-function setTool(t){if(S.tool==='pen'&&t!=='pen')endPen();if(isShape(t))S.lastShape=t;S.tool=t;S.nsel=[];S.ov={};S.hover=null;buildTools();updateUI();render()}
+function setTool(t){if(S.tool==='pen'&&t!=='pen')endPen();if(isShape(t)){S.lastShape=t;const it=selItems().find(i=>i.shape&&i.shape.kind===t);if(it){const sh=it.shape;if(t==='star'){S.opt.starN=sh.n;S.opt.starR=sh.ratio}if(t==='poly')S.opt.polyN=sh.n;if(t==='rect')S.opt.rectR=sh.r}}S.tool=t;S.nsel=[];S.ov={};S.hover=null;buildTools();updateUI();render()}
 function openFly(btn){const f=$('#fly');f.dataset.for='shape';f.classList.remove('list');f.innerHTML=SHAPES.map(([k,l])=>`<button data-shape="${k}" class="${S.tool===k?'on':''}">${ic(k)}<span>${l}</span></button>`).join('');f.hidden=false;
  const r=btn.getBoundingClientRect(),fw=f.offsetWidth,fh=f.offsetHeight,vert=innerWidth>760;
  if(vert){f.style.left=(r.right+8)+'px';f.style.top=Math.min(innerHeight-fh-8,r.top)+'px';f.style.bottom=''}
@@ -588,6 +605,11 @@ function openCtxFly(btn,id){const f=$('#fly');if(!f.hidden&&f.dataset.for===id){
  f.classList.toggle('list',id==='layer');f.innerHTML=FLY[id]().map(([a,i,l,dis])=>`<button data-act="${a}"${dis?' disabled':''}>${ic(i)}<span>${l}</span></button>`).join('');f.hidden=false;
  const r=btn.getBoundingClientRect(),fw=f.offsetWidth;f.style.left=Math.max(8,Math.min(innerWidth-fw-8,r.left+r.width/2-fw/2))+'px';f.style.top=(r.bottom+8)+'px';f.style.bottom=''}
 function buildCtx(){const t=S.tool,n=S.sel.length;let h='';const sep='<div class="csep"></div>';
+ const shapeCtl=k=>{const V=(key,mn,mx,st)=>`<input type="range" min="${mn}" max="${mx}" step="${st}" value="${S.opt[key]}" data-opt="${key}"><span class="cval" id="cv_${key}">${S.opt[key]}</span>`;
+  if(k==='rect')return`<span class="clbl">Arrotonda</span>`+V('rectR',0,300,1);
+  if(k==='star')return`<span class="clbl">Punte</span>`+B('starM','','minus')+`<span class="cval">${S.opt.starN}</span>`+B('starP','','plus')+sep+`<span class="clbl">Rientro</span>`+V('starR',.1,.9,.01)+sep+`<span class="clbl">Arrotonda</span>`+V('starRound',0,150,1);
+  if(k==='poly')return`<span class="clbl">Lati</span>`+B('polyM','','minus')+`<span class="cval">${S.opt.polyN}</span>`+B('polyP','','plus')+sep+`<span class="clbl">Arrotonda</span>`+V('polyRound',0,150,1);return''};
+ {const one=S.sel.length===1&&selItems()[0];if(one&&one.shape){const sh=one.shape;if(sh.kind==='star'){S.opt.starN=sh.n;S.opt.starR=sh.ratio;S.opt.starRound=sh.rr||0}if(sh.kind==='poly'){S.opt.polyN=sh.n;S.opt.polyRound=sh.rr||0}if(sh.kind==='rect')S.opt.rectR=sh.r}}
  const F=(id,icon,label)=>`<button class="cb" data-fly="${id}" title="${label}">${ic(icon)}<span class="lab">${label}</span><span class="car"></span></button>`;
  if(S.doc.maskEdit){const gk=S.doc.maskEdit.kind==='group';h+=`<button class="cb on" data-act="exitmask" title="Chiudi la modifica">${ic(gk?'group':'mask')}<span>${gk?'Fine gruppo':'Fine maschera'}</span></button>`+sep}
  const B=(a,label,icon,on,title)=>`<button class="cb${on?' on':''}" data-act="${a}" title="${title||label||''}">${icon?ic(icon):''}${label?`<span>${label}</span>`:''}</button>`;
@@ -595,17 +617,19 @@ function buildCtx(){const t=S.tool,n=S.sel.length;let h='';const sep='<div class
  if(t==='select'){h+=B('multi','Multi','multisel',S.opt.multi,'Selezione multipla').replace('<span>Multi','<span class="lab">Multi')+B('selall','Tutto','selall',0,'Seleziona tutto').replace('<span>Tutto','<span class="lab">Tutto');
   if(n){const SI=selItems(),hasMask=SI.some(i=>i.type==='mask'),hasGroup=SI.some(i=>i.type==='group'),hasPath=SI.some(i=>i.type==='path');h+=sep+B('dup','','dup',0,'Duplica')+B('del','','trash',0,'Elimina')+sep+F('mirror','flipH','Rifletti');
    if(n>1||hasPath)h+=F('bool','unite','Booleane');if(n>1||hasMask)h+=F('maskm','mask','Maschera');if(n>1||hasGroup)h+=F('groupm','group','Gruppo');h+=F('layer','layers','Livello');
-   if(selItems().some(i=>i.type==='path'))h+=sep+B('clean','Pulisci','simplify',0,'Riduci i punti').replace('<span>Pulisci','<span class="lab">Pulisci');if(innerWidth>760)h+=sep+B('propScale','Prop.',null,S.opt.propScale,'Scala proporzionale dagli angoli')}}
+   if(selItems().some(i=>i.type==='path'))h+=sep+B('clean','Pulisci','simplify',0,'Riduci i punti').replace('<span>Pulisci','<span class="lab">Pulisci');
+   if(n===1&&SI[0].shape&&SI[0].shape.kind!=='ellipse')h+=sep+shapeCtl(SI[0].shape.kind)}}
  else if(t==='node'){h+=B('multi','Multi',null,S.opt.multi)+B('freeHandles','Libere',null,S.opt.freeHandles,'Maniglie sempre indipendenti')+B('addPt','','addpt',S.opt.addPt,'Aggiungi punto: tocca il tracciato');
   if(S.nsel.length)h+=sep+B('delnode','','trash',0,'Elimina punti')+F('point','smooth','Punto');
   if(n)h+=sep+B('closeToggle','','close',0,'Chiudi/apri tracciato')+B('clean','Pulisci','simplify',0,'Riduci i punti');
   if(!S.nsel.length)h+=`<span class="clbl lab">Doppio tap o tieni premuto sul tracciato = nuovo punto</span>`;}
+ else if(t==='lasso'){h+=`<div class="seg">${[['obj','Oggetti'],['pts','Punti']].map(([v,l])=>`<button data-seg="lassoMode" data-v="${v}" class="${S.opt.lassoMode===v?'on':''}">${l}</button>`).join('')}</div>`+B('multi','','multisel',S.opt.multi,'Aggiungi alla selezione')+`<span class="clbl lab">Disegna un contorno attorno a ciò che vuoi selezionare</span>`}
  else if(t==='pen'){h+=S.penId?B('penDone','Fine',null,1):'';h+=`<span class="clbl">Tap = punto · trascina = curva · tocca il 1° punto per chiudere</span>`}
  else if(t==='pencil')h+=R('smooth','Levigatura',1,12,1,S.opt.smooth)+sep+B('pencilOutline','Contorno','outline',S.opt.pencilOutline,'Crea il tratto come forma piena (contorno), pronta per le booleane');
- else if(t==='rect')h+=R('rectR','Raggio',0,300,1,S.opt.rectR)+`<span class="cval" id="cv_rectR">${S.opt.rectR}</span>`+sep+B('prop','1:1',null,S.opt.prop);
+ else if(t==='rect')h+=shapeCtl('rect')+sep+B('prop','1:1',null,S.opt.prop);
  else if(t==='ellipse')h+=B('prop','Cerchio 1:1',null,S.opt.prop);
- else if(t==='star')h+=`<span class="clbl">Punte</span>`+B('starM','','minus')+`<span class="cval">${S.opt.starN}</span>`+B('starP','','plus')+sep+R('starR','Rientro',.1,.9,.01,S.opt.starR);
- else if(t==='poly')h+=`<span class="clbl">Lati</span>`+B('polyM','','minus')+`<span class="cval">${S.opt.polyN}</span>`+B('polyP','','plus');
+ else if(t==='star')h+=shapeCtl('star');
+ else if(t==='poly')h+=shapeCtl('poly');
  else if(t==='gradient')h+=`<div class="seg">${[['fill','Riempimento'],['stroke','Tratto']].map(([v,l])=>`<button data-seg="ptarget" data-v="${v}" class="${S.ptarget===v?'on':''}">${l}</button>`).join('')}</div><span class="clbl">Trascina sull'oggetto</span>`;
  const el=$('#ctx');el.innerHTML=h;el.hidden=!h}
 
@@ -725,7 +749,7 @@ P.addEventListener('pointerdown',e=>{const gs=e.target.closest('.gstop'),bar=e.t
 
 /* ---------- click dispatch ---------- */
 document.addEventListener('click',e=>{const t=e.target;
- if(!t.closest('#menu')&&!t.closest('[data-act="menu"]'))$('#menu').hidden=true;
+ if((!t.closest('#menu')&&!t.closest('[data-act="menu"]'))||t.closest('#menu [data-act]'))$('#menu').hidden=true;
  if((!t.closest('#fly')&&!t.closest('[data-tool="shape"]')&&!t.closest('[data-fly]'))||t.closest('#fly [data-act]'))$('#fly').hidden=true;
  const fl=t.closest('[data-fly]');if(fl){openCtxFly(fl,fl.dataset.fly);return}
  const shp=t.closest('[data-shape]');if(shp){$('#fly').hidden=true;setTool(shp.dataset.shape);return}
@@ -746,12 +770,15 @@ document.addEventListener('click',e=>{const t=e.target;
  const m=t.closest('[data-m]');if(m&&modalCb){if(modalCb(m.dataset.m,m)!==false)closeModal()}});
 $('#tools').addEventListener('input',e=>{const k=e.target.dataset.swc;if(!k)return;const v=e.target.value;editStyle(s=>{if(s[k]&&s[k].t==='solid')s[k].c=v;else s[k]={t:'solid',c:v}},1);const lb=e.target.parentNode;lb.style.background=v;lb.classList.remove('none')});
 $('#tools').addEventListener('change',e=>{const k=e.target.dataset.swc;if(!k)return;addRecent(e.target.value);editStyle(()=>{})});
-$('#ctx').addEventListener('input',e=>{const k=e.target.dataset.opt;if(!k)return;S.opt[k]=+e.target.value;const v=$('#cv_'+k);if(v)v.textContent=e.target.value});
+const LIVEOPT={starR:['star',(sh,v)=>sh.ratio=v],rectR:['rect',(sh,v)=>sh.r=v],starRound:['star',(sh,v)=>sh.rr=v],polyRound:['poly',(sh,v)=>sh.rr=v]};
+$('#ctx').addEventListener('input',e=>{const k=e.target.dataset.opt;if(!k)return;const v=+e.target.value;S.opt[k]=v;const el=$('#cv_'+k);if(el)el.textContent=e.target.value;const L=LIVEOPT[k];if(L)liveShape(L[0],sh=>L[1](sh,v))});
+$('#ctx').addEventListener('change',e=>{const k=e.target.dataset.opt;if(!k)return;const L=LIVEOPT[k];if(L&&selItems().some(i=>i.shape&&i.shape.kind===L[0]))commit();else scheduleSave()});
 function onSeg(k,v){
  if(k==='pt-fill'||k==='pt-stroke'){const key=k.slice(3);editStyle((s,it)=>{s[key]=convertPaint(s[key],v,it?bboxItem(it):null);if(v!=='none'&&v!=='solid')S.gstop[key]=0});return}
  if(k==='cap'||k==='join'){editStyle(s=>{s[k]=v});return}
  if(k==='ptarget'){S.ptarget=v;updateUI();render();return}
  if(k==='mfill'){selItems().forEach(i=>{if(i.type!=='mask')return;i.showFill=v!=='off';if(v!=='off')i.fillPos=v});commit();return}
+ if(k==='lassoMode'){S.opt.lassoMode=v;buildCtx();scheduleSave();return}
  if(k==='alignTo'){S.opt.alignTo=v;buildPanel();return}
  if(k==='sym'){S.opt.sym=v!=='off';if(v!=='off')S.opt.symAxis=v;updateUI();render();scheduleSave();return}}
 
@@ -766,8 +793,8 @@ function act(a){if(a.startsWith('mvl:')){const id=a.slice(4);if(id==='new'){cons
  case'multi':S.opt.multi=!S.opt.multi;buildCtx();break;
  case'propScale':S.opt.propScale=!S.opt.propScale;buildCtx();break;
  case'prop':S.opt.prop=!S.opt.prop;buildCtx();break;
- case'starM':S.opt.starN=Math.max(3,S.opt.starN-1);buildCtx();break;case'starP':S.opt.starN=Math.min(40,S.opt.starN+1);buildCtx();break;
- case'polyM':S.opt.polyN=Math.max(3,S.opt.polyN-1);buildCtx();break;case'polyP':S.opt.polyN=Math.min(40,S.opt.polyN+1);buildCtx();break;
+ case'starM':S.opt.starN=Math.max(3,S.opt.starN-1);liveShape('star',sh=>sh.n=S.opt.starN,1);buildCtx();break;case'starP':S.opt.starN=Math.min(40,S.opt.starN+1);liveShape('star',sh=>sh.n=S.opt.starN,1);buildCtx();break;
+ case'polyM':S.opt.polyN=Math.max(3,S.opt.polyN-1);liveShape('poly',sh=>sh.n=S.opt.polyN,1);buildCtx();break;case'polyP':S.opt.polyN=Math.min(40,S.opt.polyN+1);liveShape('poly',sh=>sh.n=S.opt.polyN,1);buildCtx();break;
  case'selall':S.sel=editable().map(i=>i.id);updateUI();render();break;
  case'dup':duplicate();break;case'del':delSel();break;
  case'flipH':flip(-1,1);break;case'flipV':flip(1,-1);break;case'mirdup':mirrorDup();break;
@@ -776,8 +803,8 @@ function act(a){if(a.startsWith('mvl:')){const id=a.slice(4);if(id==='new'){cons
  case'distH':distribute('x');break;case'distV':distribute('y');break;
  case'ztop':case'zup':case'zdown':case'zbottom':zorder(a.slice(1));break;
  case'delnode':delNodes();break;
- case'corner':S.nsel.forEach(k=>{const n=getNode(k);if(n)cornerNode(n.q)});commit();break;
- case'smooth':S.nsel.forEach(k=>{const n=getNode(k);if(n)smoothNode(n.sp,n.pi)});commit();break;
+ case'corner':unshape(S.nsel);S.nsel.forEach(k=>{const n=getNode(k);if(n)cornerNode(n.q)});commit();break;
+ case'smooth':unshape(S.nsel);S.nsel.forEach(k=>{const n=getNode(k);if(n)smoothNode(n.sp,n.pi)});commit();break;
  case'closeToggle':{const its=selItems().filter(i=>i.type==='path');if(!its.length)break;const c=!its[0].subs[0].closed;its.forEach(i=>i.subs.forEach(s=>s.closed=c));commit();break}
  case'simplify':selItems().filter(i=>i.type==='path').forEach(it=>{const p=toPaper(it,true);const kids=p.children||[p];kids.forEach(k=>k.simplify(2.5));it.subs=fromPaper(p)});S.nsel=[];commit();break;
  case'clean':openClean();break;
@@ -791,8 +818,8 @@ function act(a){if(a.startsWith('mvl:')){const id=a.slice(4);if(id==='new'){cons
  case'editmask':{const m=selItems().find(i=>i.type==='mask');if(m)enterMask(m);break}
  case'exitmask':exitMask();break;
  case'freeHandles':S.opt.freeHandles=!S.opt.freeHandles;buildCtx();scheduleSave();break;
- case'breakN':S.nsel.forEach(k=>{const n=getNode(k);if(n)n.q.s=false});commit();toast('Maniglie indipendenti');break;
- case'alignN':S.nsel.forEach(k=>{const n=getNode(k);if(!n)return;const q=n.q;if(!hasIn(q)||!hasOut(q)){smoothNode(n.sp,n.pi);return}
+ case'breakN':unshape(S.nsel);S.nsel.forEach(k=>{const n=getNode(k);if(n)n.q.s=false});commit();toast('Maniglie indipendenti');break;
+ case'alignN':unshape(S.nsel);S.nsel.forEach(k=>{const n=getNode(k);if(!n)return;const q=n.q;if(!hasIn(q)||!hasOut(q)){smoothNode(n.sp,n.pi);return}
   const ax=q.ox-q.ix,ay=q.oy-q.iy,l=Math.hypot(ax,ay)||1,li=Math.hypot(q.ix-q.x,q.iy-q.y),lo=Math.hypot(q.ox-q.x,q.oy-q.y);q.ix=q.x-ax/l*li;q.iy=q.y-ay/l*li;q.ox=q.x+ax/l*lo;q.oy=q.y+ay/l*lo;q.s=true});commit();break;
  case'penDone':endPen();updateUI();render();break;
  case'ladd':{const L=S.doc.layers,i=L.indexOf(layer());const n={id:uid('L'),name:'Livello '+(L.length+1),visible:true,locked:false,opacity:1,items:[]};L.splice(i+1,0,n);S.activeLayer=n.id;commit();break}
@@ -813,6 +840,7 @@ function act(a){if(a.startsWith('mvl:')){const id=a.slice(4);if(id==='new'){cons
  case'rulers':S.opt.rulers=!S.opt.rulers;render();scheduleSave();break;
  case'trace':$('#fTrace').click();break;
  case'pencilOnly':S.opt.pencilOnly=!S.opt.pencilOnly;toast(S.opt.pencilOnly?'Solo Apple Pencil disegna':'Disegno anche con il dito');buildPanel();scheduleSave();break}}
+function inEdit(id){const me=S.doc.maskEdit;if(!me)return true;if(id===me.pathId||me.kids.includes(id))return true;const L=S.doc.layers.find(l=>l.id===me.layer);return!!(L&&L.items.some(i=>i.id===id)&&!me.pre.includes(id))}
 function enterMask(m){const r=find(m.id);if(!r)return;if(S.doc.maskEdit)exitMask(true);
  if(m.type==='group'){r.L.items.splice(r.i,1,...m.kids);S.doc.maskEdit={kind:'group',id:m.id,layer:r.L.id,kids:m.kids.map(k=>k.id),pre:r.L.items.map(i=>i.id),style:m.style||null};
   S.sel=[];S.activeLayer=r.L.id;setTool('select');commit();toast('Modifica gruppo · “Fine gruppo” per chiudere');return}
@@ -867,12 +895,12 @@ function releaseMask(){const ms=selItems().filter(i=>i.type==='mask');if(!ms.len
  ms.forEach(m=>{const r=find(m.id);r.L.items.splice(r.i,1,...m.kids,m.mask);ids.push(...m.kids.map(k=>k.id),m.mask.id)});S.sel=ids;commit()}
 function duplicate(){const ids=[];selItems().forEach(it=>{const r=find(it.id),n=reId(applyM(it,T(12,12)));r.L.items.splice(r.i+1,0,n);ids.push(n.id)});if(ids.length){S.sel=ids;commit()}}
 function delSel(){if(S.tool==='node'&&S.nsel.length)return delNodes();const ids=new Set(S.sel);if(!ids.size)return;S.doc.layers.forEach(L=>L.items=L.items.filter(i=>!ids.has(i.id)));S.sel=[];S.nsel=[];commit()}
-function delNodes(){const by={};S.nsel.forEach(k=>{const[id,si,pi]=k.split('|');(by[id+'|'+si]=by[id+'|'+si]||[]).push(+pi)});
+function delNodes(){unshape(S.nsel);const by={};S.nsel.forEach(k=>{const[id,si,pi]=k.split('|');(by[id+'|'+si]=by[id+'|'+si]||[]).push(+pi)});
  for(const key in by){const[id,si]=key.split('|'),r=find(id);if(!r)continue;const sp=r.it.subs[+si];if(!sp)continue;sp.pts=sp.pts.filter((_,i)=>!by[key].includes(i))}
  S.doc.layers.forEach(L=>{L.items.forEach(it=>{if(it.type==='path')it.subs=it.subs.filter(s=>s.pts.length>1)});L.items=L.items.filter(it=>it.type!=='path'||it.subs.length)});
  S.nsel=[];validateSel();commit()}
-function flip(sx,sy){const its=selItems();if(!its.length)return;const b=bboxOf(its),m=scaleAbout(sx,sy,b.x+b.w/2,b.y+b.h/2);its.forEach(it=>replace(applyM(it,m)));commit()}
-function mirrorDup(){const its=selItems();if(!its.length)return;const b=bboxOf(its),m=scaleAbout(-1,1,b.x+b.w,0),ids=[];its.forEach(it=>{const r=find(it.id),n=reId(applyM(it,m));r.L.items.splice(r.i+1,0,n);ids.push(n.id)});S.sel=[...S.sel,...ids];commit()}
+function flip(sx,sy){const its=selItems();if(!its.length)return;const b=bboxOf(its),m=scaleAbout(sx,sy,b.x+b.w/2,b.y+b.h/2);its.forEach(it=>{const n=applyM(it,m);if(it.rot)n.rot=normA(-it.rot);replace(n)});commit()}
+function mirrorDup(){const its=selItems();if(!its.length)return;const b=bboxOf(its),m=scaleAbout(-1,1,b.x+b.w,0),ids=[];its.forEach(it=>{const r=find(it.id),n=reId(applyM(it,m));if(it.rot)n.rot=normA(-it.rot);r.L.items.splice(r.i+1,0,n);ids.push(n.id)});S.sel=[...S.sel,...ids];commit()}
 function align(k){const its=selItems();if(!its.length)return;const ref=S.opt.alignTo==='doc'||its.length===1?{x:0,y:0,w:S.doc.w,h:S.doc.h}:bboxOf(its);
  its.forEach(it=>{const b=bboxItem(it);if(!b)return;let dx=0,dy=0;
   if(k==='al')dx=ref.x-b.x;if(k==='ach')dx=ref.x+ref.w/2-(b.x+b.w/2);if(k==='ar')dx=ref.x+ref.w-(b.x+b.w);
@@ -898,7 +926,7 @@ function boolOp(kind){const all=allItems();const its=selItems().filter(i=>i.type
   else{res=base;rest.forEach(r=>res=res.exclude(r))}}catch(e){toast('Operazione non riuscita');return}
  const subs=fromPaper(res);const r=find(its[0].id);const ids=new Set(its.map(i=>i.id));
  if(!subs.length){S.doc.layers.forEach(L=>L.items=L.items.filter(i=>!ids.has(i.id)));S.sel=[];toast('Il risultato è vuoto');commit();return}
- const nu=clone(its[0]);nu.id=uid('i');nu.subs=subs;nu.rule='evenodd';r.L.items[r.i]=nu;ids.delete(its[0].id);
+ const nu=clone(its[0]);nu.id=uid('i');nu.subs=subs;nu.rule='evenodd';delete nu.shape;r.L.items[r.i]=nu;ids.delete(its[0].id);
  S.doc.layers.forEach(L=>L.items=L.items.filter(i=>!ids.has(i.id)));S.sel=[nu.id];commit()}
 
 /* ---------- creation helpers ---------- */
@@ -938,18 +966,19 @@ function snapDelta(b,dx,axis){if(!S.opt.snap||!b)return dx;const tol=8/S.view.z,
 
 /* ---------- pointer ops ---------- */
 let lastTap={t:0,x:0,y:0};
-function isDbl(p,e){const pen=e&&e.pointerType==='pen',t=performance.now(),r=t-lastTap.t<(pen?520:400)&&Math.hypot(p.sx-lastTap.x,p.sy-lastTap.y)<(pen?40:30);lastTap=r?{t:0,x:0,y:0}:{t,x:p.sx,y:p.sy};return r}
+function isDbl(p,e){const pen=e&&e.pointerType==='pen',t=performance.now(),r=t-lastTap.t<(pen?520:450)&&Math.hypot(p.sx-lastTap.x,p.sy-lastTap.y)<(pen?40:30);lastTap=r?{t:0,x:0,y:0}:{t,x:p.sx,y:p.sy};return r}
 const far=(P,Q,d=4)=>Math.hypot(Q.sx-P.sx,Q.sy-P.sy)>=d;
 function moveOp(P){const orig=selItems().map(clone),b0=bboxOf(orig);let moved=false;
  return{move(Q){if(!moved&&!far(P,Q))return;moved=true;const m=T(snapDelta(b0,Q.x-P.x,'x'),snapDelta(b0,Q.y-P.y,'y'));orig.forEach(o=>replace(applyM(o,m)));render()},up(){if(moved)commit()}}}
-function xformOp(P,g){const b=selBBox(),orig=selItems().map(clone);
- if(g.kind==='rot'){const cx=b.x+b.w/2,cy=b.y+b.h/2,a0=Math.atan2(P.y-cy,P.x-cx);
+function xformOp(P,g){const f=selFrame(),orig=selItems().map(clone);
+ if(g.kind==='rot'){const[cx,cy]=fW(f,f.x+f.w/2,f.y+f.h/2),a0=Math.atan2(P.y-cy,P.x-cx);
   return{move(Q){let a=Math.atan2(Q.y-cy,Q.x-cx)-a0,deg=a*180/Math.PI;const sn=Math.round(deg/15)*15;if(Math.abs(deg-sn)<3){deg=sn;a=sn*Math.PI/180}
-   const m=rotAbout(a,cx,cy);orig.forEach(o=>replace(applyM(o,m)));S.ov.angle=Math.round(((deg%360)+540)%360-180);S.ov.ap=[Q.sx,Q.sy];render()},up(){commit()}}}
- const ax=b.x+(1-g.fx)*b.w,ay=b.y+(1-g.fy)*b.h,hx=b.x+g.fx*b.w,hy=b.y+g.fy*b.h,corner=g.fx!==.5&&g.fy!==.5;
- return{move(Q){snapP(Q);let sx=1,sy=1;if(g.fx!==.5&&Math.abs(hx-ax)>1e-6)sx=(Q.x-ax)/(hx-ax);if(g.fy!==.5&&Math.abs(hy-ay)>1e-6)sy=(Q.y-ay)/(hy-ay);
-  if(corner&&S.opt.propScale){const dx=hx-ax,dy=hy-ay;sx=sy=((Q.x-ax)*dx+(Q.y-ay)*dy)/(dx*dx+dy*dy||1)}
-  if(Math.abs(sx)<1e-3)sx=1e-3;if(Math.abs(sy)<1e-3)sy=1e-3;const m=scaleAbout(sx,sy,ax,ay);orig.forEach(o=>replace(applyM(o,m)));render()},up(){commit()}}}
+   const m=rotAbout(a,cx,cy);orig.forEach(o=>{const n=applyM(o,m);n.rot=normA((o.rot||0)+a);replace(n)});render()},up(){commit()}}}
+ const ax=f.x+(1-g.fx)*f.w,ay=f.y+(1-g.fy)*f.h,hx=f.x+g.fx*f.w,hy=f.y+g.fy*f.h,corner=g.fx!==.5&&g.fy!==.5;
+ return{move(Q){if(!f.ang)snapP(Q);const[qx,qy]=fL(f,Q.x,Q.y);let sx=1,sy=1;if(g.fx!==.5&&Math.abs(hx-ax)>1e-6)sx=(qx-ax)/(hx-ax);if(g.fy!==.5&&Math.abs(hy-ay)>1e-6)sy=(qy-ay)/(hy-ay);
+  if(corner&&S.opt.propScale){const dx=hx-ax,dy=hy-ay;sx=sy=((qx-ax)*dx+(qy-ay)*dy)/(dx*dx+dy*dy||1)}
+  if(Math.abs(sx)<1e-3)sx=1e-3;if(Math.abs(sy)<1e-3)sy=1e-3;let m=scaleAbout(sx,sy,ax,ay);if(f.ang)m=mul(rotAbout(f.ang,0,0),mul(m,rotAbout(-f.ang,0,0)));
+  orig.forEach(o=>{const n=applyM(o,m);if(sx*sy<0)n.rot=normA(-(o.rot||0));replace(n)});render()},up(){commit()}}}
 function marqueeOp(P,mode){
  return{move(Q){S.ov.marquee={x:Math.min(P.sx,Q.sx),y:Math.min(P.sy,Q.sy),w:Math.abs(Q.sx-P.sx),h:Math.abs(Q.sy-P.sy)};renderOverlay()},
   up(Q){const m=S.ov.marquee;S.ov.marquee=null;
@@ -960,9 +989,10 @@ function marqueeOp(P,mode){
     src.forEach(it=>it.subs.forEach((sp,si)=>sp.pts.forEach((q,pi)=>{if(q.x>=r.x&&q.x<=r.x+r.w&&q.y>=r.y&&q.y<=r.y+r.h)keys.push(nkey(it.id,si,pi))})));
     S.nsel=S.opt.multi?[...new Set([...S.nsel,...keys])]:keys;const ids=[...new Set(keys.map(k=>k.split('|')[0]))];S.sel=[...new Set([...S.sel,...ids])]}
    updateUI();render()}}}
-function nodeMoveOp(P){const orig=S.nsel.map(k=>{const n=getNode(k);return n&&{q:n.q,o:{...n.q}}}).filter(Boolean);let moved=false;
+const unshape=keys=>keys.forEach(k=>{const n=getNode(k);if(n&&n.it.shape)delete n.it.shape});
+function nodeMoveOp(P){unshape(S.nsel);const orig=S.nsel.map(k=>{const n=getNode(k);return n&&{q:n.q,o:{...n.q}}}).filter(Boolean);let moved=false;
  return{move(Q){if(!moved&&!far(P,Q))return;moved=true;let dx=Q.x-P.x,dy=Q.y-P.y;if(orig[0]){const o=orig[0].o;dx=snapVal(o.x+dx,'x')-o.x;dy=snapVal(o.y+dy,'y')-o.y}orig.forEach(({q,o})=>{q.x=o.x+dx;q.y=o.y+dy;q.ix=o.ix+dx;q.iy=o.iy+dy;q.ox=o.ox+dx;q.oy=o.oy+dy});render()},up(){if(moved)commit()}}}
-function handleOp(g,P){const n=getNode(g.key);if(!n)return null;const isIn=g.kind==='hin',q=n.q;let moved=false;
+function handleOp(g,P){const n=getNode(g.key);if(!n)return null;if(n.it.shape)delete n.it.shape;const isIn=g.kind==='hin',q=n.q;let moved=false;
  // tieni premuta la maniglia ~0,4 s prima di trascinare = maniglia indipendente (funziona anche con Apple Pencil)
  const tm=q.s?setTimeout(()=>{if(!moved&&op){q.s=false;render();toast('Maniglia indipendente')}},420):0;
  return{move(Q){if(P&&!moved&&far(P,Q,3)){moved=true;clearTimeout(tm)}if(isIn){q.ix=Q.x;q.iy=Q.y}else{q.ox=Q.x;q.oy=Q.y}
@@ -970,8 +1000,17 @@ function handleOp(g,P){const n=getNode(g.key);if(!n)return null;const isIn=g.kin
   if(q.s){const dx=(isIn?q.ix:q.ox)-q.x,dy=(isIn?q.iy:q.oy)-q.y,l=Math.hypot(dx,dy)||1,ol=isIn?Math.hypot(q.ox-q.x,q.oy-q.y):Math.hypot(q.ix-q.x,q.iy-q.y),L2=ol||l;
    if(isIn){q.ox=q.x-dx/l*L2;q.oy=q.y-dy/l*L2}else{q.ix=q.x-dx/l*L2;q.iy=q.y-dy/l*L2}}render()},up(){clearTimeout(tm);commit()}}}
 function shapeOp(kind){return P=>{if(!canDraw())return null;let it=null;
- return{move(Q){if(!it&&!far(P,Q))return;if(!it){it=newPath([]);layer().items.push(it);S.sel=[it.id]}it.subs=shapeSubs(kind,P,Q);fitPaints(it);render()},
+ return{move(Q){if(!it&&!far(P,Q))return;if(!it){it=newPath([]);layer().items.push(it);S.sel=[it.id]}it.shape=shapeParams(kind,P,Q);it.subs=genShape(it.shape);fitPaints(it);render()},
   up(){if(!it)return;finishNew(it);commit()}}}}
+// parametri di forma: si rigenera finché il tracciato non viene modificato nei punti
+function shapeParams(kind,P,Q){if(kind==='rect'||kind==='ellipse'){let w=Q.x-P.x,h=Q.y-P.y;if(S.opt.prop){const s=Math.max(Math.abs(w),Math.abs(h));w=Math.sign(w||1)*s;h=Math.sign(h||1)*s}
+  return{kind,x:Math.min(P.x,P.x+w),y:Math.min(P.y,P.y+h),w:Math.abs(w),h:Math.abs(h),r:S.opt.rectR,m:[1,0,0,1,0,0]}}
+ const R=Math.hypot(Q.x-P.x,Q.y-P.y);let rot=Math.atan2(Q.y-P.y,Q.x-P.x);const deg=rot*180/Math.PI,sn=Math.round(deg/15)*15;if(Math.abs(deg-sn)<4)rot=sn*Math.PI/180;
+ return{kind,cx:P.x,cy:P.y,R,rot,n:kind==='star'?S.opt.starN:S.opt.polyN,ratio:S.opt.starR,rr:kind==='star'?S.opt.starRound:S.opt.polyRound,m:[1,0,0,1,0,0]}}
+function genShape(sh){let subs;if(sh.kind==='rect')subs=rectSubs(sh.x,sh.y,sh.w,sh.h,sh.r);else if(sh.kind==='ellipse')subs=ellSubs(sh.x+sh.w/2,sh.y+sh.h/2,sh.w/2,sh.h/2);
+ else{const V=(sh.kind==='star'?starSubs(sh.cx,sh.cy,sh.R,sh.R*sh.ratio,sh.n,sh.rot):polySubs(sh.cx,sh.cy,sh.R,sh.n,sh.rot))[0].pts.map(q=>[q.x,q.y]);subs=roundPoly(V,sh.rr||0)}
+ return applyM({type:'path',subs,style:{}},sh.m).subs}
+function liveShape(kind,fn,final){const it=selItems().find(i=>i.type==='path'&&i.shape&&i.shape.kind===kind);if(!it)return false;fn(it.shape);it.subs=genShape(it.shape);render();if(final)commit();return true}
 function shapeSubs(kind,P,Q){
  if(kind==='rect'||kind==='ellipse'){let w=Q.x-P.x,h=Q.y-P.y;if(S.opt.prop){const s=Math.max(Math.abs(w),Math.abs(h));w=Math.sign(w||1)*s;h=Math.sign(h||1)*s}
   const x=Math.min(P.x,P.x+w),y=Math.min(P.y,P.y+h),W=Math.abs(w),H=Math.abs(h);return kind==='rect'?rectSubs(x,y,W,H,S.opt.rectR):ellSubs(x+W/2,y+H/2,W/2,H/2)}
@@ -981,13 +1020,14 @@ const OPS={
  hand(P){const v0={...S.view};return{move(Q){S.view.x=v0.x+Q.sx-P.sx;S.view.y=v0.y+Q.sy-P.sy;render()},up(){scheduleSave()}}},
  select(P,e,tolS){const g=pickGrip(P.sx,P.sy,tolS);if(g&&(g.kind==='scale'||g.kind==='rot'))return xformOp(P,g);
   const dbl=isDbl(P,e),hit=hitTest(P.x,P.y,tolS/S.view.z);
+  if(hit&&dbl&&S.doc.maskEdit&&!inEdit(hit.id)){exitMask();return null}
   if(hit){if(dbl&&hit.type==='path'){S.sel=[hit.id];setTool('node');return null}
    if(dbl&&(hit.type==='mask'||hit.type==='group')){enterMask(hit);return null}
    if(S.opt.multi){if(S.sel.includes(hit.id)){S.sel=S.sel.filter(i=>i!==hit.id);updateUI();render();return null}S.sel.push(hit.id)}
    else if(!S.sel.includes(hit.id))S.sel=[hit.id];updateUI();render();return moveOp(P)}
   const gd=hitGuide(P,tolS);if(gd)return guideOp(gd,P);
-  const b=selBBox();if(b&&!S.opt.multi&&P.x>=b.x&&P.x<=b.x+b.w&&P.y>=b.y&&P.y<=b.y+b.h)return moveOp(P);
   if(dbl&&S.doc.maskEdit){exitMask();return null}
+  const fr=selFrame();if(fr&&!S.opt.multi){const[lx,ly]=fL(fr,P.x,P.y);if(lx>=fr.x&&lx<=fr.x+fr.w&&ly>=fr.y&&ly<=fr.y+fr.h)return moveOp(P)}
   if(!S.opt.multi)S.sel=[];updateUI();render();return marqueeOp(P,'items')},
  node(P,e,tolS){const tol=tolS/S.view.z,dbl=isDbl(P,e),g=pickGrip(P.sx,P.sy,tolS);
   if(g&&(g.kind==='hin'||g.kind==='hout'))return handleOp(g,P);
@@ -1017,6 +1057,17 @@ const OPS={
     pp.simplify(S.opt.smooth/S.view.z);if(closeIt){pp.lastSegment.remove();pp.closed=true}
     const st=clone(S.def);st.fill=null;if(!st.stroke)st.stroke={t:'solid',c:'#1a1a1a'};if(!st.sw)st.sw=2;
     let it=newPath(fromPaper(pp),st);if(S.opt.pencilOutline){const o=strokeOutline(it);if(o)it=o}layer().items.push(it);finishNew(it);commit()}}},
+ lasso(P){const pts=[[P.sx,P.sy]],dp=[[P.x,P.y]];S.ov.lasso=pts;
+  return{coalesced:true,move(Q){const l=pts[pts.length-1];if(Math.hypot(Q.sx-l[0],Q.sy-l[1])<3)return;pts.push([Q.sx,Q.sy]);dp.push([Q.x,Q.y]);renderOverlay()},
+   up(){S.ov.lasso=null;if(dp.length<4){if(!S.opt.multi){S.sel=[];S.nsel=[]}updateUI();render();return}
+    const inP=(x,y)=>{let c=false;for(let i=0,j=dp.length-1;i<dp.length;j=i++){const a=dp[i],b=dp[j];if((a[1]>y)!==(b[1]>y)&&x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0])c=!c}return c};
+    if(S.opt.lassoMode==='pts'){const src=(S.sel.length?selItems():editable()).filter(i=>i.type==='path'),keys=[];
+     src.forEach(it=>it.subs.forEach((sp,si)=>sp.pts.forEach((q,pi)=>{if(inP(q.x,q.y))keys.push(nkey(it.id,si,pi))})));
+     const owners=[...new Set(keys.map(k=>k.split('|')[0]))];if(!keys.length){toast('Nessun punto nel lazo');render();return}
+     S.sel=S.opt.multi?[...new Set([...S.sel,...owners])]:owners;setTool('node');S.nsel=S.opt.multi?[...new Set([...S.nsel,...keys])]:keys;updateUI();render();return}
+    const samp=it=>it.type==='path'?flatten(it).flatMap(f=>f.pts):it.type==='image'?imgCorners(it):it.type==='mask'?samp(it.mask):it.kids.flatMap(samp);
+    const ids=editable().filter(it=>{const sp=samp(it),b=bboxItem(it);if(!b)return false;if(inP(b.x+b.w/2,b.y+b.h/2))return true;let k=0;for(const p of sp)if(inP(p[0],p[1]))k++;return sp.length&&k/sp.length>.5}).map(i=>i.id);
+    S.sel=S.opt.multi?[...new Set([...S.sel,...ids])]:ids;setTool('select');updateUI();render()}}},
  rect:shapeOp('rect'),ellipse:shapeOp('ellipse'),star:shapeOp('star'),poly:shapeOp('poly'),
  gradient(P,e,tolS){const k=S.ptarget,g=pickGrip(P.sx,P.sy,tolS);
   if(g&&(g.kind==='g1'||g.kind==='g2')){const p=selItems()[0].style[k];return{move(Q){if(g.kind==='g1'){const dx=Q.x-p.x1,dy=Q.y-p.y1;p.x1=Q.x;p.y1=Q.y;if(p.t==='rad'){p.x2+=dx;p.y2+=dy}}else{p.x2=Q.x;p.y2=Q.y}render()},up(){commit()}}}
@@ -1340,7 +1391,7 @@ function openClean(){let its=selItems().filter(i=>i.type==='path');if(!its.lengt
  buildCtx();cleanPreview()}
 function cleanPreview(){cancelAnimationFrame(CL.raf);CL.raf=requestAnimationFrame(()=>{const o=CL.o,its=CL.orig.map(clone);
  if(o.join>0)joinOpen(its,o.join);
- its.forEach(it=>{it.subs=it.subs.filter(sp=>sp.pts.length>1&&(o.minLen<=0||subLen(sp)>=o.minLen));if(o.tol>0)it.subs=it.subs.map(sp=>{try{return simplifySub(sp,o.tol,o.corners)}catch(e){return sp}})});
+ its.forEach(it=>{delete it.shape;it.subs=it.subs.filter(sp=>sp.pts.length>1&&(o.minLen<=0||subLen(sp)>=o.minLen));if(o.tol>0)it.subs=it.subs.map(sp=>{try{return simplifySub(sp,o.tol,o.corners)}catch(e){return sp}})});
  // sostituisce nel documento
  S.doc=JSON.parse(S.undo[S.undo.length-1]);const keep=new Set();
  its.forEach(it=>{const r=find(it.id);if(!r)return;if(it.subs.length){r.L.items[r.i]=it;keep.add(it.id)}else r.L.items.splice(r.i,1)});
