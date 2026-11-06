@@ -1,7 +1,7 @@
 {
-  "name": "Tratto",
-  "short_name": "Tratto",
-  "description": "Editor vettoriale minimale per iPad e iPhone",
+  "name": "ANIMAti",
+  "short_name": "ANIMAti",
+  "description": "Disegno vettoriale e animazione per iPad e iPhone",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
