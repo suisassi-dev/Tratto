@@ -3580,6 +3580,19 @@ function assetPanel(){const el=$('#assetp');el.innerHTML=`<h4>${ic('asset')} Ass
 document.addEventListener('pointerdown',e=>{const el=$('#assetp');if(el.hidden)return;if(e.target.closest('#assetp,[data-act="assets"],#modal,#mbox,#npad'))return;if(e.target.closest('#cv'))el.hidden=true},true);
 // ---- memoria: la cronologia degli annullamenti resta sotto un limite di dimensione (documenti grandi) ----
 {const _c=commit;commit=function(){const r=_c();try{if(!SCRUB&&S.undo.length>12){let tot=0;for(const s of S.undo)tot+=s.length;while(tot>90e6&&S.undo.length>12){tot-=S.undo.shift().length}}}catch(_){}return r}}
+// ---- salvataggio ed esportazioni: il nome del file si può cambiare prima di salvare ----
+deliver=function(data,name,type){const blob=data instanceof Blob?data:new Blob([data],{type});const kb=blob.size>1048576?(blob.size/1048576).toFixed(1)+' MB':Math.max(1,Math.round(blob.size/1024))+' KB';
+ const m=/^(.*?)((?:_lottie)?\.[a-z0-9]+)$/i.exec(name)||[name,name,''],base=m[1],ext=m[2],isProj=ext.toLowerCase()==='.json';
+ const canShare=!!(navigator.canShare&&(()=>{try{return navigator.canShare({files:[new File([blob],name,{type})]})}catch(e){return false}})());
+ modal(`<h3>Salva file</h3><label>Nome del file</label><div class="row" style="gap:6px"><button class="btn" data-m="ren" style="flex:1;justify-content:flex-start;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(base)}</button><span class="muted">${esc(ext)}</span><button class="btn" data-m="ren" title="Rinomina">✎</button></div>
+ <div class="muted" style="margin-top:6px">${kb} · pronto</div><div class="btns"><button class="btn" data-m="no">Chiudi</button>${canShare?`<button class="btn${DL?'':' pri'}" data-m="share">${DL?'Condividi…':'Salva / Condividi…'}</button>`:''}<button class="btn${DL||!canShare?' pri':''}" data-m="save">${DL||!canShare?'Salva sul dispositivo':'Scarica'}</button></div>`,v=>{
+  if(v==='ren'){setTimeout(()=>askText('Nome del file',base,nv=>{nv=(nv||'').replace(/[\\/:*?"<>|]+/g,'').trim();if(!nv){deliver(data,name,type);return}
+    // per il progetto il nuovo nome diventa anche il nome del documento (libreria e Home)
+    if(isProj&&!/_lottie$/i.test(ext.replace(/\.json$/i,''))&&ext.toLowerCase()==='.json'){S.doc.name=nv;$('#docName').textContent=nv;try{libSave(true)}catch(_){}scheduleSave()}
+    deliver(data,nv+ext,type)}),30);return}
+  if(v==='save'){(async()=>{if(DL){try{await DL.save({filename:name,data:blob});toast('Salvato «'+name+'»');return}catch(e){if(e&&e.code==='declined')return}}
+    try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}catch(e){toast('Salvataggio non disponibile qui')}})()}
+  if(v==='share'){navigator.share({files:[new File([blob],name,{type})],title:name}).catch(()=>{})}})};
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
