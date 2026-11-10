@@ -294,9 +294,9 @@ body.anima #tools .swb{display:none}
 .kbd{margin-top:10px;display:flex;flex-direction:column;gap:6px}.kr{display:flex;gap:5px;justify-content:center}
 .kbd button{flex:1;min-width:0;height:44px;border:0;border-radius:9px;background:#34343c !important;font-size:17px;color:var(--tx);padding:0}
 .kbd button.wide{flex:1.6;font-size:14px}.kbd button.space{flex:4;font-size:14px}.kbd button.on{background:var(--accbg);color:var(--acc)}.kbd button:active{background:var(--panel3)}
-#home{position:fixed;inset:0;z-index:55;background:var(--bg,#111113);overflow-y:auto;padding:calc(var(--st,0px) + 24px) calc(var(--sr,0px) + 24px) 40px calc(var(--sl,0px) + 24px)}
+#home{position:fixed;inset:0;z-index:55;background:var(--bg,#111113);overflow-y:auto;padding:calc(var(--st,0px) + 24px) calc(var(--sr,0px) + 24px) calc(var(--sb,0px) + 14px) calc(var(--sl,0px) + 24px);box-sizing:border-box}
 #home[hidden]{display:none}
-.hbox{max-width:980px;margin:0 auto}
+.hbox{max-width:980px;margin:0 auto;display:flex;flex-direction:column;min-height:100%}
 .htop{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
 .hlogo{display:flex;align-items:center;gap:10px;font-size:22px}.hlogo .ic{width:34px;height:34px;color:var(--acc)}
 .hsec{display:flex;align-items:center;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--tx2);margin:22px 2px 10px}
@@ -323,7 +323,8 @@ body.anima #tools .swb{display:none}
 .fxh{width:100%;height:42px;border:0;background:none;display:flex;align-items:center;gap:10px;padding:0 10px;color:var(--tx);font-size:13.5px;text-align:left}.fxh span{flex:1}.fxh .ic{width:20px;height:20px}.fxh .chev .ic{width:16px;height:16px;color:var(--tx2)}.fxh{cursor:pointer;-webkit-user-select:none;user-select:none}.fxh .fxchev{display:grid;place-items:center;width:26px;height:26px}.fxh .fxchev .ic{width:16px;height:16px;color:var(--acc,#ff9f0a)}.fxdel{width:32px;height:32px;border:0;border-radius:8px;background:none;display:grid;place-items:center;color:var(--tx2);padding:0}.fxdel .ic{width:18px!important;height:18px!important}.fxdel:active{background:var(--sep);color:#ff5a52}.fxrow.off .fxh>span{opacity:.5}
 .fxb{padding:2px 10px 10px}
 #askLoupe{position:absolute;top:-64px;width:120px;height:52px;border-radius:26px;background:var(--panel2);border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,0,0,.45);overflow:hidden;display:flex;align-items:center;font-size:15px;pointer-events:none}#askLoupe[hidden]{display:none}#askLoupe .lpc{display:inline-block;width:1.5px;height:1.1em;background:var(--acc);vertical-align:middle}
-.hlogo svg{width:220px;height:auto}
+.hlogo svg{height:30px;width:auto;display:block}.htop{margin-bottom:4px}
+.hfoot{margin:34px 2px 0;margin-top:auto;padding-top:9px;border-top:1px solid rgb(255,144,72);text-align:center;color:var(--tx2);font-size:11px;font-family:ui-monospace,Menlo,monospace;letter-spacing:.02em}
 </style>
 </head>
 <body>
@@ -661,11 +662,11 @@ function grips(){const G=[];
  if(S.mode==='anima'&&(S.tool==='select'||S.tool==='pivot')&&S.sel.length===1){const it=selItems()[0];if(it){const[x,y]=toS(...pivotW(it,S.frame));G.push({kind:'pivot',x,y})}}
  if(S.tool==='select'&&S.sel.length){const f=selFrame();if(f){for(const fx of[0,.5,1])for(const fy of[0,.5,1]){if(fx===.5&&fy===.5)continue;const[x,y]=toS(...fW(f,f.x+fx*f.w,f.y+fy*f.h));G.push({kind:'scale',fx,fy,x,y})}
   const[tx,ty]=toS(...fW(f,f.x+f.w/2,f.y)),ux=Math.sin(f.ang),uy=-Math.cos(f.ang);G.push({kind:'rot',x:tx+ux*30,y:ty+uy*30,bx:tx,by:ty})}}
- if(S.tool==='node'||S.tool==='pen'||(S.tool==='lasso'&&S.opt.lassoMode==='pts')){const ids=S.tool==='pen'?(S.penId?[S.penId]:[]):S.sel;
+ if(S.tool==='node'||S.tool==='pen'||(S.tool==='lasso'&&S.opt.lassoMode==='pts')){const ids=S.tool==='pen'?(S.penId?[S.penId]:S.sel.slice(0,4)):S.sel;
   for(const id of ids){const r=find(id);if(!r||r.it.type!=='path')continue;const it=r.it;const AM=S.mode==='anima'?mAt(it,S.frame):null,toS=AM?(x,y)=>toS0(...mx(AM,x,y)):toS0;
-   it.subs.forEach((sp,si)=>sp.pts.forEach((q,pi)=>{const key=nkey(id,si,pi),on=S.nsel.includes(key)||(S.tool==='pen'&&pi===sp.pts.length-1);const[ax,ay]=toS(q.x,q.y);
+   it.subs.forEach((sp,si)=>sp.pts.forEach((q,pi)=>{const key=nkey(id,si,pi),on=S.nsel.includes(key)||(S.tool==='pen'&&S.penId===id&&pi===sp.pts.length-1);const[ax,ay]=toS(q.x,q.y);
     if(on){if(hasIn(q)){const[x,y]=toS(q.ix,q.iy);G.push({kind:'hin',key,x,y,ax,ay})}if(hasOut(q)){const[x,y]=toS(q.ox,q.oy);G.push({kind:'hout',key,x,y,ax,ay})}}
-    G.push({kind:'node',key,x:ax,y:ay,sel:on,smooth:q.s,first:S.tool==='pen'&&pi===0})}))}}
+    G.push({kind:'node',key,x:ax,y:ay,sel:on,smooth:q.s,first:S.tool==='pen'&&S.penId===id&&pi===0})}))}}
  if(S.mode==='anima')mpGrips(G);
  if(S.tool==='gradient'){const it=selItems()[0],p=it&&it.style&&it.style[S.ptarget];if(p&&p.t!=='solid'){const s=sortStops(p);const[x1,y1]=toS(p.x1,p.y1),[x2,y2]=toS(p.x2,p.y2);G.push({kind:'g1',x:x1,y:y1,c:s[0].c},{kind:'g2',x:x2,y:y2,c:s[s.length-1].c})}}
  return G}
@@ -761,9 +762,9 @@ function buildCtx(){if(S.mode==='anima'){$('#ctx').hidden=true;return}const t=S.
  {const one=S.sel.length===1&&selItems()[0];if(one&&one.shape){const sh=one.shape;if(sh.kind==='star'){S.opt.starN=sh.n;S.opt.starR=sh.ratio;S.opt.starRound=sh.rr||0}if(sh.kind==='poly'){S.opt.polyN=sh.n;S.opt.polyRound=sh.rr||0}if(sh.kind==='rect')S.opt.rectR=sh.r}}
  const F=(id,icon,label)=>`<button class="cb" data-fly="${id}" title="${label}">${ic(icon)}<span class="lab">${label}</span><span class="car"></span></button>`;
  if(S.doc.maskEdit){const gk=S.doc.maskEdit.kind==='group';h+=`<button class="cb on" data-act="exitmask" title="Chiudi la modifica">${ic(gk?'group':'mask')}<span>${gk?'Fine gruppo':'Fine maschera'}</span></button>`+sep}
- const B=(a,label,icon,on,title)=>`<button class="cb${on?' on':''}" data-act="${a}" title="${title||label||''}">${icon?ic(icon):''}${label?`<span>${label}</span>`:''}</button>`;
+ const B=(a,label,icon,on,title)=>`<button class="cb${on?' on':''}" data-act="${a}" title="${title||label||''}">${icon?ic(icon):''}${label?`<span${icon?' class="lab"':''}>${label}</span>`:''}</button>`;
  const R=(k,l,min,max,step,v)=>`<span class="clbl">${l}</span><input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-opt="${k}">`;
- if(t==='select'){h+=B('multi','Multi','multisel',S.opt.multi,'Selezione multipla').replace('<span>Multi','<span class="lab">Multi')+B('selall','Tutto','selall',0,'Seleziona tutto').replace('<span>Tutto','<span class="lab">Tutto')+(S.clip&&S.clip.length&&!S.sel.length?B('an:pasteI','Incolla','paste',0,'Incolla nella stessa posizione').replace('<span>Incolla','<span class="lab">Incolla'):'');
+ if(t==='select'){h+=B('multi','Multi','multisel',S.opt.multi,'Selezione multipla').replace('<span>Multi','<span class="lab">Multi')+B('selall','Tutto','selall',0,'Seleziona tutto').replace('<span>Tutto','<span class="lab">Tutto')+B('assets','Asset','asset',0,'Asset: salva e inserisci')+(S.clip&&S.clip.length&&!S.sel.length?B('an:pasteI','Incolla','paste',0,'Incolla nella stessa posizione').replace('<span>Incolla','<span class="lab">Incolla'):'');
   if(n){const SI=selItems(),hasMask=SI.some(i=>i.type==='mask'),hasGroup=SI.some(i=>i.type==='group'),hasPath=SI.some(i=>i.type==='path');h+=sep+F('clipm','paste','Appunti')+F('orderm','top','Ordine')+B('del','','trash',0,'Elimina')+sep+F('mirror','flipH','Rifletti');
    if(n>1||hasPath)h+=F('bool','unite','Booleane');if(n>1||hasMask)h+=F('maskm','mask','Maschera');if(n>1||hasGroup)h+=F('groupm','group','Gruppo');h+=F('layer','layers','Livello');
    if(selItems().some(i=>i.type==='path'))h+=sep+B('clean','Pulisci','simplify',0,'Riduci i punti').replace('<span>Pulisci','<span class="lab">Pulisci');
@@ -1248,7 +1249,10 @@ const held=new Set();let altKey=false;
 // un dito tenuto premuto mentre si trascina una maniglia = maniglia indipendente
 function modActive(){if(altKey||held.size)return true;for(const[id,p]of ptrs)if(id!==opPid&&p.type==='touch')return true;return false}
 svg.addEventListener('pointerdown',e=>{
- if(e.pointerType==='pen')penDown=true;
+ if(e.pointerType==='pen'){penDown=true;e.preventDefault();
+  // una nuova Pencil mentre è ancora aperta un'operazione Pencil: il rilascio precedente è andato perso -> la chiudo come rilascio
+  if(op&&opPid!=null&&ptrs.has(opPid)&&ptrs.get(opPid).type==='pen'){const o=op,q=ptrs.get(opPid);op=null;ptrs.delete(opPid);try{o.up&&o.up({x:q.x,y:q.y,sx:q.sx,sy:q.sy},e)}catch(_){}}
+  for(const[id,q]of[...ptrs])if(q.type==='pen'&&id!==e.pointerId)ptrs.delete(id)}
  if(e.pointerType==='touch'&&(penDown||performance.now()-penUpAt<350)){held.add(e.pointerId);if(op&&op.refresh&&isShape(opTool)){S.shapeLock=!S.shapeLock;toast(S.shapeLock?'1:1 attivo':'1:1 spento');op.refresh()}return}
  $('#menu').hidden=true;try{svg.setPointerCapture(e.pointerId)}catch(_){}
  const P=evPos(e);
@@ -1264,7 +1268,7 @@ svg.addEventListener('pointerdown',e=>{
  if(CL.open){const t=effTool(e);if(t!=='hand'&&S.tool!=='hand'){op=OPS.hand(P);opPid=e.pointerId;opTool='hand';return}}
  const tool=effTool(e),tolS=e.pointerType==='touch'?24:e.pointerType==='pen'?14:10;
  if(SNAPT.includes(tool))snapP(P);
- if(S.mode==='anima'&&!['select','pivot','node','hand','bone'].includes(tool))return;
+ if(S.mode==='anima'&&!['select','pivot','node','hand','bone','weight'].includes(tool))return;
  if(S.mode==='frames'&&tool!=='hand'){const draws=['pencil','pen','eraser','bucket','rect','ellipse','star','poly'].includes(tool)||isShape(tool);if(draws){if(!frEnsure()){toast('Nessun disegno qui');return}S.baked=bakeScene(S.frame,true);render()}else if(frEnter()){S.baked=bakeScene(S.frame,true);render()}}
  const f=(S.mode==='anima'&&AOPS[tool])||OPS[tool];op=f?f(P,e,tolS):null;opPid=e.pointerId;opTool=tool});
 const SNAPT=['pen','rect','ellipse','star','poly'];let opTool=null;
@@ -1280,7 +1284,7 @@ function onUp(e){if(e.pointerType==='pen'){penDown=false;penUpAt=performance.now
  if(held.delete(e.pointerId))return;
  const pr=ptrs.get(e.pointerId);if(!pr)return;ptrs.delete(e.pointerId);
  if(gest){if(!touchList().length){if(!gest.moved&&performance.now()-gest.t0<400&&e.type!=='pointercancel'){if(gest.maxN===2)undo();else if(gest.maxN>=3)redo()}gest=null;scheduleSave()}return}
- if(op&&e.pointerId===opPid){const o=op;op=null;if(e.type==='pointercancel'&&!(e.pointerType==='pen'&&['pencil','eraser','bucket'].includes(opTool))){cancelOp();updateUI();return}const P=evPos(e);if(SNAPT.includes(opTool))snapP(P);o.up&&o.up(P,e)}}
+ if(op&&e.pointerId===opPid){const o=op;op=null;if(e.type==='pointercancel'&&e.pointerType!=='pen'){cancelOp();updateUI();return}const P=evPos(e);if(SNAPT.includes(opTool))snapP(P);o.up&&o.up(P,e)}}
 svg.addEventListener('pointerup',onUp);svg.addEventListener('pointercancel',onUp);
 ['touchstart','touchmove','touchend'].forEach(t=>svg.addEventListener(t,e=>{if(e.cancelable)e.preventDefault()},{passive:false}));
 svg.addEventListener('pointerleave',e=>{if(e.pointerType!=='touch'&&S.hover){S.hover=null;renderOverlay()}});
@@ -1350,7 +1354,7 @@ function gaussRGBA(d,w,h,sigma){if(sigma<.3)return;const n=3,wI=Math.sqrt(12*sig
  for(const r of R){const ri=Math.round(r);if(ri<1)continue;bh(a,t,ri);bv(t,a,ri)}
  for(let i=0;i<N;i++){const al=a[i*4+3];d[i*4+3]=al;if(al>0){const f=255/al;d[i*4]=a[i*4]*f;d[i*4+1]=a[i*4+1]*f;d[i*4+2]=a[i*4+2]*f}}}
 async function rasterize(type,scale,scene,keep){const d=scene||S.doc;let k=scale;const maxPx=12e6;if(d.w*d.h*k*k>maxPx)k=Math.sqrt(maxPx/(d.w*d.h));const W=Math.round(d.w*k),H=Math.round(d.h*k);
- const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');if(type==='image/jpeg'||d.bg){ctx.fillStyle=d.bg||'#ffffff';ctx.fillRect(0,0,W,H)}
+ const cv=document.createElement('canvas');cv.width=W;cv.height=H;const ctx=cv.getContext('2d');if(type==='image/jpeg'||d.bg){ctx.fillStyle=d.bg||'#ffffff';ctx.globalAlpha=type==='image/jpeg'?1:(S.doc.bgA??1);ctx.fillRect(0,0,W,H);ctx.globalAlpha=1}
  const imgs=AN_IMGS;await Promise.all(Object.keys(S.assets).map(id=>imgs[id]&&imgs[id].src===S.assets[id]?0:new Promise(r=>{const i=new Image();i.onload=()=>{imgs[id]=i;r()};i.onerror=r;i.src=S.assets[id]})));
  const lc=document.createElement('canvas');lc.width=W;lc.height=H;const c2=lc.getContext('2d');
  const paintFor=(cx,p)=>{if(p.t==='solid')return p.c;const g=p.t==='lin'?cx.createLinearGradient(p.x1,p.y1,p.x2,p.y2):cx.createRadialGradient(p.x1,p.y1,0,p.x1,p.y1,Math.max(.01,Math.hypot(p.x2-p.x1,p.y2-p.y1)));sortStops(p).forEach(s=>g.addColorStop(Math.max(0,Math.min(1,s.o)),rgba(s.c,s.a)));return g};
@@ -2193,9 +2197,7 @@ $('#mbox').addEventListener('pointerdown',e=>{const b=e.target.closest('[data-k]
  if(!b){const t=e.target;if(TOUCH&&t.matches&&t.matches('input[type=number]')&&e.pointerType!=='mouse'){e.preventDefault();numPad(t.closest('div')&&t.closest('div').previousElementSibling?t.closest('div').previousElementSibling.textContent:'',t.value,v=>{t.value=v;t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}))},{int:true})}return}
  e.preventDefault();const i=$('#askIn');if(!i)return;const k=b.dataset.k;
  if(k==='⌫')kDel();else if(k==='clr'){i.value='';AN.kPos=0;caretUpd()}else if(k==='⇧'){AN.kShift=!AN.kShift;b.classList.toggle('on',AN.kShift);return}else{kIns(AN.kShift?k.toUpperCase():k);if(AN.kShift){AN.kShift=false;const sh=$('#mbox [data-k="⇧"]');if(sh)sh.classList.remove('on')}}},true);
-// campi numerici del pannello: su iPad si apre il tastierino dell'app
-P.addEventListener('pointerdown',e=>{const t=e.target;if(!TOUCH||e.pointerType==='mouse'||!(t.matches&&t.matches('input.num,input[type=number]')))return;e.preventDefault();e.stopPropagation();
- const lb=t.closest('.row')&&t.closest('.row').querySelector('.lbl');numPad(lb?lb.textContent:'',t.value,v=>{t.value=v;t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}))})},true);
+/* campi numerici del pannello: tastierino al tocco, trascinamento per cambiare il valore -> misc8.js */
 
 /* ---------- lente del contagocce: aggiornata subito, senza ridisegnare tutta l'interfaccia ---------- */
 let pkRaf=0,pkState=null;
@@ -2245,9 +2247,9 @@ async function libBoot(restored){try{LIB=(await IDB.get('lib'))||[]}catch(e){LIB
 function libSave(now){clearTimeout(libT);const run=async snap=>{const{id,doc,view,assets,frame}=snap;if(!id)return;if(!snap.n&&!LIB.some(l=>l.id===id))return;
  await IDB.set('d_'+id,{doc,view});await IDB.set('a_'+id,assets);
  let e=LIB.find(l=>l.id===id);if(!e){e={id};LIB.unshift(e)}e.name=doc.name||'Senza titolo';e.t=Date.now();e.w=doc.w;e.h=doc.h;
- if(!e.thumb||now||Date.now()-thumbT>6000){thumbT=Date.now();try{const k=Math.min(1,320/Math.max(doc.w,doc.h));const sc={w:doc.w,h:doc.h,bg:doc.bg,layers:doc.layers.map(L=>({...L,items:L.items.map(it=>it.type==='seq'?seqGroup(it,frame):it)}))};
+ if(!e.thumb||now||Date.now()-thumbT>20000){thumbT=Date.now();try{const k=Math.min(1,320/Math.max(doc.w,doc.h));const sc={w:doc.w,h:doc.h,bg:doc.bg,layers:doc.layers.map(L=>({...L,items:L.items.map(it=>it.type==='seq'?seqGroup(it,frame):it)}))};
   const r=await rasterize('image/jpeg',k,sc,true);e.thumb=r.cv.toDataURL('image/jpeg',.72);r.cv.width=r.cv.height=0}catch(err){}}
- LIB.sort((a,b)=>b.t-a.t);if(LIB.length>30){for(const x of LIB.slice(30)){IDB.set('d_'+x.id,null);IDB.set('a_'+x.id,null)}LIB=LIB.slice(0,30)}await IDB.set('lib',LIB)};
+ LIB.sort((a,b)=>b.t-a.t);if(LIB.length>150){for(const x of LIB.slice(150)){IDB.set('d_'+x.id,null);IDB.set('a_'+x.id,null)}LIB=LIB.slice(0,150)}await IDB.set('lib',LIB)};
  const snap=()=>{const used={},set=new Set();allItems().forEach(i=>itemAssets(i,set));const au=S.doc.anim&&S.doc.anim.audio;if(au)set.add(au.asset);set.forEach(a=>{if(S.assets[a])used[a]=S.assets[a]});
   return{id:S.docId,doc:JSON.parse(JSON.stringify(S.doc)),view:{...S.view},assets:used,frame:S.frame,n:allItems().length}};
  if(now)return run(snap());libT=setTimeout(()=>run(snap()),2500)}
@@ -2259,7 +2261,7 @@ function showHome(boot){if(boot&&navigator.webdriver&&!window.FORCEHOME)return;s
   <div class="hsec">Nuovo documento</div><div class="hnew">${HPRE.map(([n,w,hh])=>`<button data-h="new:${w}:${hh}"><i style="aspect-ratio:${w}/${hh}"></i><b>${n}</b><span>${w}×${hh}</span></button>`).join('')}<button data-h="newc"><i class="cust">+</i><b>Personalizzato</b><span>larghezza × altezza</span></button></div>
   <div class="hsec">Recenti <span class="sp1"></span><button class="hopen" data-h="open">${ic('open')} Apri documento…</button></div>
   <div class="hrec">${rec.length?rec.map(l=>`<div class="hcard${l.id===S.docId?' cur':''}" data-h="lib:${l.id}"><div class="hth">${l.thumb?`<img src="${l.thumb}" alt="">`:''}</div><b>${esc(l.name||'Senza titolo')}</b><span>${fmt(l.t)}${l.id===S.docId?' · aperto':''}</span><button class="hdel" data-h="del:${l.id}" title="Rimuovi dai recenti">✕</button></div>`).join(''):'<div class="muted" style="padding:20px 4px">Nessun documento recente.</div>'}</div>
-  ${LIB.length>5?`<div class="hmore muted">Altri ${LIB.length-5} documenti nella libreria: <button class="hopen" data-h="all">mostra tutti</button></div>`:''}</div>`;
+  ${LIB.length>5?`<div class="hmore muted">Altri ${LIB.length-5} documenti nella libreria: <button class="hopen" data-h="all">mostra tutti</button></div>`:''}<div class="hfoot">versione 0.1 · 2026</div></div>`;
  h.hidden=false;h.dataset.all=''}
 document.addEventListener('click',async e=>{const b=e.target.closest('#home [data-h]');if(!b)return;e.stopPropagation();const[c,a,b2]=b.dataset.h.split(':');const H=$('#home');
  if(c==='close'){H.hidden=true;render();return}
@@ -2459,12 +2461,12 @@ function pwFromPoints(src,w,minR,col,sm){if(src.length<2)return null;
  const sm2=pr.map((v,i)=>{let a=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(N-1,i+2);j++){a+=pr[j];c++}return +(a/c).toFixed(3)});
  const st=S.def;const it=newPath(subs,{...clone(st),fill:null,stroke:{t:'solid',c:col},sw:w,so:st.so??1,cap:'round',join:'round'});it.pw={s:sm2,minR};it.pr=1;return it}
 const PWC=new WeakMap();
-function pwOutline(it){const key=JSON.stringify(it.subs)+'|'+it.style.sw+'|'+it.pw.minR;const c=PWC.get(it);if(c&&c.k===key)return c.subs;
+function pwOutline(it){const c=PWC.get(it);if(c&&c.ref===it.subs&&c.sw===it.style.sw&&c.mr===it.pw.minR&&c.pr===it.pw.s)return c.subs;const key=JSON.stringify(it.subs)+'|'+it.style.sw+'|'+it.pw.minR;if(c&&c.k===key){c.ref=it.subs;c.sw=it.style.sw;c.mr=it.pw.minR;c.pr=it.pw.s;return c.subs}
  const fl=flatten(it),out=[];for(const f of fl){let P=f.pts;if(P.length<2)continue;const dense=[P[0]];for(let i=1;i<P.length;i++){const a=dense[dense.length-1],b=P[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(d/2));for(let k=1;k<=n;k++)dense.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
   const L=[0];for(let i=1;i<dense.length;i++)L.push(L[i-1]+Math.hypot(dense[i][0]-dense[i-1][0],dense[i][1]-dense[i-1][1]));const T=L[L.length-1]||1,S0=it.pw.s,N=S0.length;
   const pts=dense.map((q,i)=>{const u=L[i]/T*(N-1),j=Math.min(N-2,Math.floor(u)),t=u-j;return[q[0],q[1],S0[j]+(S0[j+1]-S0[j])*t]});
   const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
- PWC.set(it,{k:key,subs:out});return out}
+ PWC.set(it,{k:key,subs:out,ref:it.subs,sw:it.style.sw,mr:it.pw.minR,pr:it.pw.s});return out}
 // come appare: un riempimento con il colore del tratto (stessa opacità, sfocatura, fusione e rim)
 function pwFlat(it){if(!it||!it.pw||it.type!=='path'||!it.style.stroke)return it;return{...it,subs:pwOutline(it),style:{...it.style,fill:it.style.stroke,fo:it.style.so??1,stroke:null},pw:undefined,rule:'nonzero'}}
 {const _m=itemMarkup;itemMarkup=function(it,exp,nested,noBlend){return _m(it&&it.pw?pwFlat(it):it,exp,nested,noBlend)}}
@@ -2744,6 +2746,8 @@ function lExtra(it,base,L,A,assets,nextInd){
    ks:{o:{a:0,k:100},r:{a:0,k:f2(rot)},p:{a:0,k:[f2(m[4]),f2(m[5]),0]},a:{a:0,k:[0,0,0]},s:{a:0,k:[f2(sx*100),f2(sy*100),100]}}};
   // tempo locale (velocità, tieni, ripeti) con la rimappatura del tempo
   const tk=[];for(let f=st;f<(after==='hide'?st+len:A.dur);f++){const lt=instLocal(it,f);if(lt==null)continue;tk.push({t:f,s:[+(lt/A.fps).toFixed(4)],h:1})}if(tk.length)pl.tm={a:1,k:tk};
+  // l'opacità non passa dal genitore al figlio in Lottie: la porto sulla pre-composizione
+  if(nul.ks&&nul.ks.o){pl.ks.o=nul.ks.o;nul.ks={...nul.ks,o:{a:0,k:100}}}
   return[pl,nul]}
  if(it.type==='fx'){const W=S.doc.w,H=S.doc.h,p=it.p,full={o:{a:0,k:100},r:{a:0,k:0},p:{a:0,k:[0,0,0]},a:{a:0,k:[0,0,0]},s:{a:0,k:[100,100,100]}},lay=(o)=>({ddd:0,ind:nextInd(),sr:1,ao:0,ip:0,op:A.dur,st:0,nm:itName(it),ks:full,...o});
   const rect={ty:'rc',p:{a:0,k:[W/2,H/2]},s:{a:0,k:[W,H]},r:{a:0,k:0}};
@@ -2854,14 +2858,7 @@ fxRow=function(key,icon,name,on,body,extraBtns){const open=AN.fxOpen===key;const
  h=h.replace(/<div class="fxrow([^"]*)"><div class="fxh" data-fxopen="([^"]+)" role="button">([\s\S]*?)<i class="fxchev">([\s\S]*?)<\/i><\/div>(<div class="fxb">([\s\S]*?)<!--del:(\w+):([^-]+)-->([\s\S]*?)<\/div>)?/g,(m,cls,key,inner,chev,fb,body,a,b,rest)=>{if(!fb)return`<div class="fxrow${cls}"><div class="fxh" data-fxopen="${key}" role="button">${inner}<i class="fxchev">${chev}</i></div>`;
   return`<div class="fxrow${cls}"><div class="fxh" data-fxopen="${key}" role="button">${inner}<button class="fxdel" data-${a}="${b}" title="Rimuovi effetto">${ic('trash')}</button><i class="fxchev">${chev}</i></div><div class="fxb">${body}${rest}</div>`});
  return h}}
-// rimozione affidabile: usa l'id (o indice) memorizzato al pointerdown e ignora i click "fantasma" dopo un ridisegno
-let FXDN=null;P.addEventListener('pointerdown',e=>{const d=e.target.closest('.fxdel');FXDN=d?{id:d.dataset.fxdel??null,li:d.dataset.lfxdel??null,t:performance.now()}:null;const h=e.target.closest('[data-fxopen]');if(h&&!d)FXDN={open:h.dataset.fxopen,t:performance.now()}},true);
-P.addEventListener('click',e=>{const d=e.target.closest('.fxdel'),o=e.target.closest('[data-fxopen]');if(!d&&!o)return;e.stopImmediatePropagation();e.preventDefault();
- if(!FXDN||performance.now()-FXDN.t>1500){FXDN=null;return}const dn=FXDN;FXDN=null;
- if(d){if(dn.id!=null&&d.dataset.fxdel===dn.id){const r=find(dn.id);if(r&&r.it.type==='fx'){r.L.items.splice(r.i,1);if(AN.fxOpen===dn.id)AN.fxOpen=null;commit();toast('Effetto rimosso')}}
-  else if(dn.li!=null&&d.dataset.lfxdel===dn.li){const L=layer();if(L.fx&&L.fx[+dn.li]){L.fx.splice(+dn.li,1);AN.fxOpen=null;commit();toast('Effetto rimosso')}}return}
- if(o&&dn.open===o.dataset.fxopen){AN.fxOpen=AN.fxOpen===dn.open?null:dn.open;buildPanel()}},true);
-
+// apertura/rimozione: gestite al rilascio del tocco in misc8.js
 /* --- pannello: fusione per vignettatura e flare, target 4 colori --- */
 {const _ep=effectsPanel;effectsPanel=function(){let h=_ep();const L=layer();
  L.items.filter(i=>i.type==='fx').forEach(it=>{const P0=it.id+'.';
@@ -2895,7 +2892,9 @@ if(typeof AOPS!=='undefined'&&AOPS.select){const _s=AOPS.select;AOPS.select=func
  if(!cp){cp=document.createElementNS(NS,'clipPath');cp.id='lfxclip';cp.innerHTML='<rect/>';$('#cv defs').appendChild(cp)}const cr=cp.firstChild;if(+cr.getAttribute('width')!==W||+cr.getAttribute('height')!==H){cr.setAttribute('x',0);cr.setAttribute('y',0);cr.setAttribute('width',W);cr.setAttribute('height',H)}
  for(const L of SCN().layers){const g=lcache.get(L.id);if(!g)continue;const b=layerBlur(L);let mg=g.querySelector(':scope>g.lfxmir');
   if(!b||!L.visible){if(mg)mg.remove();if(g.getAttribute('clip-path')==='url(#lfxclip)')g.removeAttribute('clip-path');continue}
-  const m=Math.ceil(b*3)+2,ids=[];for(const it of L.items){const c=cache.get(it.id);if(!c)continue;const eid='ie_'+it.id;if(c.el.id!==eid)c.el.id=eid;ids.push(eid)}
+  const m=Math.ceil(b*3)+2,ids=[];for(const it of L.items){const c=cache.get(it.id);if(!c)continue;let bb=null;try{bb=bboxItem(it)}catch(_){}
+   // solo gli oggetti vicini al bordo del foglio servono da copia specchiata (meno lavoro per la GPU)
+   if(bb&&bb.x>m*1.2&&bb.y>m*1.2&&bb.x+bb.w<W-m*1.2&&bb.y+bb.h<H-m*1.2)continue;const eid='ie_'+it.id;if(c.el.id!==eid)c.el.id=eid;ids.push(eid)}
   const sig=ids.join()+'|'+m+'|'+W+'|'+H;if(!mg){mg=document.createElementNS(NS,'g');mg.setAttribute('class','lfxmir');mg.setAttribute('pointer-events','none')}
   if(mg.dataset.sig!==sig){mg.dataset.sig=sig;const R=[['l',[-1,0,0,1,0,0],[-m,0,m,H]],['r',[-1,0,0,1,2*W,0],[W,0,m,H]],['t',[1,0,0,-1,0,0],[0,-m,W,m]],['b',[1,0,0,-1,0,2*H],[0,H,W,m]],
     ['tl',[-1,0,0,-1,0,0],[-m,-m,m,m]],['tr',[-1,0,0,-1,2*W,0],[W,-m,m,m]],['bl',[-1,0,0,-1,0,2*H],[-m,H,m,m]],['br',[-1,0,0,-1,2*W,2*H],[W,H,m,m]]];
@@ -2915,7 +2914,8 @@ ICONS.nocolor=[[C(12,12,8)],['M6.3 17.7L17.7 6.3']];
 function applyHints(){document.body.classList.toggle('nohints',S.opt.hints===false)}
 {const _a=act;act=function(a){if(a==='hints'){S.opt.hints=S.opt.hints===false;applyHints();scheduleSave();$('#menu').hidden=true;toast(S.opt.hints===false?'Aiuti nascosti':'Aiuti visibili');return}
  if(a==='swnone'){swNone();return}return _a(a)}}
-{const st=document.createElement('style');st.textContent=`body.nohints .hint,body.nohints .tiphint,body.nohints .clbl.lab{display:none!important}
+{const st=document.createElement('style');st.textContent=`body.nohints #ctx .lab{display:none!important}body.nohints #ctx .cb{padding:0 6px;min-width:34px}
+body.nohints .hint,body.nohints .tiphint,body.nohints .clbl.lab{display:none!important}
 .swb .swn{position:absolute;left:-3px;bottom:-4px;width:20px;height:20px;border:0;background:none;color:var(--tx2);padding:0;display:grid;place-items:center;z-index:3}.swb .swn .ic{width:15px;height:15px}.swb .swn:active{color:var(--acc,#ff9f0a)}
 .swb .sw.none::before{content:'';position:absolute;left:50%;top:-20%;width:2px;height:140%;background:#ff3b30;transform:rotate(45deg);transform-origin:center;z-index:1}
 .swb .sw.last{border-color:#ff9f0a}`;document.head.appendChild(st)}
@@ -3129,7 +3129,7 @@ function rigPose(f){f=Math.max(0,Math.round(f));const sig=rigSig();if(!RIG.cache
  if(!bones().some(b=>b.kind==='spring'))return C.frames[f]||(C.frames[f]=rigStep(f,null));
  while(C.frames.length<=f)C.frames.push(rigStep(C.frames.length,C.state));return C.frames[f]}
 function rigRestPose(){const P=new Map();bones().forEach(b=>P.set(b.id,{hx:b.x,hy:b.y,a:bA0(b),len:bLen(b),M:[1,0,0,1,0,0]}));return P}
-const rigRest=()=>S.mode==='anima'&&S.tool==='bone';
+let rigRest=()=>S.mode==='anima'&&S.tool==='bone';
 const rigOn=()=>S.mode==='anima'&&bones().length>0;
 // ---- smart: forme e opacità guidate dalla rotazione dell'osso ----
 function smartT(b,f){const s=b.smart;if(!s||s.a0==null||s.a1==null||s.a1===s.a0)return null;const r=valAt(b,'rot',f);return clamp01((r-s.a0)/(s.a1-s.a0))}
@@ -3285,6 +3285,301 @@ function rigBakedDoc(){const d=clone(S.doc),A=ADOC();const RL=d.layers.find(l=>l
  return d}
 {const _el=exportLottie;exportLottie=function(){if(!bones().length)return _el();const sv=S.doc,d=rigBakedDoc();S.doc=d;try{return _el()}finally{S.doc=sv}}}
 {const _v=selItemsV;selItemsV=function(){return _v().filter(i=>!isBone(i))}}
+
+/* ===== Rig v2: più rig, vincoli IK e Copia rotazione, pesi automatici su tutte le ossa, pittura dei pesi, nomi, modelli ===== */
+ICONS.weight=[['M12 3c-3 4.2-6 7.6-6 11a6 6 0 0 0 12 0c0-3.4-3-6.8-6-11z'],['M9 15.5a3 3 0 0 0 3 2.6']];
+ICONS.ik=ICONS.ikon;
+TOOLS_A.splice(TOOLS_A.findIndex(t=>t[0]==='bone')+1,0,['weight','Pesi','w']);
+// più livelli rig: le ossa vengono da tutti; le nuove vanno nel rig attivo
+bones=function(){const r=[];S.doc.layers.forEach(L=>{if(L.rig)L.items.forEach(b=>{if(b.type==='bone')r.push(b)})});return r};
+boneById=function(id){for(const L of S.doc.layers)if(L.rig){const b=L.items.find(x=>x.id===id&&x.type==='bone');if(b)return b}return null};
+function rigOf(b){return S.doc.layers.find(L=>L.rig&&L.items.includes(b))}
+rigLayer=function(create){const a=layer();if(a&&a.rig)return a;const sb=S.sel.length===1&&boneById(S.sel[0]);if(sb)return rigOf(sb);let L=S.doc.layers.find(l=>l.rig);
+ if(!L&&create){L={id:uid('L'),name:'Ossa (rig)',visible:true,locked:true,opacity:1,items:[],rig:true};S.doc.layers.push(L)}return L};
+function newRig(){const n=S.doc.layers.filter(l=>l.rig).length+1;const L={id:uid('L'),name:'Ossa (rig '+n+')',visible:true,locked:true,opacity:1,items:[],rig:true};S.doc.layers.push(L);S.activeLayer=L.id;S.sel=[];commit();toast('Nuovo rig: disegna le ossa con lo strumento Ossa')}
+// ordine: prima genitori e bersagli dei vincoli di rotazione
+rigSorted=function(){const bs=bones(),ids=new Set(bs.map(b=>b.id)),out=[],done=new Set();let guard=0;
+ const ready=b=>(!b.parent||!ids.has(b.parent)||done.has(b.parent))&&(!b.cr||!b.cr.t||!ids.has(b.cr.t)||done.has(b.cr.t)||b.cr.t===b.id);
+ while(out.length<bs.length&&guard++<300){let prog=false;for(const b of bs){if(done.has(b.id))continue;if(ready(b)){out.push(b);done.add(b.id);prog=true}}if(!prog){bs.forEach(b=>{if(!done.has(b.id)){out.push(b);done.add(b.id)}});break}}return out};
+rigRest=function(){return S.mode==='anima'&&(S.tool==='bone'||(S.tool==='weight'&&!S.opt.wPose))};
+function rigSolve(f,state,ovr){const P=new Map();
+ for(const b of rigSorted()){const a0=bA0(b),lr=valAt(b,'rot',f)*Math.PI/180+windOff(b,f);let rot=lr,hx,hy,a;const pb=b.parent&&boneById(b.parent),par=pb&&P.get(pb.id);
+  if(par){const pa0=bA0(pb),c=Math.cos(par.a-pa0),s=Math.sin(par.a-pa0),dx=b.x-pb.x,dy=b.y-pb.y;hx=par.hx+c*dx-s*dy;hy=par.hy+s*dx+c*dy;a=par.a+(a0-pa0)+rot}
+  else{hx=b.x+valAt(b,'tx',f);hy=b.y+valAt(b,'ty',f);a=a0+rot}
+  // Copia rotazione: locale (stessa rotazione propria del bersaglio) o mondo (stessa variazione di direzione del bersaglio)
+  if(b.cr&&b.cr.t&&b.cr.on!==false){const tb=boneById(b.cr.t),tp=tb&&P.get(tb.id);if(tp){const w=b.cr.infl??1;let aw;
+    if(b.cr.space==='local')aw=a-(b.cr.off?0:rot)+tp.lr;else aw=a0+(tp.a-bA0(tb))+(b.cr.off?rot:0);let d=aw-a;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;a+=d*w;rot=a-(par?par.a+(a0-bA0(pb)):a0)}}
+  if(ovr&&ovr.has(b.id))a=ovr.get(b.id);
+  if(b.kind==='spring'&&state){let st=state.get(b.id);if(!st){st={off:0,vel:0,prev:a};state.set(b.id,st)}let d=a-st.prev;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;
+   st.off-=d;const k=.03+bP(b,'stiff',f)*.45,c=.04+bP(b,'damp',f)*.5;for(let n=0;n<2;n++){st.vel+=-k*st.off-c*st.vel;st.off+=st.vel}st.off=Math.max(-2.6,Math.min(2.6,st.off));st.prev=a;const wg=bP(b,'wig',f);a+=st.off+(wg?wg*Math.PI/180*Math.sin(f*.9+b.x*.01)*Math.sin(f*.37):0)}
+  P.set(b.id,{hx,hy,a,lr:rot,len:bLen(b),M:mul(T(hx,hy),mul(rotAbout(a-a0,0,0),T(-b.x,-b.y)))})}
+ return P}
+function ikSolve(P){const ovr=new Map();for(const b of bones()){if(!b.ik||!b.ik.t||b.ik.on===false||!b.parent)continue;const pb=boneById(b.parent),A=P.get(b.parent),B=P.get(b.id),T2=P.get(b.ik.t);if(!pb||!A||!B||!T2)continue;
+  const L1=Math.hypot(B.hx-A.hx,B.hy-A.hy),L2=B.len,del=Math.atan2(B.hy-A.hy,B.hx-A.hx)-A.a;let tx=T2.hx,ty=T2.hy;const w=b.ik.infl??1;
+  const rs=Math.sin(bA0(b)-Math.atan2(b.y-pb.y,b.x-pb.x));let sg=Math.abs(rs)<1e-3?1:(rs<0?-1:1);if(b.ik.flip)sg=-sg;
+  const dx=tx-A.hx,dy=ty-A.hy;let d=Math.hypot(dx,dy);d=Math.max(Math.abs(L1-L2)+.01,Math.min(L1+L2-.01,d));const phi=Math.atan2(dy,dx),al=Math.acos(Math.max(-1,Math.min(1,(L1*L1+d*d-L2*L2)/(2*L1*d))));
+  const aAB=phi-sg*al,aA=aAB-del,hbx=A.hx+Math.cos(aAB)*L1,hby=A.hy+Math.sin(aAB)*L1,aB=Math.atan2(ty-hby,tx-hbx);
+  const mix=(x,y)=>{let dd=y-x;while(dd>Math.PI)dd-=2*Math.PI;while(dd<-Math.PI)dd+=2*Math.PI;return x+dd*w};ovr.set(pb.id,mix(A.a,aA));ovr.set(b.id,mix(B.a,aB))}return ovr}
+rigStep=function(f,state){const hasIK=bones().some(b=>b.ik&&b.ik.t&&b.ik.on!==false&&b.parent);if(!hasIK)return rigSolve(f,state,null);const P1=rigSolve(f,null,null);return rigSolve(f,state,ikSolve(P1))};
+// ---- pesi: automatici su tutte le ossa del rig (o del gruppo scelto), oppure dipinti ----
+function wKey(it){return it.subs.map(s=>s.pts.length).join(',')}
+function autoWeights(it,set){return it.subs.map(sp=>sp.pts.map(q=>{let L=set.map(b=>{const d=segD(q.x,q.y,b),e=Math.max(3,bLen(b)*.12);return[b.id,Math.pow(1/(d+e),3)]});L.sort((a,b)=>b[1]-a[1]);L=L.slice(0,3);const s=L.reduce((a,x)=>a+x[1],0)||1;L=L.map(([id,v])=>[id,v/s]).filter(x=>x[1]>.02);const s2=L.reduce((a,x)=>a+x[1],0)||1;return L.map(([id,v])=>[id,+(v/s2).toFixed(4)])}))}
+rigWeights=function(it){if(!it.subs)return null;if(it.bwp&&it.bwp.k===wKey(it))return it.bwp.w;const set=(it.bset||[it.bone]).map(boneById).filter(Boolean);if(!set.length)return null;
+ const key=it.id+'|'+set.map(b=>b.id+b.x+b.y+b.x2+b.y2).join()+'|'+it.subs.map(s=>s.pts.length+':'+(s.pts[0]?s.pts[0].x.toFixed(1)+','+s.pts[0].y.toFixed(1):'')).join();const c=RIGW.get(it.id);if(c&&c.key===key)return c.w;const w=autoWeights(it,set);RIGW.set(it.id,{key,w});return w};
+rigBind=function(soft){const its=selItems().filter(i=>!isBone(i)),b=boneById(S.rigBone);if(!b||!its.length)return;const R=rigOf(b),all=R?R.items.filter(isBone).map(x=>x.id):[b.id];
+ its.forEach(it=>{delete it.bsoft;delete it.bset;delete it.bwp;it.bone=b.id;if(soft&&it.type==='path'){it.bsoft=1;it.bset=all;if(it.shape)delete it.shape;const ml=Math.max(6,Math.min(...all.map(id=>bLen(boneById(id))))/4);if(!(it.ak&&it.ak.ch.shape&&it.ak.ch.shape.k.length))rigSubdiv(it,ml)}});
+ RIGW.clear();commit();toast(soft?`Collegati in modo morbido a tutte le ossa del rig (pesi automatici): correggi con lo strumento Pesi`:`Collegati a «${itName(b)}»`)};
+// ---- strumento Pesi: pennello sull'osso scelto (aggiungi / togli), anteprima a colori sui punti ----
+S.opt.wR=S.opt.wR||40;S.opt.wS=S.opt.wS??.5;S.opt.wMode=S.opt.wMode||'add';
+function wBone(){const sb=S.sel.length===1&&boneById(S.sel[0]);return sb||boneById(S.rigBone)}
+function softItems(){const r=[];S.doc.layers.forEach(L=>{if(L.rig||!L.visible)return;L.items.forEach(it=>{if(it.bsoft&&it.type==='path')r.push(it)})});return r}
+AOPS.weight=function(P,e,tolS){const b=wBone();if(!b){toast('Scegli prima un osso: toccalo con Trasforma o nel pannello Rig');return null}S.rigBone=b.id;const its=softItems();if(!its.length){toast('Nessun tracciato collegato in modo morbido: seleziona il disegno e premi «Collega morbido»');return null}
+ if(!S.sel.includes(b.id)){S.sel=[b.id];updateUI()}const pose=rigRest()?null:rigPose(S.frame);
+ const paint=Q=>{const R=S.opt.wR/S.view.z,str=S.opt.wS*.25*(e.pointerType==='pen'&&e.pressure?Math.max(.3,e.pressure*1.6):1),sub=S.opt.wMode==='sub'||modActive();S.ov.wb={x:Q.x,y:Q.y};
+  for(const it of its){const W=rigWeights(it);if(!W)continue;if(!it.bwp||it.bwp.k!==wKey(it))it.bwp={k:wKey(it),w:clone(W)};if(!(it.bset||[]).includes(b.id))it.bset=[...(it.bset||[]),b.id];
+   it.subs.forEach((sp,si)=>sp.pts.forEach((q,pi)=>{let x=q.x,y=q.y;if(pose){const[px,py]=wPosed(it,si,pi,pose);x=px;y=py}const d=Math.hypot(x-Q.x,y-Q.y);if(d>R)return;const fall=1-(d/R)*(d/R),L=it.bwp.w[si][pi];
+    let cur=(L.find(x=>x[0]===b.id)||[0,0])[1],nv=Math.max(0,Math.min(1,cur+(sub?-1:1)*str*fall));if(Math.abs(nv-cur)<1e-4)return;const others=L.filter(x=>x[0]!==b.id),os=others.reduce((a,x)=>a+x[1],0);
+    let out;if(os>1e-6)out=others.map(([id,v])=>[id,v/os*(1-nv)]);else{if(nv<1){const nb=(it.bset||[]).map(boneById).filter(k=>k&&k.id!==b.id).sort((a,c)=>segD(q.x,q.y,a)-segD(q.x,q.y,c))[0];out=nb?[[nb.id,1-nv]]:[];if(!nb)nv=1}else out=[]}
+    if(nv>0)out.push([b.id,nv]);it.bwp.w[si][pi]=out.filter(x=>x[1]>.001).map(([id,v])=>[id,+v.toFixed(4)])}))}
+  RIGW.clear();S.baked=null;render()};
+ paint(P);return{move(Q){paint(Q)},up(){S.ov.wb=null;commit()}}};
+function wPosed(it,si,pi,pose){const q=it.subs[si].pts[pi],W=rigWeights(it);if(!W)return[q.x,q.y];let X=0,Y=0;for(const[id,w]of W[si][pi]){const P=pose.get(id),m=P?P.M:[1,0,0,1,0,0],[a,c]=mx(m,q.x,q.y);X+=a*w;Y+=c*w}return[X,Y]}
+const heat=v=>{const t=Math.max(0,Math.min(1,v));const r=Math.round(255*Math.min(1,t*2)),g=Math.round(255*(t<.5?t*2*.85:(1-t)*2*.85)),bl=Math.round(255*Math.max(0,1-t*2));return`rgb(${r},${g},${bl})`};
+function weightOverlay(){if(S.mode!=='anima'||S.tool!=='weight')return'';const b=wBone();if(!b)return'';const pose=rigRest()?null:rigPose(S.frame);let s='';
+ for(const it of softItems()){const W=rigWeights(it);if(!W)continue;it.subs.forEach((sp,si)=>sp.pts.forEach((q,pi)=>{const w=(W[si][pi].find(x=>x[0]===b.id)||[0,0])[1];let x=q.x,y=q.y;if(pose)[x,y]=wPosed(it,si,pi,pose);const[a,c]=toS(x,y);s+=`<circle cx="${f2(a)}" cy="${f2(c)}" r="${w>.01?4.5:2.5}" fill="${heat(w)}" fill-opacity="${w>.01?.95:.5}" stroke="#000" stroke-opacity=".35"/>`}))}
+ if(S.ov.wb){const[a,c]=toS(S.ov.wb.x,S.ov.wb.y);s+=`<circle cx="${f2(a)}" cy="${f2(c)}" r="${S.opt.wR}" fill="none" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 3"/>`}
+ return`<g class="wgt" pointer-events="none">${s}</g>`}
+// ---- disegno delle ossa con i nomi ----
+{const _ro=rigOverlay;rigOverlay=function(){let h=_ro();if(!h)return weightOverlay();if(S.opt.boneNames){const pose=rigRest()?rigRestPose():rigPose(S.frame);let t='';
+  for(const b of bones()){const q=pose.get(b.id);if(!q)continue;const[hx,hy]=toS(q.hx,q.hy),L2=q.len*S.view.z,mx2=hx+Math.cos(q.a)*L2*.5,my2=hy+Math.sin(q.a)*L2*.5;
+   t+=`<text x="${f2(mx2)}" y="${f2(my2-10)}" text-anchor="middle" font-size="11" font-family="-apple-system,system-ui,sans-serif" fill="#fff" stroke="#000" stroke-width="3" stroke-opacity=".55" paint-order="stroke">${esc(itName(b))}</text>`}
+  h=h.replace('</g>',t+'</g>')}
+ // vincoli: linea tratteggiata verso il bersaglio IK
+ const pose=rigRest()?rigRestPose():rigPose(S.frame);let c='';for(const b of bones()){if(b.ik&&b.ik.t){const q=pose.get(b.id),t=pose.get(b.ik.t);if(q&&t){const[a1,b1]=toS(q.hx+Math.cos(q.a)*q.len,q.hy+Math.sin(q.a)*q.len),[a2,b2]=toS(t.hx,t.hy);c+=`<line x1="${f2(a1)}" y1="${f2(b1)}" x2="${f2(a2)}" y2="${f2(b2)}" stroke="#ffd84d" stroke-width="1.2" stroke-dasharray="3 3"/>`}}}
+ if(c)h=h.replace('<g class="rig" pointer-events="none">','<g class="rig" pointer-events="none">'+c);
+ return h+weightOverlay()}}
+// ---- pannelli ----
+function boneOpts(sel,excl){return`<option value="">Nessuno</option>`+bones().filter(k=>!excl.has(k.id)).map(k=>`<option value="${k.id}"${sel===k.id?' selected':''}>${esc(itName(k))}</option>`).join('')}
+{const _bp=bonePanel;bonePanel=function(b){let h=_bp(b);const ds=descOf(b);ds.add(b.id);const chain=new Set([b.id,b.parent].filter(Boolean));
+ const ik=b.ik||{},cr=b.cr||{},nb=allItems().filter(i=>i.bone===b.id||(i.bset&&i.bset.includes(b.id))).length;
+ let v=`<div class="row"><span class="lbl">IK verso</span><select class="sel" data-bik="t"${b.parent?'':' disabled'}>${boneOpts(ik.t,new Set([...chain,...ds]))}</select></div>`;
+ if(!b.parent)v+=`<div class="hint" style="margin-top:-4px">L'IK si mette sull'osso finale di una catena di 2 (es. lo stinco): la punta raggiunge la testa dell'osso bersaglio.</div>`;
+ if(ik.t)v+=`<label class="tog"><input type="checkbox" data-bik="flip"${ik.flip?' checked':''}> Inverti la piega</label>`+fxSlider(b.id+'.ikinfl','Influenza IK',0,1,.05,ik.infl??1);
+ v+=`<div class="row"><span class="lbl">Copia rotaz.</span><select class="sel" data-bcr="t">${boneOpts(cr.t,new Set([b.id]))}</select></div>`;
+ if(cr.t)v+=`<div class="seg full"><button data-act="an:rigcrs:world" class="${cr.space!=='local'?'on':''}">Mondo</button><button data-act="an:rigcrs:local" class="${cr.space==='local'?'on':''}">Locale</button></div><label class="tog"><input type="checkbox" data-bcr="off"${cr.off?' checked':''}> Somma alla rotazione propria</label>`+fxSlider(b.id+'.crinfl','Influenza',0,1,.05,cr.infl??1)+`<div class="hint">Mondo: l'osso cambia direzione come il bersaglio (es. il piede segue il controllo). Locale: copia la rotazione propria (catene che si arricciano, come la bandiera).</div>`;
+ const vin=sec('rig-v','Vincoli',v);
+ const ex=`<div class="row"><span class="lbl">Collegati</span><span class="val" style="flex:1;text-align:left">${nb} oggetti</span></div><label class="tog"><input type="checkbox" data-rigopt="boneNames"${S.opt.boneNames?' checked':''}> Nomi delle ossa sul canvas</label>
+  <div class="grid g2"><button class="btn" data-act="an:rigtool:weight">${ic('weight')} Dipingi pesi</button><button class="btn" data-act="an:rignew">Nuovo rig</button></div>`;
+ const i=h.indexOf('<button class="btn" data-act="an:rigdel"');return h.slice(0,i)+vin+sec('rig-x','Rig',ex)+h.slice(i)}}
+{const _rs=rigItemsSec;rigItemsSec=function(){let h=_rs();if(!h)return h;const its=selItems().filter(i=>i.bsoft);
+ const add=`<label class="tog"><input type="checkbox" data-rigopt="boneNames"${S.opt.boneNames?' checked':''}> Nomi delle ossa sul canvas</label>`+(its.length?`<div class="grid g2" style="margin-top:6px"><button class="btn" data-act="an:rigtool:weight">${ic('weight')} Dipingi pesi</button><button class="btn" data-act="an:rigauto">Pesi automatici</button></div>`:'');
+ return h.replace('<div class="hint">Rigido:',add+'<div class="hint">Rigido:').replace("Morbido: i punti dei tracciati si piegano tra l'osso scelto e quelli vicini (padre e figli).","Morbido: i punti si piegano tra tutte le ossa del rig con pesi automatici; correggili con «Dipingi pesi».")}}
+function weightPanel(){const b=wBone();return`<div class="ptitle">Pesi${b?' · '+esc(itName(b)):''}</div>`+sec('rig-wp','Pennello pesi',`<div class="row"><span class="lbl">Osso</span><select class="sel" data-rigbone="1">${bones().map(k=>`<option value="${k.id}"${b&&k.id===b.id?' selected':''}>${esc(itName(k))}</option>`).join('')}</select></div>
+ <div class="seg full"><button data-act="an:wmode:add" class="${S.opt.wMode!=='sub'?'on':''}">Aggiungi</button><button data-act="an:wmode:sub" class="${S.opt.wMode==='sub'?'on':''}">Togli</button></div>
+ <div class="row"><span class="lbl">Raggio</span><input type="range" min="8" max="160" step="1" value="${S.opt.wR}" data-wopt="wR"><span class="val">${S.opt.wR}</span></div>
+ <div class="row"><span class="lbl">Forza</span><input type="range" min="0.05" max="1" step="0.05" value="${S.opt.wS}" data-wopt="wS"><span class="val">${S.opt.wS}</span></div>
+ <label class="tog"><input type="checkbox" data-rigopt="wPose"${S.opt.wPose?' checked':''}> Dipingi sulla posa (vedi la deformazione)</label>
+ <div class="grid g2"><button class="btn" data-act="an:rigauto">Pesi automatici</button><button class="btn" data-act="an:wsmooth">Ammorbidisci</button></div>
+ <div class="hint">I punti sono colorati in base all'influenza dell'osso scelto: blu = nessuna, rosso = piena. Tocca un osso con Trasforma per sceglierlo; il dito o la Pencil dipingono. Con la Pencil la pressione regola la forza.</div>`)}
+{const _ap=animPanel;animPanel=function(){if(S.tool==='weight'&&bones().length)return weightPanel();return _ap()}}
+{const _a=animAct;animAct=function(a){const[c,arg]=a.split(':');const b=boneSel();
+ if(c==='rignew'){newRig();return}
+ if(c==='rigtool'){setTool(arg);updateUI();return}
+ if(c==='rigcrs'&&b&&b.cr){b.cr.space=arg;commit();return}
+ if(c==='wmode'){S.opt.wMode=arg;scheduleSave();buildPanel();return}
+ if(c==='rigauto'){const its=(S.tool==='weight'?softItems():selItems().filter(i=>i.bsoft));its.forEach(it=>{delete it.bwp;const R=rigOf(boneById(it.bone));if(R)it.bset=R.items.filter(isBone).map(x=>x.id)});RIGW.clear();commit();toast('Pesi automatici ricalcolati');return}
+ if(c==='wsmooth'){softItems().forEach(it=>{const W=rigWeights(it);if(!W)return;const nw=W.map((row,si)=>{const sp=it.subs[si],n=row.length;return row.map((L,i)=>{const nb=[row[(i-1+n)%n],L,L,row[(i+1)%n]];if(!sp.closed){if(i===0)nb[0]=L;if(i===n-1)nb[3]=L}const m=new Map();nb.forEach(x=>x.forEach(([id,v])=>m.set(id,(m.get(id)||0)+v/4)));const s=[...m.values()].reduce((a,x)=>a+x,0)||1;return[...m].map(([id,v])=>[id,+(v/s).toFixed(4)]).filter(x=>x[1]>.005)})});it.bwp={k:wKey(it),w:nw}});RIGW.clear();commit();toast('Pesi ammorbiditi');return}
+ return _a(a)}}
+P.addEventListener('change',e=>{const t=e.target,b=boneSel();
+ if(t.dataset.bik&&b){e.stopImmediatePropagation();b.ik=b.ik||{};if(t.dataset.bik==='t'){if(t.value)b.ik.t=t.value;else delete b.ik}else b.ik.flip=t.checked;commit();return}
+ if(t.dataset.bcr&&b){e.stopImmediatePropagation();b.cr=b.cr||{space:'world'};if(t.dataset.bcr==='t'){if(t.value)b.cr.t=t.value;else delete b.cr}else b.cr.off=t.checked;commit();return}
+ if(t.dataset.rigopt){e.stopImmediatePropagation();S.opt[t.dataset.rigopt]=t.checked;scheduleSave();render();if(t.dataset.rigopt==='wPose')S.baked=null;return}
+ if(t.dataset.wopt){e.stopImmediatePropagation();scheduleSave();return}},true);
+P.addEventListener('input',e=>{const t=e.target;if(t.dataset.wopt){e.stopImmediatePropagation();S.opt[t.dataset.wopt]=+t.value;const v=t.parentNode.querySelector('.val');if(v)v.textContent=t.value;return}
+ const b=boneSel();if(b&&(t.dataset.brot||t.dataset.btx)){e.stopImmediatePropagation();setVal(b,t.dataset.brot?'rot':t.dataset.btx,+t.value||0);S.baked=null;render();try{drawTL()}catch(_){}}},true);
+// influenze di IK e Copia rotazione come cursori (in Anima animabili come le altre proprietà "p:")
+{const _fa=fxAnimWrite;fxAnimWrite=function(path,v){const k=path.slice(path.indexOf('.')+1);if(k==='ikinfl'||k==='crinfl'){const b=boneById(path.slice(0,path.indexOf('.')));if(b){const o=k==='ikinfl'?b.ik:b.cr;if(o){o.infl=v;S.baked=null;render()}}return true}return _fa(path,v)}}
+// strumento Pesi: visibile solo con un rig; maniglie e scelta osso
+{const _st=setTool;setTool=function(t){_st(t);if(t==='weight'&&S.mode==='anima'){S.baked=null;render();if(S.opt.hints!==false)toast(bones().length?'Pesi: dipingi sui punti del disegno collegato in modo morbido (osso scelto in Proprietà)':'Prima crea le ossa')}}}
+// ---- modelli di rig (dallo studio dei rig base: gamba con IK, due gambe, catena per bandiera/coda) ----
+function rigTemplate(kind){const L=rigLayer(true);S.activeLayer=L.id;const W=S.doc.w,H=S.doc.h,u=Math.min(W,H)/4,cx=W/2,cy=H*.3,mk=(name,x,y,x2,y2,parent,extra)=>{const b={id:uid('i'),type:'bone',name,x,y,x2,y2,parent:parent||null,kind:'fk',p:{},ak:{pv:[x,y],ch:{}},...(extra||{})};L.items.push(b);return b};
+ if(kind==='leg'||kind==='legs'){const legs=kind==='leg'?[[0,'']]:[[-.35,' L'],[.35,' R']];let root=null;
+  if(kind==='legs'){root=mk('Controllo',cx,cy,cx-u*.6,cy);mk('Busto',cx,cy,cx,cy-u*1.2,root.id)}
+  for(const[dx,s]of legs){const x=cx+dx*u,th=mk('Coscia'+s,x,cy,x+u*.25,cy+u,root&&root.id),sh=mk('Polpaccio'+s,x+u*.25,cy+u,x,cy+u*2,th.id),ft=mk('Piede'+s,x,cy+u*2,x+u*.45,cy+u*2.02,sh.id);
+   const ctl=mk('Controllo IK'+s,x,cy+u*2,x-u*.3,cy+u*2.02,null);sh.ik={t:ctl.id};ft.cr={t:ctl.id,space:'world'}}}
+ if(kind==='flag'){const ctl=mk('Controllo',cx-u*1.2,cy,cx-u*1.2,cy-u*.4);let p=ctl;for(let i=0;i<4;i++){const x=cx-u*1.2+i*u*.6;p=mk(String.fromCharCode(65+i),x,cy,x+u*.6,cy,p.id,{kind:'wind',p:{...RIGDEF.wind},cr:{t:p.id,space:'local',off:true}})}}
+ if(kind==='tail'){let p=null;for(let i=0;i<5;i++){const x=cx-u+i*u*.4;p=mk('Coda '+(i+1),x,cy,x+u*.4,cy,p&&p.id,i?{kind:'spring',p:{...RIGDEF.spring}}:{})}}
+ commit();setTool('select');toast({leg:'Gamba: muovi «Controllo IK» (testa) per piegarla, ruotalo per il piede',legs:'Due gambe: «Controllo» sposta tutto, i controlli IK piegano le gambe',flag:'Bandiera: ruota «Controllo» per arricciare, il vento muove la catena',tail:'Coda a molla: ruota il primo osso, le altre seguono e oscillano'}[kind])}
+{const _a=animAct;animAct=function(a){const[c,arg]=a.split(':');if(c==='rigtpl'){rigTemplate(arg);return}return _a(a)}}
+// pannello vuoto in Anima con lo strumento Ossa: modelli pronti
+{const _ap=animPanel;animPanel=function(){if(S.mode==='anima'&&S.tool==='bone'&&!boneSel()){return`<div class="ptitle">Ossa</div>`+sec('rig-t','Modelli di rig',`<div class="grid g2"><button class="btn" data-act="an:rigtpl:leg">Gamba (IK)</button><button class="btn" data-act="an:rigtpl:legs">Due gambe (IK)</button><button class="btn" data-act="an:rigtpl:flag">Bandiera (vento)</button><button class="btn" data-act="an:rigtpl:tail">Coda (molla)</button></div><button class="btn" data-act="an:rignew" style="width:100%;margin-top:6px">Nuovo rig vuoto</button>
+  <div class="hint">I modelli vengono messi al centro del foglio: sposta teste e punte con lo strumento Ossa per adattarli al disegno, poi collega il disegno nel pannello Rig.</div>`)+_ap()}return _ap()}}
+// le ossa di bersaglio IK si possono spostare dalla testa anche se hanno un genitore (controlli)
+
+/* ===== v8: documento, home, salvataggio, timeline, asset ===== */
+// ---- Documento: dimensioni, sfondo con opacità; dentro una pre-composizione: sfondo di sola vista ----
+function inComp(){return!!(S.doc.compStack&&S.doc.compStack.length)}
+function curComp(){const st=S.doc.compStack;return st&&st.length?S.doc.comps[st[st.length-1].cid]:null}
+docDialog=function(){const d=S.doc,c=curComp();
+ if(c){const vb=c.viewBg||d.bg||'#ffffff';
+  modal(`<h3>Vista pre-composizione</h3><div class="hint" style="margin:0 0 10px">Sfondo usato solo mentre lavori dentro «${esc(c.name)}»: non cambia il documento né l'esportazione.</div>
+  <label>Sfondo vista</label><div class="row">${colorBox('id="dBg"',vb)}<button class="btn" data-m="chk">Scacchiera</button><button class="btn" data-m="doc">Come il documento</button></div>
+  <label>Durata (frame)</label><input class="txt" id="dDur" type="number" inputmode="numeric" value="${ADOC().dur}">
+  <div class="btns"><button class="btn" data-m="no">Annulla</button><button class="btn pri" data-m="ok">Applica</button></div>`,v=>{
+   if(v==='chk'){c.viewBg='none';commit();return}if(v==='doc'){delete c.viewBg;commit();return}if(v!=='ok')return;c.viewBg=$('#dBg').value;const du=Math.max(1,Math.round(+$('#dDur').value||ADOC().dur));ADOC().dur=du;commit()});
+  $('#dBg').addEventListener('input',e=>{e.target.parentNode.style.background=e.target.value;c.viewBg=e.target.value;render()});return}
+ const a=d.bgA??1;
+ modal(`<h3>Documento</h3><label>Nome</label><input class="txt" id="dName" value="${esc(d.name)}">
+ <div class="r2"><div><label>Larghezza px</label><input class="txt" id="dW" type="number" inputmode="numeric" value="${d.w}"></div><div><label>Altezza px</label><input class="txt" id="dH" type="number" inputmode="numeric" value="${d.h}"></div></div>
+ <div class="presets">${[['1080×1080','1080x1080'],['1080×1350','1080x1350'],['1080×1920','1080x1920'],['1920×1080','1920x1080'],['A4 300dpi','2480x3508'],['512×512','512x512']].map(([l,v])=>`<button data-m="p:${v}">${l}</button>`).join('')}</div>
+ <label class="tog" style="color:var(--tx)"><input type="checkbox" id="dSc"> Ridimensiona anche il contenuto (in proporzione)</label>
+ <label>Sfondo</label><div class="row">${colorBox('id="dBg"',d.bg||'#ffffff')}<label class="tog" style="margin:0;color:var(--tx)"><input type="checkbox" id="dTr"${d.bg?'':' checked'}> Trasparente</label></div>
+ <div class="row"><span class="lbl">Opacità</span><input type="range" id="dBa" min="0" max="100" step="1" value="${Math.round(a*100)}"><span class="val" id="dBaV">${Math.round(a*100)}%</span></div>
+ <div class="btns"><button class="btn" data-m="no">Annulla</button><button class="btn pri" data-m="ok">Applica</button></div>`,(v)=>{
+  if(v.startsWith('p:')){const[w,h]=v.slice(2).split('x');$('#dW').value=w;$('#dH').value=h;return false}
+  if(v!=='ok'){render();return}const ow=d.w,oh=d.h;d.name=$('#dName').value.trim()||'Senza titolo';d.w=Math.max(1,Math.round(+$('#dW').value||d.w));d.h=Math.max(1,Math.round(+$('#dH').value||d.h));
+  if($('#dSc').checked&&(ow!==d.w||oh!==d.h))docScale(d.w/ow,d.h/oh);
+  d.bg=$('#dTr').checked?null:$('#dBg').value;d.bgA=+$('#dBa').value/100;if(d.bgA>=1)delete d.bgA;commit();fitView()});
+ $('#dBg').addEventListener('input',e=>{e.target.parentNode.style.background=e.target.value;$('#dTr').checked=false});
+ $('#dBa').addEventListener('input',e=>{$('#dBaV').textContent=e.target.value+'%'})};
+// ridimensiona tutto il contenuto con il documento (scala uniforme, centrata)
+function docScale(kx,ky){const k=Math.min(kx,ky),ox=(S.doc.w-(S.doc.w/kx)*k)/2,oy=(S.doc.h-(S.doc.h/ky)*k)/2,M=[k,0,0,k,ox,oy];
+ const doL=L=>L.items=L.items.map(it=>{if(it.type==='bone'){const n=applyM(it,M);if(n.ak)n.ak.pv=[n.x,n.y];return n}const n=applyM(it,M);if(n.style&&n.style.sw)n.style.sw*=k;if(n.ak&&n.ak.pv){n.ak.pv=mx(M,...n.ak.pv);['tx','ty'].forEach(c=>{const ch=n.ak.ch[c];if(ch){ch.v*=k;ch.k.forEach(q=>{q.v*=k;if(q.so)q.so=q.so.map(v=>v*k);if(q.si)q.si=q.si.map(v=>v*k)})}})}return n});
+ S.doc.layers.forEach(doL)}
+{const _dr=doRender;doRender=function(){_dr();const ab=$('#artboard'),d=S.doc,c=curComp();let chk=$('#abchk');
+ const fill=c&&c.viewBg?(c.viewBg==='none'?null:c.viewBg):d.bg,a=c&&c.viewBg?1:(d.bgA??1);
+ if(!chk){chk=document.createElementNS(NS,'rect');chk.id='abchk';chk.setAttribute('fill','url(#checker)');ab.parentNode.insertBefore(chk,ab)}
+ const need=!fill||a<1;chk.style.display=need?'':'none';if(need){chk.setAttribute('width',d.w);chk.setAttribute('height',d.h)}
+ ab.setAttribute('fill',fill||'none');ab.setAttribute('fill-opacity',a)}}
+// esportazioni: opacità dello sfondo
+{const _el=exportLottie;exportLottie=function(){const J=_el();const a=S.doc.bgA??1;if(a<1&&J&&J.layers){const L=J.layers.find(l=>l.ty===1&&l.nm==='Sfondo');if(L)L.ks.o={a:0,k:Math.round(a*100)}}return J}}
+// ---- doppio tocco deciso al rilascio: un secondo tocco rapido seguito da un trascinamento è un trascinamento normale ----
+// (prima il secondo tocco veloce veniva letto come doppio tocco e l'operazione andava persa)
+let DBLOFF=false;{const _d=isDbl;isDbl=function(p,e){if(DBLOFF)return false;return _d(p,e)}}
+function dblPeek(p,e){const pen=e&&e.pointerType==='pen';return performance.now()-lastTap.t<(pen?520:450)&&Math.hypot(p.sx-lastTap.x,p.sy-lastTap.y)<(pen?40:30)}
+function dblDefer(orig){return function(P,e,tolS,...a){if(!dblPeek(P,e))return orig.call(this,P,e,tolS,...a);const self=this;let drag=null;
+ return{move(Q,ev){if(!drag){if(!far(P,Q,6))return;lastTap={t:0,x:0,y:0};DBLOFF=true;try{drag=orig.call(self,P,e,tolS,...a)}finally{DBLOFF=false}if(!drag)drag={move(){},up(){}}}drag.move(Q,ev)},
+  up(Q,ev){if(drag){drag.up&&drag.up(Q,ev);return}const o=orig.call(self,P,e,tolS,...a);if(o&&o.up)o.up(Q,ev)}}}}
+OPS.select=dblDefer(OPS.select);OPS.node=dblDefer(OPS.node);AOPS.select=dblDefer(AOPS.select);if(AOPS.pivot)AOPS.pivot=dblDefer(AOPS.pivot);
+// ---- Modifica punti: trascinare un segmento lo piega (crea le maniglie); tenere premuto aggiunge un punto ----
+{const _n=OPS.node;OPS.node=function(P,e,tolS,...a){if(S.mode==='anima'||S.opt.addPt||dblPeek(P,e))return _n.call(this,P,e,tolS,...a);const g=pickGrip(P.sx,P.sy,tolS);if(g)return _n.call(this,P,e,tolS,...a);
+ const tol=tolS/S.view.z;let hit=null;for(const it of selItems()){if(it.type!=='path'||it.pw)continue;const nb=nearestOnItem(it,P.x,P.y);if(nb.d<=tol+(it.style.stroke?it.style.sw/2:0)){hit={it,nb};break}}
+ if(!hit)return _n.call(this,P,e,tolS,...a);const{it,nb}=hit,sp=it.subs[nb.si],A=sp.pts[nb.i],B=sp.pts[(nb.i+1)%sp.pts.length];if(!A||!B)return _n.call(this,P,e,tolS,...a);
+ const t=Math.min(.9,Math.max(.1,nb.t)),o1=[A.ox,A.oy],o2=[B.ix,B.iy],B0=[cub(A.x,A.ox,B.ix,B.x,t),cub(A.y,A.oy,B.iy,B.y,t)],k=1/(3*t*(1-t)*((1-t)*(1-t)+t*t));
+ let moved=false,ins=false,inner=null;const tm=setTimeout(()=>{if(moved||!op)return;S.nsel=[insertNode(it,nb)];ins=true;inner=nodeMoveOp(P);updateUI();render()},450);
+ return{move(Q){if(inner){inner.move(Q);return}if(!moved&&!far(P,Q,5))return;if(!moved){moved=true;clearTimeout(tm);delete it.shape;A.s=false;B.s=false}
+   const dx=Q.x-B0[0],dy=Q.y-B0[1];A.ox=o1[0]+dx*k*(1-t);A.oy=o1[1]+dy*k*(1-t);B.ix=o2[0]+dx*k*t;B.iy=o2[1]+dy*k*t;render()},
+  up(Q){clearTimeout(tm);if(inner){inner.up(Q);commit();return}if(moved){commit();return}updateUI();render()}}}}
+// penna: le maniglie dei punti scelti con Modifica punti restano visibili e si possono trascinare
+{const _p=OPS.pen;OPS.pen=function(P,e,tolS,...a){if(!S.penId){const g=pickGrip(P.sx,P.sy,tolS);if(g&&(g.kind==='hin'||g.kind==='hout'))return handleOp(g,P)}return _p.call(this,P,e,tolS,...a)}}
+// pulizia: avviso se la forma è animata (la pulizia agisce sulla forma di base)
+{const _oc=openClean;openClean=function(){_oc();if(selItems().some(i=>i.ak&&i.ak.ch.shape&&i.ak.ch.shape.k.length))toast('Forma animata: la pulizia cambia solo la forma di base, i keyframe di forma restano')}}
+// ---- timeline: altezza regolabile (maniglia in alto) e scorrimento trascinando i nomi dei livelli ----
+{const st=document.createElement('style');st.textContent=`#tlgrip{flex:none;height:14px;margin-top:-7px;position:relative;z-index:3;touch-action:none;cursor:ns-resize;display:flex;align-items:center;justify-content:center}
+#tlgrip::after{content:'';width:44px;height:4px;border-radius:2px;background:var(--sep)}#tlgrip:active::after,#tlgrip.on::after{background:var(--acc)}#anim.fold #tlgrip{display:none}`;document.head.appendChild(st)}
+{const A=$('#anim'),g=document.createElement('div');g.id='tlgrip';g.title='Trascina per allargare o restringere la timeline';A.insertBefore(g,A.firstChild);
+ const apply=()=>{const h=S.opt.tlH;if(h)A.style.height=Math.max(120,Math.min(innerHeight*.8,h))+'px';else A.style.height=''};setTimeout(apply,0);addEventListener('resize',apply);
+ g.addEventListener('pointerdown',e=>{e.preventDefault();e.stopPropagation();try{g.setPointerCapture(e.pointerId)}catch(_){}const y0=e.clientY,h0=A.getBoundingClientRect().height;g.classList.add('on');
+  const mv=ev=>{S.opt.tlH=Math.round(Math.max(120,Math.min(innerHeight*.8,h0+(y0-ev.clientY))));apply();if(S.mode==='frames')drawFR();else drawAnim();render()};
+  const up=()=>{g.classList.remove('on');g.removeEventListener('pointermove',mv);g.removeEventListener('pointerup',up);g.removeEventListener('pointercancel',up);scheduleSave()};
+  g.addEventListener('pointermove',mv);g.addEventListener('pointerup',up);g.addEventListener('pointercancel',up)});
+ g.addEventListener('dblclick',()=>{S.opt.tlH=0;apply();drawAnim();render()})}
+{const W=$('#tlwrap');let sc=null;
+ W.addEventListener('pointerdown',e=>{if(e.target.id!=='tlc'||!e.isPrimary)return;const R=e.target.getBoundingClientRect(),x=e.clientX-R.left,y=e.clientY-R.top;if(x>NAMEW()||y<RULH){sc=null;return}sc={id:e.pointerId,y,y0:AN.T.y0,on:false}},true);
+ W.addEventListener('pointermove',e=>{if(!sc||e.pointerId!==sc.id)return;const R=$('#tlc').getBoundingClientRect(),y=e.clientY-R.top;
+  if(!sc.on){if(Math.abs(y-sc.y)<7)return;sc.on=true;const c=$('#tlc');if(c._op&&c._op.cancel)c._op.cancel();c._op=null}
+  e.stopImmediatePropagation();const T=AN.T,maxY=Math.max(0,(AN.tlContentH||0)-((AN.tlGeom?AN.tlGeom.H:200)-RULH));T.y0=Math.max(0,Math.min(maxY,sc.y0+(sc.y-y)));S.mode==='frames'?drawFR():drawTL()},true);
+ const end=e=>{if(sc&&e.pointerId===sc.id){if(sc.on){e.stopImmediatePropagation();const c=$('#tlc');c._op=null}sc=null}};W.addEventListener('pointerup',end,true);W.addEventListener('pointercancel',end,true)}
+// ---- tocchi nel pannello decisi al rilascio (intestazioni che si aprono/chiudono, cestino degli effetti) ----
+// se il pannello si ridisegna tra pressione e rilascio, il "click" non arriva o colpisce un elemento vecchio: qui uso la chiave e cerco l'elemento attuale
+{let T0=null,skipT=0;const SEL='[data-col],.fxdel,[data-fxopen]';
+ const keyOf=el=>el.matches('.fxdel')?'del:'+(el.dataset.fxdel??('L'+el.dataset.lfxdel)):el.matches('[data-fxopen]')?'open:'+el.dataset.fxopen:'col:'+el.dataset.col;
+ P.addEventListener('pointerdown',e=>{const el=e.target.closest(SEL);if(!el||e.target.closest('select,input,label,.kb,[data-fxkey]')){T0=null;return}const inner=e.target.closest('.fxdel');T0={k:keyOf(inner||el),x:e.clientX,y:e.clientY,t:performance.now(),el:inner||el}},true);
+ P.addEventListener('pointerup',e=>{if(!T0)return;const t=T0;T0=null;if(Math.hypot(e.clientX-t.x,e.clientY-t.y)>12||performance.now()-t.t>1200)return;skipT=performance.now();const[c,...r]=t.k.split(':'),k=r.join(':');
+  if(c==='col'){S.opt.col=S.opt.col||{};S.opt.col[k]=!S.opt.col[k];P.querySelectorAll(`[data-col="${CSS.escape(k)}"]`).forEach(h=>h.parentNode.classList.toggle('col',S.opt.col[k]));scheduleSave();return}
+  if(c==='open'){AN.fxOpen=AN.fxOpen===k?null:k;const r2=find(k);if(r2&&r2.it.type==='fx'&&AN.fxOpen){S.sel=[k];if(S.tool!=='select')setTool('select')}buildPanel();render();return}
+  if(c==='del'){if(k.startsWith('L')&&!find(k)){const L=layer(),i=+t.el.dataset.lfxdel;if(L.fx&&L.fx[i]){L.fx.splice(i,1);if(!L.fx.length)delete L.fx;AN.fxOpen=null;commit();buildPanel();render();toast('Effetto rimosso')}return}
+   const r2=find(k);if(r2&&r2.it.type==='fx'){r2.L.items.splice(r2.i,1);S.sel=S.sel.filter(i=>i!==k);if(AN.fxOpen===k)AN.fxOpen=null;commit();buildPanel();render();toast('Effetto rimosso')}}},true);
+ P.addEventListener('pointercancel',()=>{T0=null},true);
+ P.addEventListener('click',e=>{const el=e.target.closest(SEL);if(!el||e.target.closest('select,input,label,.kb,[data-fxkey]'))return;e.stopImmediatePropagation();e.preventDefault();
+  // clic da tastiera/mouse senza pointerup registrato (raro): eseguo comunque
+  if(performance.now()-skipT<800)return;const x=new PointerEvent('pointerup',{clientX:e.clientX,clientY:e.clientY});T0={k:keyOf(e.target.closest('.fxdel')||el),x:e.clientX,y:e.clientY,t:performance.now(),el:e.target.closest('.fxdel')||el};P.dispatchEvent(x)},true)}
+// lens flare: anche l'asse dei riflessi ha i suoi cursori (animabili con ◇ in Anima)
+{const _ep=effectsPanel;effectsPanel=function(){let h=_ep();layer().items.filter(i=>i.type==='fx'&&i.kind==='flare').forEach(it=>{const p=S.mode==='anima'&&it.ak?fxApplyAnim(it,S.frame).p:it.p,P0=it.id+'.';
+  const re=new RegExp(`(<div class="row"><span class="lbl">Y</span><input[^>]*data-fxp="${P0}y"[\\s\\S]*?</div>)`);h=h.replace(re,`$1${fxSlider(P0+'ax','Riflessi X',-S.doc.w*.5,S.doc.w*1.5,1,p.ax??S.doc.w/2)}${fxSlider(P0+'ay','Riflessi Y',-S.doc.h*.5,S.doc.h*1.5,1,p.ay??S.doc.h/2)}`)});return h}}
+// ---- campi numerici: tocco = tastierino, trascinamento orizzontale = il valore cambia dal vivo ----
+let SCRUB=false;{const _c=commit;commit=function(){if(SCRUB){S.baked=null;render();if(S.mode!=='draw'){try{S.mode==='frames'?drawFR():drawTL()}catch(_){}}return}return _c()}}
+{const st=document.createElement('style');st.textContent='#P input.num{touch-action:none;cursor:ew-resize}#P input.num.scrub{background:var(--accbg);color:var(--acc)}';document.head.appendChild(st)}
+P.addEventListener('pointerdown',e=>{const t=e.target;if(!(t.matches&&t.matches('input.num,input[type=number]')))return;const touch=TOUCH&&e.pointerType!=='mouse';
+ if(touch)e.preventDefault();e.stopPropagation();const x0=e.clientX,v0=parseFloat(t.value)||0,stp=parseFloat(t.step)||1,mn=t.min!==''?+t.min:-Infinity,mx2=t.max!==''?+t.max:Infinity;let scr=false;try{t.setPointerCapture(e.pointerId)}catch(_){}
+ const rate=stp>=1?stp*.5:stp*2,dec=(String(stp).split('.')[1]||'').length;
+ const mv=ev=>{const dx=ev.clientX-x0;if(!scr){if(Math.abs(dx)<7)return;scr=true;SCRUB=true;t.classList.add('scrub')}ev.preventDefault();let v=v0+dx*rate;v=Math.round(v/stp)*stp;v=Math.max(mn,Math.min(mx2,v));t.value=+v.toFixed(Math.max(dec,0));t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}))};
+ const up=()=>{t.removeEventListener('pointermove',mv);t.removeEventListener('pointerup',up);t.removeEventListener('pointercancel',up);
+  if(scr){SCRUB=false;t.classList.remove('scrub');commit();return}
+  if(touch){const lb=t.closest('.row')&&t.closest('.row').querySelector('.lbl');numPad(lb?lb.textContent:'',t.value,v=>{t.value=v;t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}))})}else{t.focus();try{t.select()}catch(_){}}};
+ t.addEventListener('pointermove',mv);t.addEventListener('pointerup',up);t.addEventListener('pointercancel',up)},true);
+// ---- salvataggio obbligatorio: prima di tornare alla Home o di aprire un altro file il documento viene salvato (e nominato se è senza titolo) ----
+function ensureSaved(next0){const has=allItems().length>0;if(!has){next0();return}if(!S.docId)S.docId=uid('doc');const sv=libSave;const next=next0;
+ if(/^Senza titolo/.test(S.doc.name||'Senza titolo')){askText('Salva il documento: nome',S.doc.name&&S.doc.name!=='Senza titolo'?S.doc.name:'',v=>{v=(v||'').trim();if(v)S.doc.name=v;Promise.resolve(libSave(true)).then(()=>{S.dirty=false;toast('Salvato «'+(S.doc.name||'Senza titolo')+'» nella libreria');next()})});return}
+ const d=S.dirty;Promise.resolve(libSave(true)).then(()=>{if(d)toast('Salvato «'+S.doc.name+'»');S.dirty=false;next()})}
+{const _c=commit;commit=function(){const r=_c();if(!SCRUB)S.dirty=true;return r}}
+{const _sh=showHome;showHome=function(boot){if(boot||$('#home')&&!$('#home').hidden)return _sh(boot);ensureSaved(()=>_sh(boot))}}
+{const _a=act;act=function(a){if(a==='open'&&!(window.__openOK)){ensureSaved(()=>{window.__openOK=1;try{_a('open')}finally{window.__openOK=0}});return}return _a(a)}}
+// chiusura dell'app o passaggio ad un'altra app: salvo subito
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&allItems().length){try{libSave(true)}catch(_){}}});
+addEventListener('pagehide',()=>{if(allItems().length){try{libSave(true)}catch(_){}}});
+// ---- Asset personalizzati: salva selezione o livello (anche animati), inserisci con un tocco o trascinando sul canvas ----
+ICONS.asset=[['M4 7.5L12 3l8 4.5v9L12 21l-8-4.5z'],['M4 7.5l8 4.5 8-4.5M12 12v9']];
+let ALIB=[];IDB.get('assetlib').then(v=>{if(Array.isArray(v))ALIB=v}).catch(()=>{});
+function moveItem(it,dx,dy){const M=T(dx,dy);const n=applyM(it,M);if(n.ak){if(n.ak.pv)n.ak.pv=[n.ak.pv[0]+dx,n.ak.pv[1]+dy];const sc=n.ak.ch&&n.ak.ch.shape;if(sc)sc.k.forEach(q=>{q.v=applyM({type:'path',style:{},subs:q.v},M).subs});if(sc&&sc.v&&Array.isArray(sc.v))sc.v=applyM({type:'path',style:{},subs:sc.v},M).subs}return n}
+function assetReId(it,map){const n=clone(it);const w=o=>{if(o.id){const nid=uid(o.type==='bone'?'i':'i');map[o.id]=nid;o.id=nid}(o.kids||[]).forEach(w);if(o.draws)o.draws.forEach(d=>{d.id=uid('d');(d.items||[]).forEach(w)})};w(n);return n}
+function bbOf(items){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;items.forEach(it=>{const b=bboxItem(it);if(!b)return;x0=Math.min(x0,b.x);y0=Math.min(y0,b.y);x1=Math.max(x1,b.x+b.w);y1=Math.max(y1,b.y+b.h)});return x1<x0?{x:0,y:0,w:1,h:1}:{x:x0,y:y0,w:x1-x0,h:y1-y0}}
+async function assetSave(fromLayer){let items,lay=null;const L=layer();
+ if(!fromLayer){items=selItems().filter(i=>i.type!=='bone');if(!items.length){toast('Seleziona uno o più oggetti (o usa «Salva livello»)');return}}else{if(L.rig){toast('Il livello delle ossa non si salva come asset');return}items=L.items.slice();lay={name:L.name,blend:L.blend,opacity:L.opacity,fx:L.fx?clone(L.fx):undefined};if(!items.length){toast('Il livello è vuoto');return}}
+ const comps={},set=new Set(),walkC=it=>{if(it.type==='inst'&&S.doc.comps&&S.doc.comps[it.comp]&&!comps[it.comp]){comps[it.comp]=clone(S.doc.comps[it.comp]);comps[it.comp].layers.forEach(l=>l.items.forEach(walkC))}(it.kids||[]).forEach(walkC)};items.forEach(walkC);
+ const all=[...items];Object.values(comps).forEach(c=>c.layers.forEach(l=>all.push(...l.items)));all.forEach(i=>itemAssets(i,set));const assets={};set.forEach(a=>{if(S.assets[a])assets[a]=S.assets[a]});
+ const bb=bbOf(items.map(i=>bakeItem(i,S.mode==='anima'?S.frame:0))),animated=items.some(i=>keyed(i)||i.type==='seq'||i.type==='inst');
+ let thumb='';try{const k=Math.min(1,180/Math.max(bb.w,bb.h,1)),sc={w:Math.ceil(bb.w)+8,h:Math.ceil(bb.h)+8,bg:null,layers:[{id:'t',visible:true,opacity:1,items:items.map(i=>moveItem(i.type==='seq'?seqGroup(i,S.frame):bakeItem(i,S.mode==='anima'?S.frame:0),4-bb.x,4-bb.y))}]};const r=await rasterize('image/png',k,sc,true);thumb=r.cv.toDataURL('image/png');r.cv.width=r.cv.height=0}catch(e){}
+ const name=(lay?lay.name:(items.length===1?itName(items[0]):items.length+' oggetti'))||'Asset';
+ askText('Nome dell\'asset',name,v=>{const a={id:uid('as'),name:(v||name).trim()||name,t:Date.now(),thumb,animated,bb,lay,data:{items:clone(items),comps,assets,fps:ADOC().fps}};ALIB.unshift(a);IDB.set('assetlib',ALIB);toast('Asset «'+a.name+'» salvato');if(!$('#assetp').hidden)assetPanel()})}
+function assetInsert(id,at){const a=ALIB.find(x=>x.id===id);if(!a)return;let L=layer();if(L.rig||L.locked||!L.visible){L=S.doc.layers.find(l=>!l.rig&&l.visible&&!l.locked);if(!L){toast('Nessun livello disponibile');return}}
+ const d=a.data,map={};Object.assign(S.assets,d.assets||{});S.assetsDirty=true;
+ // pre-composizioni: se esiste già lo stesso id con contenuto diverso, ne faccio una copia
+ const cmap={};S.doc.comps=S.doc.comps||{};for(const cid in d.comps||{}){const c=clone(d.comps[cid]);if(S.doc.comps[cid]&&JSON.stringify(S.doc.comps[cid])!==JSON.stringify(c)){const nid=uid('c');cmap[cid]=nid;c.id=nid}S.doc.comps[cmap[cid]||cid]=c}
+ const fix=o=>{if(o.type==='inst'&&cmap[o.comp])o.comp=cmap[o.comp];(o.kids||[]).forEach(fix)};Object.values(S.doc.comps).forEach(c=>c.layers.forEach(l=>l.items.forEach(fix)));
+ const c=at||(()=>{const r=svg.getBoundingClientRect();return{x:(r.width/2-S.view.x)/S.view.z,y:(r.height/2-S.view.y)/S.view.z}})(),dx=c.x-(a.bb.x+a.bb.w/2),dy=c.y-(a.bb.y+a.bb.h/2);
+ const items=d.items.map(it=>{const n=assetReId(it,map);fix(n);delete n.bone;delete n.bsoft;delete n.bset;delete n.bwp;return moveItem(n,dx,dy)});
+ if(a.lay){const NL={id:uid('L'),name:a.lay.name||a.name,visible:true,locked:false,opacity:a.lay.opacity??1,items};if(a.lay.blend)NL.blend=a.lay.blend;if(a.lay.fx)NL.fx=clone(a.lay.fx);const i=S.doc.layers.indexOf(L);S.doc.layers.splice(i+1,0,NL);S.activeLayer=NL.id}
+ else L.items.push(...items);
+ if(S.mode==='frames'){}if(S.mode!=='anima'&&S.tool!=='select')setTool('select');S.sel=items.map(i=>i.id);S.nsel=[];commit();updateUI();toast('Inserito «'+a.name+'»'+(a.animated?' (con animazione)':''))}
+{const st=document.createElement('style');st.textContent=`#assetp{position:absolute;top:62px;left:50%;transform:translateX(-50%);width:min(560px,calc(100% - 16px));max-height:min(62vh,520px);overflow:auto;z-index:24;background:rgba(28,28,31,.97);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 50px rgba(0,0,0,.55);padding:12px;-webkit-overflow-scrolling:touch}
+#assetp[hidden]{display:none}#assetp h4{margin:0 0 10px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px}#assetp h4 .sp1{flex:1}
+#assetp .agrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:8px}#assetp .atile{position:relative;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:6px;touch-action:none;-webkit-user-select:none;user-select:none}
+#assetp .atile .ath{height:84px;border-radius:8px;background-image:linear-gradient(45deg,#2a2a2f 25%,transparent 25%,transparent 75%,#2a2a2f 75%),linear-gradient(45deg,#2a2a2f 25%,transparent 25%,transparent 75%,#2a2a2f 75%);background-size:14px 14px;background-position:0 0,7px 7px;background-color:#202024;display:grid;place-items:center;overflow:hidden}
+#assetp .atile img{max-width:100%;max-height:100%;pointer-events:none}#assetp .atile b{display:block;font-size:11.5px;font-weight:500;margin-top:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#assetp .atile i{position:absolute;left:10px;top:10px;font-style:normal;font-size:9.5px;background:var(--acc);color:#000;border-radius:5px;padding:1px 5px}
+#assetp .atile .abt{position:absolute;right:4px;top:4px;display:flex;gap:2px}#assetp .atile .abt button{width:26px;height:26px;border:0;border-radius:7px;background:rgba(0,0,0,.55);color:#fff;font-size:12px;padding:0}
+#assetGhost{position:fixed;z-index:60;width:90px;height:70px;border-radius:10px;border:2px solid var(--acc);background:rgba(28,28,31,.8);pointer-events:none;display:grid;place-items:center;transform:translate(-50%,-50%)}#assetGhost img{max-width:84px;max-height:64px}`;document.head.appendChild(st)}
+{const d=document.createElement('div');d.id='assetp';d.hidden=true;$('#cv').parentNode.appendChild(d)}
+function assetPanel(){const el=$('#assetp');el.innerHTML=`<h4>${ic('asset')} Asset<span class="sp1"></span><button class="btn" data-as="save">Salva selezione</button><button class="btn" data-as="savel">Salva livello</button><button class="btn" data-as="close">✕</button></h4>
+ ${ALIB.length?`<div class="agrid">${ALIB.map(a=>`<div class="atile" data-asid="${a.id}"><div class="ath">${a.thumb?`<img src="${a.thumb}" alt="">`:''}</div>${a.animated?'<i>animato</i>':''}<b>${esc(a.name)}</b><div class="abt"><button data-as="ren:${a.id}" title="Rinomina">✎</button><button data-as="del:${a.id}" title="Elimina">✕</button></div></div>`).join('')}</div>`:'<div class="muted" style="padding:14px 4px">Nessun asset. Seleziona degli oggetti e premi «Salva selezione», oppure «Salva livello» per il livello attivo (con effetti e fusione).</div>'}
+ <div class="hint" style="margin-top:10px">Tocca un asset per inserirlo al centro della vista, oppure trascinalo sul canvas. Gli asset restano disponibili in tutti i documenti.</div>`;el.hidden=false}
+{const _a=act;act=function(a){if(a==='assets'){const el=$('#assetp');if(!el.hidden){el.hidden=true;return}assetPanel();return}return _a(a)}}
+{const el=$('#assetp');let dn=null;
+ el.addEventListener('click',e=>{const b=e.target.closest('[data-as]');if(!b)return;e.stopPropagation();const[c,id]=b.dataset.as.split(':');
+  if(c==='close'){el.hidden=true;return}if(c==='save'){assetSave(false);return}if(c==='savel'){assetSave(true);return}
+  if(c==='ren'){const a=ALIB.find(x=>x.id===id);if(a)askText('Nome dell\'asset',a.name,v=>{if(v){a.name=v;IDB.set('assetlib',ALIB);assetPanel()}});return}
+  if(c==='del'){const a=ALIB.find(x=>x.id===id);if(!a)return;modal(`<h3>Eliminare «${esc(a.name)}»?</h3><div class="btns"><button class="btn" data-m="no">Annulla</button><button class="btn pri" data-m="ok">Elimina</button></div>`,v=>{if(v==='ok'){ALIB=ALIB.filter(x=>x.id!==id);IDB.set('assetlib',ALIB);assetPanel()}});return}});
+ el.addEventListener('pointerdown',e=>{const t=e.target.closest('.atile');if(!t||e.target.closest('[data-as]'))return;e.preventDefault();try{t.setPointerCapture(e.pointerId)}catch(_){}dn={id:t.dataset.asid,x:e.clientX,y:e.clientY,drag:false,g:null,t}});
+ el.addEventListener('pointermove',e=>{if(!dn)return;if(!dn.drag&&Math.hypot(e.clientX-dn.x,e.clientY-dn.y)>10){dn.drag=true;const g=document.createElement('div');g.id='assetGhost';const im=dn.t.querySelector('img');g.innerHTML=im?`<img src="${im.src}">`:'';document.body.appendChild(g);dn.g=g;el.style.opacity='.35'}
+  if(dn.drag){dn.g.style.left=e.clientX+'px';dn.g.style.top=e.clientY+'px'}});
+ const end=e=>{if(!dn)return;const d=dn;dn=null;el.style.opacity='';if(d.g)d.g.remove();
+  if(!d.drag){if(e.type==='pointerup'){assetInsert(d.id);el.hidden=true}return}
+  const r=svg.getBoundingClientRect(),inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;const er=el.getBoundingClientRect(),overP=e.clientX>=er.left&&e.clientX<=er.right&&e.clientY>=er.top&&e.clientY<=er.bottom;
+  if(inside&&!overP&&e.type==='pointerup'){const sx=e.clientX-r.left,sy=e.clientY-r.top;assetInsert(d.id,{x:(sx-S.view.x)/S.view.z,y:(sy-S.view.y)/S.view.z});el.hidden=true}};
+ el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end)}
+document.addEventListener('pointerdown',e=>{const el=$('#assetp');if(el.hidden)return;if(e.target.closest('#assetp,[data-act="assets"],#modal,#mbox,#npad'))return;if(e.target.closest('#cv'))el.hidden=true},true);
+// ---- memoria: la cronologia degli annullamenti resta sotto un limite di dimensione (documenti grandi) ----
+{const _c=commit;commit=function(){const r=_c();try{if(!SCRUB&&S.undo.length>12){let tot=0;for(const s of S.undo)tot+=s.length;while(tot>90e6&&S.undo.length>12){tot-=S.undo.shift().length}}}catch(_){}return r}}
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
