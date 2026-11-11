@@ -642,7 +642,7 @@ const cache=new Map(),lcache=new Map();
 let rq=0;function render(){if(!rq)rq=requestAnimationFrame(()=>{rq=0;doRender()})}
 function doRender(){const V=S.view,d=S.doc;world.setAttribute('transform',`translate(${V.x} ${V.y}) scale(${V.z})`);
  const ab=$('#artboard');ab.setAttribute('width',d.w);ab.setAttribute('height',d.h);ab.setAttribute('fill',d.bg||'url(#checker)');const abd=$('#abd');abd.setAttribute('width',d.w);abd.setAttribute('height',d.h);
- if(S.mode!=='frames'&&S.doc.frEdit)frExit(true);S.baked=S.mode==='anima'?bakeScene(S.frame):hasSeq()?bakeScene(S.frame,true):null;$('#onion').innerHTML=S.mode==='frames'?frOnionHTML():onionHTML();renderContent();placeVideo();renderOverlay();drawRulers();$('#bZoom').textContent=Math.round(V.z*100)+'%'}
+ if(S.mode!=='frames'&&S.doc.frEdit)frExit(true);S.baked=S.mode==='anima'||docAnimated()?bakeScene(S.frame):hasSeq()?bakeScene(S.frame,true):null;$('#onion').innerHTML=S.mode==='frames'?frOnionHTML():onionHTML();renderContent();placeVideo();renderOverlay();drawRulers();$('#bZoom').textContent=Math.round(V.z*100)+'%'}
 function renderContent(){fxPreload();const seen=new Set();let prevL=null;
  for(const L of SCN().layers){let g=lcache.get(L.id);if(!g){g=document.createElementNS(NS,'g');lcache.set(L.id,g)}
   if(g.parentNode!==content||g.previousSibling!==prevL)content.insertBefore(g,prevL?prevL.nextSibling:content.firstChild);
@@ -3586,13 +3586,37 @@ deliver=function(data,name,type){const blob=data instanceof Blob?data:new Blob([
  const canShare=!!(navigator.canShare&&(()=>{try{return navigator.canShare({files:[new File([blob],name,{type})]})}catch(e){return false}})());
  modal(`<h3>Salva file</h3><label>Nome del file</label><div class="row" style="gap:6px"><button class="btn" data-m="ren" style="flex:1;justify-content:flex-start;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(base)}</button><span class="muted">${esc(ext)}</span><button class="btn" data-m="ren" title="Rinomina">✎</button></div>
  <div class="muted" style="margin-top:6px">${kb} · pronto</div><div class="btns"><button class="btn" data-m="no">Chiudi</button>${canShare?`<button class="btn${DL?'':' pri'}" data-m="share">${DL?'Condividi…':'Salva / Condividi…'}</button>`:''}<button class="btn${DL||!canShare?' pri':''}" data-m="save">${DL||!canShare?'Salva sul dispositivo':'Scarica'}</button></div>`,v=>{
-  if(v==='ren'){setTimeout(()=>askText('Nome del file',base,nv=>{nv=(nv||'').replace(/[\\/:*?"<>|]+/g,'').trim();if(!nv){deliver(data,name,type);return}
+  if(v==='ren'){setTimeout(()=>askText('Nome del file',base,nv=>{nv=(nv||'').replace(/[\\/:*?"<>|]+/g,'').trim();if(!nv){setTimeout(()=>deliver(data,name,type),60);return}
     // per il progetto il nuovo nome diventa anche il nome del documento (libreria e Home)
     if(isProj&&!/_lottie$/i.test(ext.replace(/\.json$/i,''))&&ext.toLowerCase()==='.json'){S.doc.name=nv;$('#docName').textContent=nv;try{libSave(true)}catch(_){}scheduleSave()}
-    deliver(data,nv+ext,type)}),30);return}
+    setTimeout(()=>deliver(data,nv+ext,type),60)}),30);return}
   if(v==='save'){(async()=>{if(DL){try{await DL.save({filename:name,data:blob});toast('Salvato «'+name+'»');return}catch(e){if(e&&e.code==='declined')return}}
     try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},4000)}catch(e){toast('Salvataggio non disponibile qui')}})()}
   if(v==='share'){navigator.share({files:[new File([blob],name,{type})],title:name}).catch(()=>{})}})};
+
+// ---- id sempre unici: il contatore considera tutto il documento (pre-composizioni, ossa, disegni) e corregge eventuali doppioni ----
+fixUID=function(){let m=0;const chk=id=>{const s=String(id||'');const mm=/^[a-zA-Z]([0-9a-z]+)$/.exec(s);if(!mm)return;const n=parseInt(mm[1],36);if(n>m&&n<1e9)m=n};
+ const walk=o=>{if(!o||typeof o!=='object')return;if(Array.isArray(o)){o.forEach(walk);return}if(o.id!=null)chk(o.id);for(const k in o){if(k==='ak'||k==='subs'||k==='pw'||k==='bwp')continue;const v=o[k];if(v&&typeof v==='object')walk(v)}};
+ walk(S.doc);Object.keys(S.assets||{}).forEach(chk);UID=Math.max(UID,m+1);
+ // doppioni di livelli/oggetti (documenti vecchi): nuovo id al secondo
+ const seen=new Set(),fix=it=>{if(seen.has(it.id))it.id=uid(it.type==='bone'?'i':'i');seen.add(it.id);(it.kids||[]).forEach(fix);if(it.mask)fix(it.mask);(it.draws||[]).forEach(d=>d.items.forEach(fix))};
+ const lseen=new Set(),doL=L=>{if(lseen.has(L.id))L.id=uid('L');lseen.add(L.id);L.items.forEach(fix)};
+ S.doc.layers.forEach(doL);Object.values(S.doc.comps||{}).forEach(c=>c.layers.forEach(doL));(S.doc.compStack||[]).forEach(st=>(st.layers||[]).forEach(doL))};
+// nuovo livello / duplica: prima si chiude l'eventuale disegno Frames aperto, così niente resta agganciato al livello precedente
+{const _a=act;act=function(a){if((a==='ladd'||a==='ldup'||a==='ldel'||a.startsWith('mvl:'))&&S.doc.frEdit){try{frExit(true)}catch(_){}}const r=_a(a);if(a==='ladd'||a==='ldup')S.sel=a==='ladd'?[]:S.sel;return r}}
+setTimeout(()=>{try{fixUID()}catch(_){}},0);
+// ---- Anima: selezionando un oggetto sul canvas, la timeline mostra e illumina la sua riga e il suo livello ----
+{let last='';const _dt=drawTL;drawTL=function(){const key=S.mode==='anima'?S.sel.join(','):'';if(key&&key!==last){last=key;const r=find(S.sel[0]);
+  if(r&&r.L){if(S.activeLayer!==r.L.id)S.activeLayer=r.L.id;if(AN.T.lcol&&AN.T.lcol.has(r.L.id))AN.T.lcol.delete(r.L.id);
+   const rows=tlRows();let y=0,yi=-1,h=26;for(const q of rows){if(q.t==='I'&&q.it&&q.it.id===S.sel[0]){yi=y;h=q.h;break}y+=q.h}
+   if(yi>=0&&AN.tlGeom){const vis=AN.tlGeom.H-RULH;if(yi<AN.T.y0)AN.T.y0=Math.max(0,yi-10);else if(yi+h>AN.T.y0+vis)AN.T.y0=yi+h-vis+10}}}else if(!key)last='';return _dt()}}
+// ---- contorno tratteggiato di gruppi, pre-composizioni e disegni: segue la rotazione come la cornice ----
+function rotOutline(it){const a=it.rot||0;if(!a)return null;const b0=bboxItem(it);if(!b0)return null;const cx=b0.x+b0.w/2,cy=b0.y+b0.h/2,b=bboxItem(applyM(it,rotAbout(-a,cx,cy)));if(!b)return null;
+ const R=(x,y)=>mx(rotAbout(a,cx,cy),x,y);return[R(b.x,b.y),R(b.x+b.w,b.y),R(b.x+b.w,b.y+b.h),R(b.x,b.y+b.h)]}
+{const _ro=renderOverlay;renderOverlay=function(){_ro();try{const w=$('#wover');if(!w)return;const rects=[...w.querySelectorAll('rect.ol[stroke-dasharray]')];if(!rects.length)return;const its=selItemsV().filter(i=>['group','fx','inst','seq'].includes(i.type));
+  rects.forEach((r,k)=>{const it=its[k];if(!it)return;const pts=rotOutline(it);if(!pts)return;const pg=document.createElementNS(NS,'polygon');pg.setAttribute('points',pts.map(p=>p.join(',')).join(' '));pg.setAttribute('class','ol');pg.setAttribute('stroke-dasharray','6 4');r.replaceWith(pg)})}catch(_){}}}
+// ---- Draw e Frames mostrano la scena com'è al frame corrente (come in Anima): opacità, trasformazioni, visibilità e pre-composizioni animate ----
+function docAnimated(){for(const L of S.doc.layers){if(L.rig)continue;for(const it of L.items){if(it.type==='inst')return true;if(it.ak&&it.ak.ch&&Object.keys(it.ak.ch).length)return true}}return false}
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
