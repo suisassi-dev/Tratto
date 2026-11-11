@@ -3617,6 +3617,13 @@ function rotOutline(it){const a=it.rot||0;if(!a)return null;const b0=bboxItem(it
   rects.forEach((r,k)=>{const it=its[k];if(!it)return;const pts=rotOutline(it);if(!pts)return;const pg=document.createElementNS(NS,'polygon');pg.setAttribute('points',pts.map(p=>p.join(',')).join(' '));pg.setAttribute('class','ol');pg.setAttribute('stroke-dasharray','6 4');r.replaceWith(pg)})}catch(_){}}}
 // ---- Draw e Frames mostrano la scena com'è al frame corrente (come in Anima): opacità, trasformazioni, visibilità e pre-composizioni animate ----
 function docAnimated(){for(const L of S.doc.layers){if(L.rig)continue;for(const it of L.items){if(it.type==='inst')return true;if(it.ak&&it.ak.ch&&Object.keys(it.ak.ch).length)return true}}return false}
+// ---- menu a comparsa (Interpolazione, Altro…): si apre/chiude al rilascio del tocco; un tocco fuori dai pulsanti lo chiude sempre ----
+{let flyT=0,flyDn=null;
+ document.addEventListener('pointerdown',e=>{const f=$('#fly');const b=e.target.closest('[data-fly]');flyDn=b?{b,x:e.clientX,y:e.clientY}:null;if(f.hidden||b)return;
+  if(f.dataset.for==='shapep'){if(!e.target.closest('#fly'))f.hidden=true;return}
+  if(!e.target.closest('#fly button:not([disabled]),#fly input,#fly select,#fly label,[data-tool="shape"]'))f.hidden=true},true);
+ document.addEventListener('pointerup',e=>{if(!flyDn)return;const d=flyDn;flyDn=null;const b=e.target.closest('[data-fly]');if(b!==d.b||Math.hypot(e.clientX-d.x,e.clientY-d.y)>14)return;flyT=performance.now();openCtxFly(b,b.dataset.fly)},true);
+ document.addEventListener('click',e=>{const b=e.target.closest('[data-fly]');if(b&&performance.now()-flyT<700){e.stopImmediatePropagation();e.preventDefault()}},true)}
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
