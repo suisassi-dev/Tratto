@@ -22,8 +22,8 @@ input{font:inherit}
 input[type=number],input.hex,input.txt{-webkit-user-select:text;user-select:text}
 #app{position:fixed;inset:0;display:flex;flex-direction:column}
 #top{display:flex;align-items:center;gap:2px;padding:calc(var(--st) + 4px) calc(var(--sr) + 8px) 4px calc(var(--sl) + 8px);background:var(--panel);border-bottom:1px solid var(--line);flex:none}
-#top .sp{flex:1}
-#top .name{color:var(--tx2);font-size:12px;max-width:30vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px}
+#top{position:relative}#top .sp{flex:1}#top .tsep{width:1px;height:22px;background:var(--line);margin:0 6px;flex:none}#top .seg.modes{margin-left:8px}
+#top .name{position:absolute;left:50%;bottom:4px;height:36px;line-height:36px;transform:translateX(-50%);color:var(--tx2);font-size:12.5px;max-width:24vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px}
 .b{min-width:40px;height:40px;border-radius:10px;display:grid;place-items:center;background:none;border:0;padding:0 6px}
 .b:active{background:var(--panel3)}
 .b.on{background:var(--accbg);color:var(--acc)}
@@ -151,7 +151,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .tool{position:relative}
 .tool .tri{position:absolute;right:5px;bottom:5px;width:0;height:0;border-left:5px solid transparent;border-bottom:5px solid currentColor;opacity:.8}
 #fly{position:fixed;z-index:25;display:flex;gap:4px;padding:6px;background:var(--panel2);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(0,0,0,.55)}
-#fly[hidden]{display:none}
+#fly[hidden]{display:none!important}
 #fly button{min-width:60px;width:auto;padding:0 8px;white-space:nowrap;height:58px;border:0;border-radius:10px;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;color:var(--tx2)}
 #fly button .ic{color:var(--tx)}
 #fly button.on{background:var(--accbg)}
@@ -333,10 +333,11 @@ body.anima #tools .swb{display:none}
   <button class="b" data-act="menu" aria-label="Menu" id="bMenu"></button>
   <button class="b" data-act="undo" id="bUndo" aria-label="Annulla"></button>
   <button class="b" data-act="redo" id="bRedo" aria-label="Ripeti"></button>
-  <span class="name" id="docName"></span>
   <div class="seg modes"><button data-act="mode:draw" id="mDraw" class="on">Draw</button><button data-act="mode:frames" id="mFrames">Frames</button><button data-act="mode:anima" id="mAnima">Anima</button></div>
   <div class="sp"></div>
+  <span class="name" id="docName"></span>
   <button class="b" data-fly="expq" id="bExp" aria-label="Esporta"></button>
+  <span class="tsep"></span>
   <button class="b" data-act="sym" id="bSym" aria-label="Simmetria"></button>
   <button class="zoom" data-act="fit" id="bZoom">100%</button>
   <button class="b" data-act="panel" id="bPanel" aria-label="Pannello"></button>
@@ -776,7 +777,7 @@ function buildCtx(){if(S.mode==='anima'){$('#ctx').hidden=true;return}const t=S.
   if(!S.nsel.length)h+=`<span class="clbl lab">Doppio tap o tieni premuto sul tracciato = nuovo punto</span>`;}
  else if(t==='lasso'){h+=`<div class="seg">${[['obj','Oggetti'],['pts','Punti']].map(([v,l])=>`<button data-seg="lassoMode" data-v="${v}" class="${S.opt.lassoMode===v?'on':''}">${l}</button>`).join('')}</div>`+B('multi','','multisel',S.opt.multi,'Aggiungi alla selezione')+`<span class="clbl lab">Disegna un contorno attorno a ciò che vuoi selezionare</span>`}
  else if(t==='pen'){h+=S.penId?B('penDone','Fine',null,1):'';h+=`<span class="clbl">Tap = punto · trascina = curva · tocca il 1° punto per chiudere</span>`}
- else if(t==='pencil')h+=R('smooth','Levigatura',0,12,1,S.opt.smooth)+sep+B('an:pressure','Pressione','pencilonly',S.opt.pressure,'Apple Pencil: spessore variabile con la pressione')+(S.opt.pressure?R('prMin','Min %',5,100,5,S.opt.prMin??20):'')+sep+B('pencilOutline','Contorno','outline',S.opt.pencilOutline,'Crea il tratto come forma piena (contorno), pronta per le booleane');
+ else if(t==='pencil'){const br=S.opt.brush||'ink';h+=B('an:brush:ink','Ink','br_ink',br==='ink','Ink: lo spessore segue la pressione')+B('an:brush:pencil','Matita','br_pencil',br==='pencil','Matita: tratto grezzo, la pressione cambia spessore e opacità')+B('an:brush:concept','Concept','br_concept',br==='concept','Concept: linea uniforme e levigata, senza pressione')+sep+R('smooth','Levigatura',0,12,1,S.opt.smooth)+(br!=='concept'?R('prMin','Min %',5,100,5,S.opt.prMin??20):'')+sep+B('pencilOutline','Contorno','outline',S.opt.pencilOutline,'Crea il tratto come forma piena (contorno), pronta per le booleane')}
  else if(t==='eraser')h+=`<div class="seg">${[['area','Pennello'],['stroke','Oggetti interi']].map(([v,l])=>`<button data-seg="erMode" data-v="${v}" class="${(S.opt.erMode||'area')===v?'on':''}">${l}</button>`).join('')}</div>`+R('erSize','Dimensione',4,160,2,S.opt.erSize||24);
  else if(t==='bucket')h+=`<div class="seg">${[['tap','Tocco'],['lasso','Lazo']].map(([v,l])=>`<button data-seg="bkMode" data-v="${v}" class="${(S.opt.bkMode||'tap')===v?'on':''}">${l}</button>`).join('')}</div>`+((S.opt.bkMode||'tap')==='tap'?R('bkGap','Chiudi buchi',0,10,1,S.opt.bkGap??2)+`<span class="clbl lab">Tocca dentro una zona chiusa</span>`:R('bkSmooth','Levigatura',0,12,1,S.opt.bkSmooth??3)+`<span class="clbl lab">Disegna il contorno da riempire</span>`);
  else if(t==='rect')h+=shapeCtl('rect')+sep+B('prop','1:1',null,S.opt.prop);
@@ -1786,7 +1787,7 @@ function drawTL(){const{x,W,H}=cvFit(tlc),T=AN.T,A=ADOC(),NW=NAMEW(),X=f=>NW+12+
      x.fillStyle='#3a3a42';x.fillRect(12,y,1,r.h);x.fillStyle=sel?'#ffffff':'#d8d8dc';x.font='13px -apple-system,system-ui';x.fillText(itName(r.it),34,y+20)}
     else{x.fillStyle='#3a3a42';x.fillRect(12,y,1,r.h);x.fillStyle=CHC[r.n]||'#aaa';x.fillRect(36,y+10,6,6);x.fillStyle='#a8a8b0';x.font='11.5px -apple-system,system-ui';x.fillText(CHN[r.n],48,y+17)}x.restore();
     x.save();x.beginPath();x.rect(NW,y,W-NW,r.h);x.clip();const cy=y+r.h/2;
-    if(r.t==='I'&&isInst(r.it))instBar(x,r.it,y,r.h,X);
+    if(r.t==='I'&&(isInst(r.it)||r.it.type==='seq'))instBar(x,r.it,y,r.h,X);
     if(r.t==='I'){const fs=keyFrames(r.it);if(fs.length>1){x.fillStyle='rgba(255,159,10,.28)';x.fillRect(X(fs[0]),cy-1.5,X(fs[fs.length-1])-X(fs[0]),3)}
      fs.forEach(f=>{const s=r.it.ak&&Object.keys(r.it.ak.ch).some(n=>kSel(r.it.id,n,f));diamond(x,X(f),cy,7,s?'#ff9f0a':'#d8d8dc',s?'#fff':null)})}
     else{const c=r.it.ak.ch[r.n];c.k.forEach((q,i)=>{const nx=c.k[i+1];if(nx){x.strokeStyle=q.e&&q.e.t==='hold'?'#55555f':'#4a4a52';x.setLineDash(q.e&&q.e.t==='hold'?[3,3]:[]);x.beginPath();x.moveTo(X(q.f),cy);x.lineTo(X(nx.f),cy);x.stroke();x.setLineDash([])}
@@ -1796,7 +1797,7 @@ function drawTL(){const{x,W,H}=cvFit(tlc),T=AN.T,A=ADOC(),NW=NAMEW(),X=f=>NW+12+
  AN.tlContentH=y+T.y0-RULH;if(AN.tlMq){const[a,b,c,d]=AN.tlMq;x.fillStyle='rgba(255,159,10,.10)';x.strokeStyle='#ff9f0a';x.setLineDash([4,3]);x.fillRect(Math.min(a,c),Math.min(b,d),Math.abs(c-a),Math.abs(d-b));x.strokeRect(Math.min(a,c)+.5,Math.min(b,d)+.5,Math.abs(c-a),Math.abs(d-b));x.setLineDash([])}x.restore();
  x.fillStyle='#2e2e34';x.fillRect(NW-1,0,1,H);drawRulerX(x,W,X,0,T.z,(T.x0-12)/T.z);durMark(x,X,H);x.fillStyle='#18181b';x.fillRect(0,0,NW-1,RULH);x.fillStyle='#8f8f99';x.font='600 10.5px -apple-system,system-ui';x.fillText(`${A.fps} fps`,10,16);
  const ph=X(S.frame);if(ph>=NW-2){x.fillStyle='#ff9f0a';x.fillRect(Math.round(ph)-1,0,2,H);x.beginPath();x.moveTo(ph-7,0);x.lineTo(ph+7,0);x.lineTo(ph+7,13);x.lineTo(ph,19);x.lineTo(ph-7,13);x.closePath();x.fill()}
- if(!rows.some(r=>r.t==='I')){x.fillStyle='#8f8f99';x.font='13px -apple-system,system-ui';x.fillText('Disegna o importa qualcosa, poi selezionalo e muovilo per creare keyframe.',NW+20,RULH+40)}}
+ if(S.opt.hints!==false&&!rows.some(r=>r.t==='I')){x.fillStyle='#8f8f99';x.font='13px -apple-system,system-ui';x.fillText('Disegna o importa qualcosa, poi selezionalo e muovilo per creare keyframe.',NW+20,RULH+40)}}
 function tlHitKey(px,py,tol){const G=AN.tlGeom;if(!G)return null;for(const{r,y}of AN.tlRows){if(py<y||py>y+r.h)continue;if(r.t==='L')return{row:r};if(r.t==='A'||r.t==='V')return{row:r};
  if(r.t==='I'){const fs=keyFrames(r.it);for(const f of fs)if(Math.abs(G.X(f)-px)<=tol)return{row:r,f,keys:Object.keys(r.it.ak.ch).filter(n=>r.it.ak.ch[n].k.some(q=>q.f===f)).map(n=>({id:r.it.id,n,f}))};if(fs.length>1&&px>G.X(fs[0])&&px<G.X(fs[fs.length-1])&&Math.abs(py-(y+r.h/2))<=10)return{row:r,bar:true}}
  else{const c=r.it.ak.ch[r.n];for(const q of c.k)if(Math.abs(G.X(q.f)-px)<=tol)return{row:r,f:q.f,keys:[{id:r.it.id,n:r.n,f:q.f}]}}return{row:r}}return null}
@@ -1830,7 +1831,7 @@ canvasPtr(tlc,(p,e)=>{if(S.mode==='frames')return frTlDown(p,e);const G=AN.tlGeo
   return{move(q){d=Math.round((q.x-p.x)/AN.T.z);if(isA)ADOC().audio.off=o0+d;else MEDIA.vid.off=o0+d;drawTL()},up(){if(!d){stopPlay();setFrame(fAt(p.x),true);return}if(isA)commit();else{saveVid();syncVideo()}if(S.tab==='aprops')buildPanel()}}}
  if(h&&h.keys){const all=h.keys.every(k=>kSel(k.id,k.n,k.f));if(S.opt.multi){if(all)AN.selK=AN.selK.filter(s=>!h.keys.some(k=>k.id===s.id&&k.n===s.n&&k.f===s.f));else AN.selK.push(...h.keys)}else if(!all)AN.selK=h.keys.slice();
   if(!S.sel.includes(h.row.it.id)){S.sel=[h.row.it.id];updateUI()}stopPlay();setFrame(h.f,true);drawTL();return keyDragOp(p)}
- if(h&&h.row&&h.row.t==='I'&&isInst(h.row.it)&&!h.keys){const it=h.row.it,c=compOf(it),st=it.start||0,len=c?Math.round((c.dur||1)/(it.speed||1)):0,f0=fAt(p.x);if(f0>=st&&f0<=st+len){if(!S.sel.includes(it.id)){S.sel=[it.id];updateUI()}let moved=false;
+ if(h&&h.row&&h.row.t==='I'&&(isInst(h.row.it)||h.row.it.type==='seq')&&!h.keys){const it=h.row.it,c=it.type==='seq'?null:compOf(it),st=it.start||0,len=it.type==='seq'?(it.expo||[]).length:(c?Math.round((c.dur||1)/(it.speed||1)):0),f0=fAt(p.x);if(f0>=st&&f0<=st+len){if(!S.sel.includes(it.id)){S.sel=[it.id];updateUI()}let moved=false;
    return{move(q){const d=Math.round((q.x-p.x)/AN.T.z);if(!moved&&Math.abs(q.x-p.x)<6)return;moved=true;it.start=Math.max(0,st+d);drawTL();render()},up(){if(moved){commit();toast(`${itName(it)}: inizia al frame ${it.start}`)}else{stopPlay();setFrame(f0,true)}}}}}
  if(h&&h.bar){const ks=allKeysOf(h.row.it);if(S.opt.multi)AN.selK.push(...ks.filter(k=>!kSel(k.id,k.n,k.f)));else AN.selK=ks;if(!S.sel.includes(h.row.it.id)){S.sel=[h.row.it.id];updateUI()}drawTL();return keyDragOp(p)}
  const it0=h&&h.row&&h.row.it;let mq=false;
@@ -2376,7 +2377,7 @@ function frBarHTML(){const A=ADOC(),s=frActive(false),B=(a,i,t,on,lab)=>`<button
  +B('an:copyI','copy','Copia gli elementi selezionati')+B('an:pasteI','paste','Incolla nel disegno corrente (stessa posizione)')+sep+B('fr:durm','','Accorcia il disegno corrente',0,'−1')+B('fr:durp','','Allunga il disegno corrente',0,'+1')+B('fr:empty','','Inserisci un frame vuoto dopo il disegno',0,'Vuoto')+B('fr:del','trash','Elimina il disegno corrente')+sep
  +`<button class="ab" data-fly="frseq" title="Animazioni a disegni">${ic('frames')}<span class="lab">${esc(s?s.name||'Animazione':'Nessuna')}</span><span class="car"></span></button>`
  +`<button class="ab" data-fly="frmore" title="Altro">${ic('more')}</button><button class="ab" data-fly="media" title="Audio e video di riferimento">${ic('audio')}</button>`+sep
- +B('an:loop','loopic','Riproduzione in loop',A.loop)+B('an:onion','onion','Onion skin (disegni vicini)',S.opt.onion)+`<span class="asp"></span>`+B('an:fold',AN.fold?'chevup':'chevdown','Riduci / espandi')}
+ +B('an:loop','loopic','Riproduzione in loop',A.loop)+B('an:onion','onion','Onion skin (disegni vicini)',S.opt.onion)+B('an:flip','flipbook','Flipbook: striscia dei disegni sopra la timeline',S.opt.flip)+`<span class="asp"></span>`+B('an:fold',AN.fold?'chevup':'chevdown','Riduci / espandi')}
 
 /* ---------- timeline Frames ---------- */
 function frRows(){const rows=[];if(ADOC().audio)rows.push({t:'A',h:34});if(MEDIA.vid)rows.push({t:'V',h:24});allSeqs().forEach(({it})=>rows.push({t:'S',it,h:44}));return rows}
@@ -2400,7 +2401,7 @@ function drawFR(){const{x,W,H}=cvFit(tlc),T=AN.T,A=ADOC(),NW=NAMEW(),X=f=>NW+12+
  AN.tlContentH=y+T.y0-RULH;x.restore();
  x.fillStyle='#2e2e34';x.fillRect(NW-1,0,1,H);drawRulerX(x,W,X,0,T.z,(T.x0-12)/T.z);durMark(x,X,H);x.fillStyle='#18181b';x.fillRect(0,0,NW-1,RULH);x.fillStyle='#8f8f99';x.font='600 10.5px -apple-system,system-ui';x.fillText(`${A.fps} fps`,10,16);
  const ph=X(S.frame);if(ph>=NW-2){x.fillStyle='rgba(255,159,10,.18)';x.fillRect(ph,RULH,T.z,H-RULH);x.fillStyle='#ff9f0a';x.fillRect(Math.round(ph)-1,0,2,H);x.beginPath();x.moveTo(ph-7,0);x.lineTo(ph+7,0);x.lineTo(ph+7,13);x.lineTo(ph,19);x.lineTo(ph-7,13);x.closePath();x.fill()}
- if(!rows.some(r=>r.t==='S')){x.fillStyle='#8f8f99';x.font='13px -apple-system,system-ui';x.fillText('Disegna sul canvas: si crea un\'animazione a disegni. “Disegno” aggiunge il disegno successivo.',NW+20,RULH+40)}}
+ if(S.opt.hints!==false&&!rows.some(r=>r.t==='S')){x.fillStyle='#8f8f99';x.font='13px -apple-system,system-ui';x.fillText('Disegna sul canvas: si crea un\'animazione a disegni. “Disegno” aggiunge il disegno successivo.',NW+20,RULH+40)}}
 function frTlDown(p,e){const G=AN.tlGeom;if(!G)return null;const fAt=px=>Math.floor((px-G.NW-12+AN.T.x0)/AN.T.z),tol=e.pointerType==='touch'?12:7;
  if(p.y<RULH&&p.x>=G.NW){const dd=durDrag(p,G);if(dd)return dd;stopPlay();setFrame(fAt(p.x),true);return{move(q){setFrame(fAt(q.x),true)}}}
  let hit=null;for(const o of AN.tlRows)if(p.y>=o.y&&p.y<=o.y+o.r.h)hit=o;if(!hit)return null;const r=hit.r;
@@ -2426,9 +2427,9 @@ function frOnionHTML(){const o=S.opt;if(!o.onion||S.mode!=='frames')return'';con
  let h='';for(let k=nB;k>=1;k--){const R=runs[(ci<0?i0:ci)-k];if(R)h+=mk(R,-1,k,nB)}for(let k=nA;k>=1;k--){const R=runs[(ci<0?i0-1:ci)+k];if(R)h+=mk(R,1,k,nA)}return h}
 
 /* ---------- matita con pressione (Apple Pencil) ---------- */
-function pressurePoly(pts,w,minR){if(pts.length<2)return null;const n=pts.length;
+function pressurePoly(pts,w,minR,rough,seed){if(pts.length<2)return null;const n=pts.length;const hsh=i=>{const x=Math.sin(i*127.1+(seed||1)*311.7)*43758.5453;return x-Math.floor(x)};
  const sm=pts.map((p,i)=>{let a=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(n-1,i+2);j++){a+=pts[j][2];c++}return a/c});
- const rad=sm.map(p=>Math.max(.15,w/2*(minR+(1-minR)*Math.pow(Math.max(0,Math.min(1,p)),.75))));
+ const rad=sm.map((p,i)=>Math.max(.15,w/2*(minR+(1-minR)*Math.pow(Math.max(0,Math.min(1,p)),.75))*(rough?1+rough*(hsh(i)-.5)*(i%3?1:1.6):1)));
  const L=[],R=[];for(let i=0;i<n;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(n-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const r=rad[i];L.push([pts[i][0]-dy*r,pts[i][1]+dx*r]);R.push([pts[i][0]+dy*r,pts[i][1]-dx*r])}
  const cap=(c,r,a0,steps)=>{const o=[];for(let k=1;k<steps;k++){const a=a0+Math.PI*k/steps;o.push([c[0]+Math.cos(a)*r,c[1]+Math.sin(a)*r])}return o};
  const e=pts[n-1],e2=pts[n-2],s0=pts[0],s1=pts[1],ae=Math.atan2(e[1]-e2[1],e[0]-e2[0]),as=Math.atan2(s1[1]-s0[1],s1[0]-s0[0]);
@@ -2465,7 +2466,7 @@ function pwOutline(it){const c=PWC.get(it);if(c&&c.ref===it.subs&&c.sw===it.styl
  const fl=flatten(it),out=[];for(const f of fl){let P=f.pts;if(P.length<2)continue;const dense=[P[0]];for(let i=1;i<P.length;i++){const a=dense[dense.length-1],b=P[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(d/2));for(let k=1;k<=n;k++)dense.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
   const L=[0];for(let i=1;i<dense.length;i++)L.push(L[i-1]+Math.hypot(dense[i][0]-dense[i-1][0],dense[i][1]-dense[i-1][1]));const T=L[L.length-1]||1,S0=it.pw.s,N=S0.length;
   const pts=dense.map((q,i)=>{const u=L[i]/T*(N-1),j=Math.min(N-2,Math.floor(u)),t=u-j;return[q[0],q[1],S0[j]+(S0[j+1]-S0[j])*t]});
-  const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
+  const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR,it.pw.br==='pencil'?.6:0,it.pw.seed);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
  PWC.set(it,{k:key,subs:out,ref:it.subs,sw:it.style.sw,mr:it.pw.minR,pr:it.pw.s});return out}
 // come appare: un riempimento con il colore del tratto (stessa opacità, sfocatura, fusione e rim)
 function pwFlat(it){if(!it||!it.pw||it.type!=='path'||!it.style.stroke)return it;return{...it,subs:pwOutline(it),style:{...it.style,fill:it.style.stroke,fo:it.style.so??1,stroke:null},pw:undefined,rule:'nonzero'}}
@@ -3450,7 +3451,9 @@ function docScale(kx,ky){const k=Math.min(kx,ky),ox=(S.doc.w-(S.doc.w/kx)*k)/2,o
  const fill=c&&c.viewBg?(c.viewBg==='none'?null:c.viewBg):d.bg,a=c&&c.viewBg?1:(d.bgA??1);
  if(!chk){chk=document.createElementNS(NS,'rect');chk.id='abchk';chk.setAttribute('fill','url(#checker)');ab.parentNode.insertBefore(chk,ab)}
  const need=!fill||a<1;chk.style.display=need?'':'none';if(need){chk.setAttribute('width',d.w);chk.setAttribute('height',d.h)}
- ab.setAttribute('fill',fill||'none');ab.setAttribute('fill-opacity',a)}}
+ ab.setAttribute('fill',fill||'none');ab.setAttribute('fill-opacity',a);
+ // video di riferimento: sta dietro al disegno, quindi il foglio diventa trasparente
+ if(MEDIA.vid&&MEDIA.vid.show&&S.mode!=='draw'){ab.setAttribute('fill','none');chk.style.display='none';try{placeVideo()}catch(_){}}}}
 // esportazioni: opacità dello sfondo
 {const _el=exportLottie;exportLottie=function(){const J=_el();const a=S.doc.bgA??1;if(a<1&&J&&J.layers){const L=J.layers.find(l=>l.ty===1&&l.nm==='Sfondo');if(L)L.ks.o={a:0,k:Math.round(a*100)}}return J}}
 // ---- doppio tocco deciso al rilascio: un secondo tocco rapido seguito da un trascinamento è un trascinamento normale ----
@@ -3496,7 +3499,7 @@ OPS.select=dblDefer(OPS.select);OPS.node=dblDefer(OPS.node);AOPS.select=dblDefer
  const keyOf=el=>el.matches('.fxdel')?'del:'+(el.dataset.fxdel??('L'+el.dataset.lfxdel)):el.matches('[data-fxopen]')?'open:'+el.dataset.fxopen:'col:'+el.dataset.col;
  P.addEventListener('pointerdown',e=>{const el=e.target.closest(SEL);if(!el||e.target.closest('select,input,label,.kb,[data-fxkey]')){T0=null;return}const inner=e.target.closest('.fxdel');T0={k:keyOf(inner||el),x:e.clientX,y:e.clientY,t:performance.now(),el:inner||el}},true);
  P.addEventListener('pointerup',e=>{if(!T0)return;const t=T0;T0=null;if(Math.hypot(e.clientX-t.x,e.clientY-t.y)>12||performance.now()-t.t>1200)return;skipT=performance.now();const[c,...r]=t.k.split(':'),k=r.join(':');
-  if(c==='col'){S.opt.col=S.opt.col||{};S.opt.col[k]=!S.opt.col[k];P.querySelectorAll(`[data-col="${CSS.escape(k)}"]`).forEach(h=>h.parentNode.classList.toggle('col',S.opt.col[k]));scheduleSave();return}
+  if(c==='col'){secToggle(k);return}
   if(c==='open'){AN.fxOpen=AN.fxOpen===k?null:k;const r2=find(k);if(r2&&r2.it.type==='fx'&&AN.fxOpen){S.sel=[k];if(S.tool!=='select')setTool('select')}buildPanel();render();return}
   if(c==='del'){if(k.startsWith('L')&&!find(k)){const L=layer(),i=+t.el.dataset.lfxdel;if(L.fx&&L.fx[i]){L.fx.splice(i,1);if(!L.fx.length)delete L.fx;AN.fxOpen=null;commit();buildPanel();render();toast('Effetto rimosso')}return}
    const r2=find(k);if(r2&&r2.it.type==='fx'){r2.L.items.splice(r2.i,1);S.sel=S.sel.filter(i=>i!==k);if(AN.fxOpen===k)AN.fxOpen=null;commit();buildPanel();render();toast('Effetto rimosso')}}},true);
@@ -3624,6 +3627,158 @@ function docAnimated(){for(const L of S.doc.layers){if(L.rig)continue;for(const 
   if(!e.target.closest('#fly button:not([disabled]),#fly input,#fly select,#fly label,[data-tool="shape"]'))f.hidden=true},true);
  document.addEventListener('pointerup',e=>{if(!flyDn)return;const d=flyDn;flyDn=null;const b=e.target.closest('[data-fly]');if(b!==d.b||Math.hypot(e.clientX-d.x,e.clientY-d.y)>14)return;flyT=performance.now();openCtxFly(b,b.dataset.fly)},true);
  document.addEventListener('click',e=>{const b=e.target.closest('[data-fly]');if(b&&performance.now()-flyT<700){e.stopImmediatePropagation();e.preventDefault()}},true)}
+
+/* ===== v9: pennelli (Ink, Matita, Concept), matita più reattiva, salvataggio dei tratti differito ===== */
+ICONS.br_ink=[['M4 20c2-6 6-11 14-15l1.5 1.5C15.5 14 10.5 18 4 20z']];
+ICONS.br_pencil=[['M5 19l1.2-4.2L16.5 4.5l3 3L9.2 17.8 5 19z'],['M14.5 6.5l3 3']];
+ICONS.br_concept=[['M3 15c3-8 6-8 9 0s6 8 9 0']];
+{const _a=animAct;animAct=function(a){if(a.startsWith('brush:')){S.opt.brush=a.slice(6);buildCtx();scheduleSave();return}return _a(a)}}
+// anteprima del tratto: un solo elemento aggiornato una volta per fotogramma (niente ridisegno dell'intera sovrimpressione ad ogni punto)
+let LIVE=null;function liveEl(){if(!LIVE||!LIVE.isConnected){LIVE=document.createElementNS(NS,'path');LIVE.id='liveStroke';LIVE.setAttribute('pointer-events','none');$('#world').appendChild(LIVE)}return LIVE}
+function liveClear(){if(LIVE)LIVE.setAttribute('d','')}
+// fine tratto leggera: ogni tratto ha il suo passo di annullamento; salvataggio e pannelli si aggiornano appena smetti di disegnare
+let LAZY=0;
+function strokeCommit(){S.ov={};S.dirty=true;try{const sn=snapshot();if(S.undo[S.undo.length-1]!==sn){S.undo.push(sn);if(S.undo.length>120)S.undo.shift();S.redo=[]}}catch(_){}try{doRender()}catch(_){render()}liveClear();clearTimeout(LAZY);LAZY=setTimeout(lazyFlush,350)}
+function lazyFlush(){if(!LAZY)return;if(op){clearTimeout(LAZY);LAZY=setTimeout(lazyFlush,200);return}clearTimeout(LAZY);LAZY=0;commit()}
+function lazyNow(){if(LAZY){clearTimeout(LAZY);LAZY=0;commit()}}
+{const _c=commit;commit=function(){if(LAZY){clearTimeout(LAZY);LAZY=0}return _c()}}
+{const _u=undo;undo=function(){lazyNow();return _u()}}
+{const _r=redo;redo=function(){lazyNow();return _r()}}
+{const _a=act;act=function(a){lazyNow();return _a(a)}}
+{const _s=setMode;setMode=function(m){lazyNow();return _s(m)}}
+{const _s=setTool;setTool=function(t){lazyNow();return _s(t)}}
+{const _co=cancelOp;cancelOp=function(){liveClear();if(LAZY){S.ov={};render();return}return _co()}}
+document.addEventListener('pointerdown',e=>{if(LAZY&&!(e.target.closest&&e.target.closest('#cv')&&S.tool==='pencil'))lazyNow()},true);
+addEventListener('pagehide',()=>{try{lazyNow()}catch(_){}});document.addEventListener('visibilitychange',()=>{if(document.hidden)try{lazyNow()}catch(_){}});
+// un tratto iniziato senza che arrivi l'evento di appoggio (capita con tratti molto rapidi): lo avvio al primo movimento con pressione
+svg.addEventListener('pointermove',e=>{if(e.pointerType!=='pen'||!(e.pressure>0)||op||ptrs.has(e.pointerId)||S.tool!=='pencil'||!e.isTrusted)return;
+ svg.dispatchEvent(new PointerEvent('pointerdown',{pointerId:e.pointerId,pointerType:'pen',pressure:e.pressure,clientX:e.clientX,clientY:e.clientY,isPrimary:true,bubbles:true,buttons:1}))});
+OPS.pencil=function(P,e){if(!canDraw())return null;
+ const br=S.opt.brush||'ink',pen=!!(e&&e.pointerType==='pen'),st=S.def,w=Math.max(.5,st.sw||2),minR=(S.opt.prMin??20)/100,sm=S.opt.smooth??3;
+ const col=st.stroke&&st.stroke.t==='solid'?st.stroke.c:(st.fill&&st.fill.t==='solid'?st.fill.c:'#1a1a1a');
+ const usePr=pen&&br!=='concept'&&S.opt.pressure!==false,rough=br==='pencil',poly=usePr||rough,seed=1+Math.floor(Math.random()*9999);
+ const p0=usePr?(e.pressure>0?e.pressure:.35):(rough?.6:.5);const pts=[[P.x,P.y,p0]];const el=liveEl();let raf=0,snap=null,hold=0,cx=P.x,cy=P.y,lastQ=P;
+ const pull=br==='concept'?1/(1+sm*.3):1;
+ el.setAttribute('fill',poly?col:'none');el.setAttribute('stroke',poly?'none':col);el.setAttribute('stroke-width',w);el.setAttribute('stroke-linecap','round');el.setAttribute('stroke-linejoin','round');el.setAttribute('opacity',rough?.75:(st.so??1));
+ const draw=()=>{raf=0;if(pts.length<2){const r=poly?Math.max(.3,w/2*(minR+(1-minR)*Math.pow(pts[0][2],.75))):w/2,x=pts[0][0],y=pts[0][1];el.setAttribute('d',poly?`M${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0Z`:`M${x} ${y}l.01 0`);return}
+  if(poly){const pl=pressurePoly(pts,w,minR,rough?.6:0,seed);el.setAttribute('d',pl?'M'+pl.map(p=>f2(p[0])+' '+f2(p[1])).join('L')+'Z':'')}else el.setAttribute('d','M'+pts.map(p=>f2(p[0])+' '+f2(p[1])).join('L'))};
+ const upd=()=>{if(!raf)raf=requestAnimationFrame(draw)};draw();
+ const arm=()=>{clearTimeout(hold);if(snap||!S.opt.quick)return;hold=setTimeout(()=>{snap=quickShape(pts);if(snap){pts.length=0;pts.push(...snap.pts);upd();toast(snap.t==='e'?'Ellisse: trascina per regolarla':'Linea dritta')}},520)};
+ return{coalesced:true,move(Q,ev){lastQ=Q;if(snap){quickAdjust(snap,Q);pts.length=0;pts.push(...snap.pts);upd();return}
+   const pr=usePr?(ev&&ev.pressure>0?ev.pressure:pts[pts.length-1][2]):p0;if(pts.length===1&&usePr&&!(e.pressure>0)&&ev&&ev.pressure>0)pts[0][2]=ev.pressure;
+   cx+=(Q.x-cx)*pull;cy+=(Q.y-cy)*pull;const l=pts[pts.length-1];if(Math.hypot(cx-l[0],cy-l[1])*S.view.z<1)return;pts.push([cx,cy,pr]);upd();arm()},
+  cancel(){clearTimeout(hold);if(raf)cancelAnimationFrame(raf);liveClear()},
+  up(){clearTimeout(hold);if(raf){cancelAnimationFrame(raf);raf=0}
+   if(!snap&&pull<1&&pts.length>1){const l=pts[pts.length-1];if(Math.hypot(lastQ.x-l[0],lastQ.y-l[1])*S.view.z>1)pts.push([lastQ.x,lastQ.y,l[2]])}
+   let it=null;const mean=pts.reduce((a,p)=>a+p[2],0)/pts.length;
+   if(pts.length<2){// un tocco: un punto
+    const r=poly?Math.max(.3,w/2*(minR+(1-minR)*Math.pow(pts[0][2],.75))):w/2;it=newPath(ellSubs(pts[0][0],pts[0][1],r,r),{...clone(S.def),fill:{t:'solid',c:col},stroke:null,fo:st.so??1});it.pr=1}
+   else{const s2=snap?0:sm,res=[pts[0]];for(let i=1;i<pts.length;i++){const p=pts[i],q=res[res.length-1];if(Math.hypot(p[0]-q[0],p[1]-q[1])>=(s2?Math.max(.6,s2*.35):.5)/S.view.z||i===pts.length-1)res.push(p)}
+    const sp=s2&&res.length>2?res.map((p,i)=>{if(i===0||i===res.length-1)return p;const a=res[i-1],b=res[i+1];return[(a[0]+2*p[0]+b[0])/4,(a[1]+2*p[1]+b[1])/4,p[2]]}):res,src=sp.length>1?sp:pts;
+    if(poly){if(S.opt.pencilOutline){const pl=pressurePoly(src,w,minR,rough?.6:0,seed);if(pl){it=newPath([{closed:true,pts:pl.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))}],{...clone(S.def),fill:{t:'solid',c:col},stroke:null,fo:st.so??1});
+       if(!rough){try{const vw={p:src.map(q=>[q[0],q[1],q[2]]),w,minR,tol:(.3+s2*.15)/S.view.z},sb=vwSubs(vw);if(sb.length)it.subs=sb}catch(_){}}it.pr=1}}
+     else{it=pwFromPoints(src,w,minR,col,s2);if(it&&rough){it.pw.br='pencil';it.pw.seed=seed}}
+     if(it&&rough){const k=usePr?.35+.65*Math.min(1,mean*1.25):.8;if(it.style.stroke)it.style.so=(st.so??1)*k;else it.style.fo=(st.so??1)*k}}
+    if(!it){// linea uniforme (Concept, o dito con Ink)
+     let subs=null;try{const pp=new paper.Path({segments:src.map(q=>[q[0],q[1]]),insert:false});const closeIt=src.length>10&&Math.hypot(src[0][0]-src[src.length-1][0],src[0][1]-src[src.length-1][1])*S.view.z<14;
+      if(src.length>2)pp.simplify((br==='concept'?.5+s2*.45:Math.max(.35,s2))/S.view.z);if(closeIt&&pp.segments.length>3){pp.lastSegment.remove();pp.closed=true}subs=fromPaper(pp)}catch(_){}
+     if(!subs||!subs.length||subs[0].pts.length<2)subs=[{closed:false,pts:src.map(q=>({x:q[0],y:q[1],ix:q[0],iy:q[1],ox:q[0],oy:q[1],s:false}))}];
+     const s3=clone(S.def);s3.fill=null;s3.stroke={t:'solid',c:col};s3.sw=w;s3.cap='round';s3.join='round';it=newPath(subs,s3);if(S.opt.pencilOutline){const o=strokeOutline(it);if(o)it=o}}}
+   if(!it){liveClear();render();return}
+   layer().items.push(it);finishNew(it);strokeCommit()}}};
+
+/* ===== v9: aiuti coerenti, sezioni chiuse per documento, Documento in Anima, fusione e barra delle animazioni a disegni ===== */
+{const _u=updateUI;updateUI=function(){applyHints();return _u()}}
+// la Pencil preme mentre resta appesa un'operazione vecchia senza puntatore: la annullo, così il nuovo tratto parte sempre
+document.addEventListener('pointerdown',e=>{if(e.pointerType!=='pen'||!(e.target.closest&&e.target.closest('#cv')))return;if(op&&(opPid==null||!ptrs.has(opPid))){try{op.cancel&&op.cancel()}catch(_){}op=null}if(gest&&!touchList().length)gest=null},true);
+// sezioni del pannello: chiuse la prima volta, lo stato aperto/chiuso viene salvato con il documento
+function secOpen(k){const u=S.doc.ui;return!!(u&&u.open&&u.open[k])}
+function secToggle(k){S.doc.ui=S.doc.ui||{};S.doc.ui.open=S.doc.ui.open||{};const o=!S.doc.ui.open[k];if(o)S.doc.ui.open[k]=true;else delete S.doc.ui.open[k];
+ P.querySelectorAll(`[data-col="${CSS.escape(k)}"]`).forEach(h=>h.parentNode.classList.toggle('col',!o));S.dirty=true;scheduleSave()}
+sec=function(key,title,body,extra){const c=!secOpen(key);return`<div class="sec${c?' col':''}"><div class="sech" data-col="${key}"><span class="ttl"><span class="chev"></span>${title}</span>${extra||''}</div><div class="secb">${body}</div></div>`};
+// Documento (fps e durata) anche in Anima
+{const _ap=animPanel;animPanel=function(){const A=ADOC();return _ap()+sec('an-doc','Documento',`<div class="row"><span class="lbl">FPS</span><button class="mini" data-act="an:fps:-1">${ic('minus')}</button><button class="nval" data-act="an:fpsedit">${A.fps}</button><button class="mini" data-act="an:fps:1">${ic('plus')}</button></div>
+  <div class="row"><span class="lbl">Durata</span><button class="mini" data-act="an:durs:-1">${ic('minus')}</button><button class="nval" data-act="an:dur">${A.dur}</button><button class="mini" data-act="an:durs:1">${ic('plus')}</button><span class="unit">frame</span></div>
+  <button class="btn" data-act="doc" style="width:100%;margin-top:6px">Dimensioni e sfondo…</button>`)}}
+// Frames: metodo di fusione dell'animazione a disegni selezionata
+{const _fp=framesPanel;framesPanel=function(){let h=_fp();const s=frActive(false);if(!s)return h;const b=(s.style&&s.style.blend)||'normal';
+ return h.replace(/(data-act="fr:rename"[^>]*>Rinomina<\/button><\/div>)/,`$1<div class="row" style="margin-top:8px"><span class="lbl">Fusione</span><select class="sel" data-seqblend="1">${BLENDS.map(([v,l])=>`<option value="${v}"${v===b?' selected':''}>${l}</option>`).join('')}</select></div>`)}}
+P.addEventListener('change',e=>{const t=e.target;if(!t.dataset.seqblend)return;e.stopImmediatePropagation();if(S.doc.frEdit)frExit(true);const s=frActive(false);if(!s)return;s.style=s.style||{};if(t.value==='normal')delete s.style.blend;else s.style.blend=t.value;commit()},true);
+// Anima: l'animazione a disegni ha la sua barra (inizio e lunghezza) da trascinare nel tempo
+{const _ib=instBar;instBar=function(x,it,y,h,X){if(it.type!=='seq')return _ib(x,it,y,h,X);const st=it.start||0,e=it.expo||[],len=e.length;if(!len)return;x.fillStyle='rgba(41,212,197,.20)';x.fillRect(X(st),y+6,X(st+len)-X(st),h-12);x.fillStyle='#29d4c5';x.fillRect(X(st),y+6,3,h-12);x.fillRect(X(st+len)-2,y+6,2,h-12);
+ x.fillStyle='rgba(41,212,197,.55)';frRuns(it).forEach(r=>{if(r.s>0)x.fillRect(X(st+r.s),y+9,1,h-18)})}}
+// pesi: il contorno del disegno è colorato come una mappa di calore (oltre ai punti)
+{const _wo=weightOverlay;weightOverlay=function(){const h=_wo();if(!h)return h;const b=wBone();if(!b)return h;const pose=rigRest()?null:rigPose(S.frame);let s='';
+ for(const it of softItems()){const W=rigWeights(it);if(!W)continue;it.subs.forEach((sp,si)=>{const n=sp.pts.length,m=sp.closed?n:n-1;for(let i=0;i<m;i++){const j=(i+1)%n,wa=(W[si][i].find(x=>x[0]===b.id)||[0,0])[1],wb=(W[si][j].find(x=>x[0]===b.id)||[0,0])[1];
+   let A=[sp.pts[i].x,sp.pts[i].y],B=[sp.pts[j].x,sp.pts[j].y];if(pose){A=wPosed(it,si,i,pose);B=wPosed(it,si,j,pose)}const a=toS(A[0],A[1]),c=toS(B[0],B[1]);
+   s+=`<line x1="${f2(a[0])}" y1="${f2(a[1])}" x2="${f2(c[0])}" y2="${f2(c[1])}" stroke="${heat((wa+wb)/2)}" stroke-width="5" stroke-linecap="round" stroke-opacity=".85"/>`}})}
+ return h.replace('<g class="wgt" pointer-events="none">','<g class="wgt" pointer-events="none">'+s)}}
+
+/* ===== v9: Flipbook (Frames) — striscia dei disegni dell'animazione attiva, sopra la timeline ===== */
+ICONS.flipbook=[['M4 6h10v12H4z'],['M14 8l5 1.5v9L14 17'],['M7 9.5h4M7 12.5h4']];
+ICONS.fbprev=[['M14 6l-6 6 6 6z']];ICONS.fbnext=[['M10 6l6 6-6 6z']];ICONS.fbtrack=[['M4 7h16M4 12h16M4 17h16']];
+{const st=document.createElement('style');st.textContent=`#flipbook{position:absolute;left:10px;bottom:10px;z-index:12;background:rgba(24,24,27,.96);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 34px rgba(0,0,0,.5);padding:6px 8px 8px;-webkit-user-select:none;user-select:none;touch-action:none;max-width:calc(100% - 20px)}
+#flipbook[hidden]{display:none}#flipbook .fbt{display:flex;align-items:center;gap:2px;padding-bottom:5px;border-bottom:1px solid var(--line);margin-bottom:5px}
+#flipbook .fbt button{width:38px;height:34px;border:0;border-radius:9px;background:none;color:var(--tx);display:grid;place-items:center;padding:0}#flipbook .fbt button .ic{width:19px;height:19px}#flipbook .fbt button:active{background:var(--panel3)}#flipbook .fbt button.on{color:var(--acc)}
+#flipbook .fbt .fbsp{flex:1}#flipbook .fbt .fbi{font-size:11px;color:var(--tx2);padding:0 6px;font-variant-numeric:tabular-nums;white-space:nowrap}
+#flipbook .fbr{display:flex;align-items:flex-end;gap:8px}#flipbook .fbn{display:flex;align-items:center;gap:6px;height:34px;padding:0 9px;border-radius:10px;background:var(--panel3);font-size:11.5px;max-width:112px;border:0;color:var(--tx)}
+#flipbook .fbn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}#flipbook .fbn i{width:14px;height:14px;border-radius:4px;border:1.5px solid var(--tx2);flex:none;display:grid;place-items:center;font-style:normal;font-size:10px;line-height:1}#flipbook .fbn.vis i{background:var(--acc);border-color:var(--acc);color:#000}
+#flipbook .fbs{display:flex;gap:4px;touch-action:none}#flipbook .fbc{width:44px;flex:none;text-align:center}#flipbook .fbc b{display:block;font-size:9.5px;font-weight:500;color:var(--tx2);height:13px;font-variant-numeric:tabular-nums}
+#flipbook .fbc.cur b{color:var(--tx)}#flipbook .fbc .th{height:34px;border-radius:7px;background:#fff;overflow:hidden;border:2px solid transparent;box-sizing:border-box;position:relative}#flipbook .fbc .th svg{width:100%;height:100%;display:block;pointer-events:none}
+#flipbook .fbc.cur .th{border-color:var(--acc)}#flipbook .fbc.empty .th{background:#101012}#flipbook .fbc.gap .th{background:repeating-linear-gradient(45deg,#2a2a2f 0 4px,#1c1c1f 4px 8px)}#flipbook .fbc .th em{position:absolute;right:2px;bottom:1px;font-style:normal;font-size:8.5px;color:#fff;background:rgba(0,0,0,.6);border-radius:4px;padding:0 3px}
+#flipmenu{position:fixed;z-index:40;background:var(--panel2);border:1px solid var(--line);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.55);padding:5px;display:flex;flex-direction:column;min-width:170px}#flipmenu[hidden]{display:none}
+#flipmenu button{height:40px;border:0;background:none;color:var(--tx);text-align:left;padding:0 12px;border-radius:9px;font-size:13px}#flipmenu button:active{background:var(--panel3)}#flipmenu button.dng{color:#ff6b62}`;document.head.appendChild(st)}
+{const d=document.createElement('div');d.id='flipbook';d.hidden=true;$('#stage').appendChild(d);const m=document.createElement('div');m.id='flipmenu';m.hidden=true;document.body.appendChild(m)}
+const FB={sig:'',w0:0,clip:null};
+{const _a=animAct;animAct=function(a){if(a==='flip'){S.opt.flip=!S.opt.flip;scheduleSave();updAbar();flipSync(true);return}return _a(a)}}
+function fbN(){return $('#stage').clientWidth>=640?10:5}
+// oggetti del disegno d (quello in modifica vive nel livello)
+function fbItems(s,d){const E=S.doc.frEdit;if(E&&E.seq===s&&E.di===d)return frInside();return(s.draws[d]&&s.draws[d].items)||[]}
+function fbThumb(s,d,k){const its=fbItems(s,d);if(!its.length)return'';let m='';try{m=its.map(it=>itemMarkup(it,false,true)).join('').replace(/(id="|url\(#|href="#)(g[fs]|fb|cm|rm|rf|ie_)([^"\)]+)/g,`$1$2$3_fb${k}`)}catch(_){}
+ return`<svg viewBox="0 0 ${S.doc.w} ${S.doc.h}" preserveAspectRatio="xMidYMid meet">${m}</svg>`}
+function flipSync(force){const el=$('#flipbook');if(!el)return;const on=S.mode==='frames'&&!!S.opt.flip;if(!on){if(!el.hidden){el.hidden=true;$('#flipmenu').hidden=true}FB.sig='';return}
+ const s=frActive(false),A=ADOC(),N=fbN(),runs=s?frRuns(s):[],t=s?S.frame-(s.start||0):0;let ci=-1;runs.forEach((r,i)=>{if(t>=r.s&&t<r.s+r.n)ci=i});
+ let w0=FB.w0;if(ci>=0){if(ci<w0)w0=ci;if(ci>=w0+N)w0=ci-N+1}w0=Math.max(0,Math.min(w0,Math.max(0,runs.length-N+1)));FB.w0=w0;
+ const E=S.doc.frEdit,sig=[s?s.id:'',w0,N,runs.map(r=>r.d+'x'+r.n).join(','),s?s.draws.map((d,i)=>fbItems(s,i).length).join(','):'',s&&s.hide?1:0,S.doc.w,S.doc.h,FB.ver||0].join('|');
+ if(force||sig!==FB.sig||el.hidden){FB.sig=sig;let cells='';for(let k=0;k<N;k++){const i=w0+k,r=runs[i];
+   if(!r)cells+=`<div class="fbc empty" data-fbi="${i}"><b></b><div class="th"></div></div>`;
+   else cells+=`<div class="fbc${r.d<0?' gap':''}" data-fbi="${i}"><b>${i+1}</b><div class="th">${r.d>=0?fbThumb(s,r.d,k):''}${r.n>1?`<em>×${r.n}</em>`:''}</div></div>`}
+  el.innerHTML=`<div class="fbt"><button data-fb="play" title="Play / Pausa">${ic(AN.playing?'tpause':'tplay')}</button><button data-fb="prev" title="Disegno precedente">${ic('fbprev')}</button><button data-fb="next" title="Disegno successivo">${ic('fbnext')}</button><button data-fb="loop" class="${A.loop?'on':''}" title="Loop">${ic('loopic')}</button><span class="fbsp"></span><span class="fbi"></span><button data-fb="track" title="Nuova animazione a disegni (traccia)">${ic('fbtrack')}</button><button data-fb="add" title="Nuovo disegno">${ic('plus')}</button></div>
+   <div class="fbr"><button class="fbn${s&&!s.hide?' vis':''}" data-fb="vis" title="Mostra / nascondi la traccia"><i>${s&&!s.hide?'✓':''}</i><span>${esc(s?s.name||'Animazione':'Nessuna traccia')}</span></button><div class="fbs">${cells}</div></div>`;el.hidden=false}
+ el.querySelectorAll('.fbc').forEach(c=>c.classList.toggle('cur',+c.dataset.fbi===ci));const inf=el.querySelector('.fbi');if(inf)inf.textContent=runs.length?(ci>=0?ci+1:'–')+' / '+runs.length:'';
+ const pb=el.querySelector('[data-fb="play"]');if(pb){const want=AN.playing?'tpause':'tplay';if(pb.dataset.i!==want){pb.dataset.i=want;pb.innerHTML=ic(want)}}}
+{const _d=drawAnim;drawAnim=function(){const r=_d();try{flipSync()}catch(_){}return r}}
+{const _u=updateUI;updateUI=function(){const r=_u();FB.ver=(FB.ver||0)+1;try{flipSync()}catch(_){}return r}}
+function fbGo(i){const s=frActive(false);if(!s)return;const r=frRuns(s)[i];if(!r)return;const f=(s.start||0)+r.s;if(f!==S.frame){if(f>=ADOC().dur)return;setFrame(f,true)}}
+function fbMenu(cell){const s=frActive(false);if(!s)return;const m=$('#flipmenu'),c=frCur(),R=c&&c.runs[c.i];if(!R)return;
+ m.innerHTML=`<button data-fm="copy">Copia</button><button data-fm="paste"${FB.clip?'':' disabled style="opacity:.4"'}>Incolla</button><button data-fm="dup">Duplica</button><button data-fm="dur">Durata… (${R.n} frame)</button><button data-fm="clear">Cancella il contenuto</button><button data-fm="del" class="dng">Elimina frame</button>`;
+ m.hidden=false;const r=cell.getBoundingClientRect(),mw=m.offsetWidth,mh=m.offsetHeight;m.style.left=Math.max(8,Math.min(innerWidth-mw-8,r.left+r.width/2-mw/2))+'px';m.style.top=Math.max(8,r.top-mh-8)+'px'}
+function fbReId(it){const n=clone(it);const w=o=>{o.id=uid('i');(o.kids||[]).forEach(w);if(o.mask)w(o.mask)};w(n);return n}
+function fbAct(a){const c=frCur();if(!c){toast('Nessun disegno al frame corrente');return}const R=c.runs[c.i],s=c.s;
+ if(a==='copy'){if(R.d<0){toast('Frame vuoto');return}FB.clip=clone(s.draws[R.d].items);toast('Disegno copiato');return}
+ if(a==='paste'){if(!FB.clip)return;if(!frEnsure())return;layer().items.push(...FB.clip.map(fbReId));commit();toast('Incollato nel disegno');return}
+ if(a==='dup'){frAct('dup');return}
+ if(a==='dur'){numPad('Durata (frame)',R.n,v=>{const n=Math.max(1,Math.min(999,Math.round(+v||R.n)));if(n!==R.n)frDurDelta(n-R.n)});return}
+ if(a==='clear'){if(R.d<0)return;s.draws[R.d].items=[];commit();toast('Contenuto cancellato');return}
+ if(a==='del'){frAct('del');return}}
+{const el=$('#flipbook'),m=$('#flipmenu');let dn=null;
+ el.addEventListener('pointerdown',e=>{e.stopPropagation();m.hidden=true;const b=e.target.closest('[data-fb]');if(b){dn={b};return}const c=e.target.closest('.fbc');if(!c)return;e.preventDefault();try{el.setPointerCapture(e.pointerId)}catch(_){}
+  const i=+c.dataset.fbi,wasCur=c.classList.contains('cur');dn={i,x:e.clientX,y:e.clientY,moved:false,cell:c,long:0};if(AN.playing)stopPlay();lazyNow();
+  if(c.classList.contains('empty')){dn.empty=true;return}fbGo(i);
+  if(wasCur)dn.long=setTimeout(()=>{if(dn&&!dn.moved){const cc=el.querySelector('.fbc.cur');if(cc)fbMenu(cc);dn=null}},500)});
+ el.addEventListener('pointermove',e=>{if(!dn||dn.b||dn.empty)return;if(!dn.moved&&Math.hypot(e.clientX-dn.x,e.clientY-dn.y)<6)return;dn.moved=true;clearTimeout(dn.long);
+  const cells=[...el.querySelectorAll('.fbc:not(.empty)')];if(!cells.length)return;let best=null,bd=1e9;for(const c of cells){const r=c.getBoundingClientRect(),d=Math.abs(e.clientX-(r.left+r.width/2));if(d<bd){bd=d;best=c}}
+  // oltre i bordi della striscia si scorre ai disegni fuori vista
+  const f=cells[0].getBoundingClientRect(),l=cells[cells.length-1].getBoundingClientRect();let i=+best.dataset.fbi;const now=performance.now();
+  if(e.clientX<f.left-10||e.clientX>l.right+10){if(now-(dn.tick||0)<140)return;dn.tick=now;i+=e.clientX<f.left?-1:1}fbGo(i)});
+ const end=e=>{if(!dn)return;const d=dn;dn=null;clearTimeout(d.long);if(e.type==='pointercancel')return;
+  if(d.b){const k=d.b.dataset.fb;if(e.target.closest('[data-fb]')!==d.b)return;lazyNow();
+   if(k==='play')animAct('play');else if(k==='prev')frAct('prevd');else if(k==='next')frAct('nextd');else if(k==='loop'){animAct('loop');flipSync(true)}else if(k==='track')frAct('newseq');else if(k==='add')frAct('add');
+   else if(k==='vis'){if(S.doc.frEdit)frExit(true);const s=frActive(false);if(s){s.hide=!s.hide;commit()}}return}
+  if(d.empty&&!d.moved){const s=frActive(false),runs=s?frRuns(s):[];if(d.i===runs.length||!s){if(s&&runs.length){const L=runs[runs.length-1],f=(s.start||0)+L.s+L.n-1;if(f<ADOC().dur)setFrame(f,true)}frAct('add')}}};
+ el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
+ m.addEventListener('click',e=>{const b=e.target.closest('[data-fm]');if(!b||b.disabled)return;m.hidden=true;fbAct(b.dataset.fm)});
+ document.addEventListener('pointerdown',e=>{if(!m.hidden&&!e.target.closest('#flipmenu'))m.hidden=true},true)}
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
