@@ -1331,7 +1331,7 @@ new ResizeObserver(()=>render()).observe(svg);
 /* ---------- menu / modal / toast ---------- */
 function toggleMenu(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
  const I=(a,i,l,ck)=>`<button data-act="${a}">${ic(i)}<span>${l}</span>${ck?`<span class="ck">✓</span>`:''}</button>`;
- m.innerHTML=I('home','file','Home: nuovo e recenti')+I('open','open','Apri… (progetto, Lottie o SVG)')+I('importImg','img','Importa immagine')+I('trace','trace','Vettorizza schizzo…')+'<div class="ms"></div>'+
+ m.innerHTML=I('home','file','Home: nuovo e recenti')+I('open','open','Apri… (progetto, Lottie o SVG)')+I('importImg','img','Importa immagine')+I('importSeq','img','Importa sequenza di immagini…')+I('importPsd','layers','Importa PSD (livelli)…')+I('trace','trace','Vettorizza schizzo…')+'<div class="ms"></div>'+
   I('save','save','Salva progetto (.json)')+I('expSVG','exp','Esporta SVG a livelli')+I('expPNG','exp','Esporta PNG')+I('expJPG','exp','Esporta JPEG')+'<div class="ms"></div>'+
   I('an:exp:lottie','exp','Esporta animazione Lottie (.json)')+I('an:exp:mp4','exp','Esporta video MP4')+I('an:exp:png','exp','Esporta sequenza PNG (.zip)')+'<div class="ms"></div>'+
   I('doc','doc','Documento…')+I('rulers','ruler','Righelli',S.opt.rulers)+I('pencilOnly','pencilonly','Solo Apple Pencil disegna',S.opt.pencilOnly)+I('hints','help','Mostra gli aiuti',S.opt.hints!==false);m.hidden=false}
@@ -1392,7 +1392,7 @@ async function rasterize(type,scale,scene,keep){const d=scene||S.doc;let k=scale
    if(x1>x0&&y1>y0){cx.setTransform(1,0,0,1,0,0);const id=cx.getImageData(x0,y0,x1-x0,y1-y0);gaussRGBA(id.data,x1-x0,y1-y0,sig);cx.putImageData(id,x0,y0)}}
   cx0.save();cx0.setTransform(1,0,0,1,0,0);cx0.globalCompositeOperation=bm==='normal'?'source-over':bm;cx0.globalAlpha=ao;cx0.drawImage(tc,0,0);cx0.restore();tc.width=tc.height=0};
  for(const L of d.layers){if(!L.visible)continue;c2.setTransform(1,0,0,1,0,0);c2.clearRect(0,0,W,H);c2.setTransform(k,0,0,k,0,0);
-  const lfx=layerBlur(L)||layerGlow(L);if(!lfx&&L.opacity>=1&&(!L.blend||L.blend==='normal')){ctx.save();ctx.setTransform(k,0,0,k,0,0);for(const it of L.items)drawItem(ctx,it);ctx.restore();continue}
+  const lfx=layerBlur(L)||layerGlow(L)||layerHsl(L);if(!lfx&&L.opacity>=1&&(!L.blend||L.blend==='normal')){ctx.save();ctx.setTransform(k,0,0,k,0,0);for(const it of L.items)drawItem(ctx,it);ctx.restore();continue}
   for(const it of L.items)drawItem(c2,it);if(lfx)layerFxRaster(lc,L,k);
   ctx.globalAlpha=L.opacity;ctx.globalCompositeOperation=L.blend&&L.blend!=='normal'?L.blend:'source-over';ctx.drawImage(lc,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over'}
  lc.width=lc.height=0;if(keep)return{cv,W,H};const blob=await new Promise(r=>cv.toBlob(r,type,.92));cv.width=cv.height=0;return{blob,W,H}}
@@ -2709,6 +2709,7 @@ function effectsPanel(){const L=layer();let h='';const its=L.items.filter(i=>i.t
  const lfx=(L.fx||[]).map((f,i)=>{const P=k=>'L'+i+'.'+k;let b='';
   if(f.kind==='blur')b=fxSlider(P('r'),'Raggio',0,60,.5,f.p.r);
   else if(f.kind==='glow')b=`<div class="row"><span class="lbl">Colore</span>${colorBox(`data-fxp="${P('c')}"`,f.p.c)}</div>`+fxSlider(P('r'),'Raggio',1,80,.5,f.p.r)+fxSlider(P('amt'),'Intensità',0,1.5,.02,f.p.amt);
+  else if(f.kind==='hsl')b=hslRows(P,f);
   else if(f.kind==='dof')b=`<div class="row"><span class="lbl">A fuoco</span><select class="sel" data-fxsel="${P('focusL')}">${S.doc.layers.map(l=>`<option value="${l.id}"${(f.p.focusL||L.id)===l.id?' selected':''}>${esc(l.name)}</option>`).join('')}</select></div>`+fxSlider(P('range'),'Zona nitida',0,6,1,f.p.range,' liv.')+fxSlider(P('step'),'Sfocatura per livello',0,20,.5,f.p.step)+`<div class="hint">I livelli più lontani da quello a fuoco si sfocano di più.</div>`;
   b+=`<label class="tog"><input type="checkbox" data-fxc="${P('on')}"${f.on!==false?' checked':''}> Attivo</label><button class="btn" data-lfxdel="${i}" style="width:100%;margin-top:6px">Rimuovi</button>`;return fxRow('L'+L.id+i,FXIC[f.kind],LFXK[f.kind].n+' (livello)',f.on!==false,b)}).join('');
  h+=`<div class="hint" style="margin:2px 0 8px">Effetti del livello «${esc(L.name)}». Tocca un effetto per aprirne le proprietà.</div>`+(items+lfx||'<div class="muted" style="font-size:12px;margin:6px 2px">Nessun effetto.</div>')
@@ -3961,6 +3962,125 @@ document.addEventListener('click',e=>{const m=$('#homemenu');if(!m||m.hidden)ret
 #homemenu{position:fixed;z-index:70;background:var(--panel2);border:1px solid var(--line);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.55);padding:5px;display:flex;flex-direction:column;min-width:160px}#homemenu[hidden]{display:none}
 #homemenu button{height:40px;border:0;background:none;color:var(--tx);text-align:left;padding:0 12px;border-radius:9px;font-size:13.5px}#homemenu button:active{background:var(--panel3)}#homemenu .dng,#home .dng{color:#ff6b62}
 #home .hsec>.hopen{margin-left:10px}#home .htt{cursor:pointer;gap:10px;-webkit-user-select:none;user-select:none}#home .htt .chev.cl{transform:rotate(-45deg)}#home .htt .hcount{background:var(--panel2);color:var(--tx2);border-radius:9px;padding:1px 8px;font-size:11px;letter-spacing:0}#home .htbar{display:flex;align-items:center;gap:12px;margin:-2px 2px 12px;font-size:12.5px}#home .htbar .muted{flex:1}#home .htbar .hopen .ic{width:16px;height:16px}#home .htrash{margin-bottom:26px}#home .trashc{cursor:default}#home .trashc .hth{opacity:.6}#home .hta{display:flex;gap:6px;margin-top:6px}#home .hta .btn{flex:1;height:34px}#home .hta .btn.dng{flex:none;width:40px;padding:0;display:grid;place-items:center}`;document.head.appendChild(st)}
+
+/* ===== v11: importa sequenza di immagini e PSD (livelli e fusioni), effetto Tonalità e saturazione, rig per livelli ===== */
+// ---------- Tonalità e saturazione (effetto di livello, anche sui livelli sottostanti, animabile) ----------
+LFXK.hsl={n:'Tonalità e saturazione',p:{h:0,s:0,l:0,below:false}};FXIC.hsl='fxhsl';
+ICONS.fxhsl=[[C(12,12,8.5)],['M12 3.5v17'],['M12 7.5a4.5 4.5 0 0 1 0 9',1]];
+{const _f=FLY.fxadd;FLY.fxadd=()=>{const L=_f();const i=L.findIndex(x=>x[0]==='an:lfx:dof');L.splice(i<0?L.length:i,0,['an:lfx:hsl','fxhsl','Tonalità e saturazione (livello)']);return L}}
+function hslRows(P,f){const p=S.mode==='anima'?lfxP(f):f.p;return fxSlider(P('h'),'Tonalità',-180,180,1,p.h,'°')+fxSlider(P('s'),'Saturazione',-100,100,1,p.s)+fxSlider(P('l'),'Luminosità',-100,100,1,p.l)+`<label class="tog"><input type="checkbox" data-fxc="${P('below')}"${f.p.below?' checked':''}> Agisce anche sui livelli sottostanti</label>`}
+Object.assign(FXCHN,{h:'Tonalità',s:'Saturazione',l:'Luminosità'});
+// valori effettivi per un livello: i suoi + quelli dei livelli sopra che agiscono «sotto»
+function layerHsl(L){const Ls=S.doc.layers,i=Ls.findIndex(l=>l.id===L.id);if(i<0)return null;let h=0,s=1,l=0,any=false;
+ for(let j=i;j<Ls.length;j++){const X=Ls[j];if(j>i&&!X.visible)continue;for(const f of X.fx||[]){if(f.kind!=='hsl'||f.on===false)continue;if(j>i&&!f.p.below)continue;const p=lfxP(f);h+=+p.h||0;s*=Math.max(0,1+(+p.s||0)/100);l+=(+p.l||0)/100;any=true}}
+ if(!any||(Math.abs(h)<.01&&Math.abs(s-1)<.001&&Math.abs(l)<.001))return null;return{h,s,l:Math.max(-1,Math.min(1,l))}}
+// matrice colore 3×3 (tonalità poi saturazione) + luminosità
+function hslMat(q){const a=q.h*Math.PI/180,c=Math.cos(a),n=Math.sin(a),s=q.s;
+ const Hm=[.213+c*.787-n*.213,.715-c*.715-n*.715,.072-c*.072+n*.928,.213-c*.213+n*.143,.715+c*.285+n*.140,.072-c*.072-n*.283,.213-c*.213-n*.787,.715-c*.715+n*.715,.072+c*.928+n*.072];
+ const Sm=[.213+.787*s,.715-.715*s,.072-.072*s,.213-.213*s,.715+.285*s,.072-.072*s,.213-.213*s,.715-.715*s,.072+.928*s],M=[];
+ for(let r=0;r<3;r++)for(let k=0;k<3;k++)M.push(Sm[r*3]*Hm[k]+Sm[r*3+1]*Hm[3+k]+Sm[r*3+2]*Hm[6+k]);
+ const sl=q.l<0?1+q.l:1-q.l,ic=q.l>0?q.l*255:0;return{M,sl,ic}}
+function hslRGB(m,r,g,b){const M=m.M,cl=v=>v<0?0:v>255?255:v;return[cl(cl(M[0]*r+M[1]*g+M[2]*b)*m.sl+m.ic),cl(cl(M[3]*r+M[4]*g+M[5]*b)*m.sl+m.ic),cl(cl(M[6]*r+M[7]*g+M[8]*b)*m.sl+m.ic)]}
+// anteprima: filtro del livello (sfocatura + bagliore come prima, più tonalità/saturazione in coda)
+layerFxSVG=function(g,L){const b=layerBlur(L),gl=layerGlow(L),hs=layerHsl(L);if(!b&&!gl&&!hs){g.removeAttribute('filter');return}
+ let df=document.getElementById('lfx_'+L.id);if(!df){df=document.createElementNS(NS,'filter');df.id='lfx_'+L.id;$('#cv defs').appendChild(df)}
+ const W=S.doc.w,H=S.doc.h;df.setAttribute('filterUnits','userSpaceOnUse');df.setAttribute('color-interpolation-filters','sRGB');
+ if(b){const m=Math.ceil(b*3)+2;df.setAttribute('x',-m);df.setAttribute('y',-m);df.setAttribute('width',W+2*m);df.setAttribute('height',H+2*m)}else{df.setAttribute('x',-W);df.setAttribute('y',-H);df.setAttribute('width',W*3);df.setAttribute('height',H*3)}
+ let h=b?`<feGaussianBlur in="SourceGraphic" stdDeviation="${f2(b)}" edgeMode="duplicate" result="b0"/>`:`<feOffset in="SourceGraphic" result="b0"/>`;
+ if(gl){const[R,G,B]=hex2(gl.p.c).map(v=>v/255);h+=`<feGaussianBlur in="b0" stdDeviation="${f2(gl.p.r)}" edgeMode="none" result="g1"/><feColorMatrix in="g1" type="matrix" values="0 0 0 0 ${f2(R)}  0 0 0 0 ${f2(G)}  0 0 0 0 ${f2(B)}  0 0 0 ${f2(gl.p.amt*1.6)} 0" result="g2"/><feBlend in="g2" in2="b0" mode="screen" result="g3"/>`}
+ if(hs){const m=hslMat(hs),M=m.M.map(v=>+v.toFixed(4)),ic=+(m.ic/255).toFixed(4),sl=+m.sl.toFixed(4);
+  h+=`<feColorMatrix type="matrix" values="${M[0]} ${M[1]} ${M[2]} 0 0  ${M[3]} ${M[4]} ${M[5]} 0 0  ${M[6]} ${M[7]} ${M[8]} 0 0  0 0 0 1 0"/>`+(sl!==1||ic?`<feComponentTransfer><feFuncR type="linear" slope="${sl}" intercept="${ic}"/><feFuncG type="linear" slope="${sl}" intercept="${ic}"/><feFuncB type="linear" slope="${sl}" intercept="${ic}"/></feComponentTransfer>`:'')}
+ if(df.innerHTML!==h)df.innerHTML=h;g.setAttribute('filter',`url(#lfx_${L.id})`)};
+// esportazioni PNG / MP4
+{const _lr=layerFxRaster;layerFxRaster=function(cv,L,k){_lr(cv,L,k);const hs=layerHsl(L);if(!hs)return;const x=cv.getContext('2d',{willReadFrequently:true}),id=x.getImageData(0,0,cv.width,cv.height),d=id.data,m=hslMat(hs);
+ for(let i=0;i<d.length;i+=4){if(!d[i+3])continue;const c=hslRGB(m,d[i],d[i+1],d[i+2]);d[i]=c[0];d[i+1]=c[1];d[i+2]=c[2]}x.putImageData(id,0,0)}}
+// Lottie: per i livelli vettoriali i colori vengono convertiti (valori al frame 0 se l'effetto è animato)
+{const _el=exportLottie;exportLottie=function(){const need=S.doc.layers.some(L=>(L.fx||[]).some(f=>f.kind==='hsl'&&f.on!==false));if(!need)return _el();const sv=S.doc,fr=S.frame;S.frame=0;const mats=new Map();sv.layers.forEach(L=>{const q=layerHsl(L);if(q)mats.set(L.id,hslMat(q))});S.frame=fr;
+ const d=clone(sv),cc=(m,c)=>typeof c==='string'&&c[0]==='#'&&c.length>=7?rgb2hex(...hslRGB(m,...hex2(c.slice(0,7))))+c.slice(7):c,pt=(m,p)=>{if(!p)return;if(p.t==='solid')p.c=cc(m,p.c);else(p.stops||[]).forEach(s=>s.c=cc(m,s.c))};
+ const it=(m,o)=>{if(o.style){pt(m,o.style.fill);pt(m,o.style.stroke)}if(o.ak&&o.ak.ch)['fill','stroke'].forEach(n=>{const ch=o.ak.ch[n];if(ch){ch.v=cc(m,ch.v);ch.k.forEach(q=>q.v=cc(m,q.v))}});(o.kids||[]).forEach(k=>it(m,k));(o.draws||[]).forEach(dr=>dr.items.forEach(k=>it(m,k)));if(o.mask)it(m,o.mask)};
+ d.layers.forEach(L=>{const m=mats.get(L.id);if(m)L.items.forEach(o=>it(m,o))});S.doc=d;try{return _el()}finally{S.doc=sv}}}
+
+// ---------- importazione: strumenti comuni ----------
+function pickFiles(accept,multiple){return new Promise(res=>{const i=document.createElement('input');i.type='file';i.accept=accept;i.multiple=!!multiple;i.className='fin';i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';document.body.appendChild(i);
+ i.addEventListener('change',()=>{const f=[...i.files];i.remove();res(f)});i.click()})}
+const natCmp=(a,b)=>a.name.localeCompare(b.name,undefined,{numeric:true,sensitivity:'base'});
+function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.onload=()=>res(im);im.onerror=()=>rej(new Error('immagine non leggibile'));im.src=src})}
+function docIsEmpty(){return!allItems().length&&!Object.keys(S.doc.comps||{}).length}
+function busy(msg){let b=$('#busyv');if(!msg){if(b)b.remove();return}if(!b){b=document.createElement('div');b.id='busyv';b.style.cssText='position:fixed;inset:0;z-index:80;background:rgba(0,0,0,.55);display:grid;place-items:center;color:#fff;font-size:15px';document.body.appendChild(b)}b.textContent=msg}
+const tick=()=>new Promise(r=>setTimeout(r,0));
+// ---------- sequenza di immagini → animazione a disegni (un'immagine per frame) ----------
+async function importSeq(files){files=files.filter(f=>/^image\//.test(f.type)||/\.(png|jpe?g|webp|gif)$/i.test(f.name)).sort(natCmp);if(!files.length){toast('Nessuna immagine scelta');return}
+ if(files.length>400){toast('Troppe immagini: uso le prime 400');files=files.slice(0,400)}
+ if(S.doc.frEdit)frExit(true);const MAX=2400,draws=[];let w0=0,h0=0,k0=1;
+ try{for(let n=0;n<files.length;n++){busy('Importo le immagini… '+(n+1)+' / '+files.length);await tick();const f=files[n],url=URL.createObjectURL(f),im=await loadImg(url);
+   if(!n){w0=im.naturalWidth;h0=im.naturalHeight;k0=Math.min(1,MAX/Math.max(w0,h0))}const w=Math.round(im.naturalWidth*k0),h=Math.round(im.naturalHeight*k0),c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(im,0,0,w,h);URL.revokeObjectURL(url);
+   const jpg=/jpe?g$/i.test(f.name)||f.type==='image/jpeg',aid=uid('a');S.assets[aid]=c.toDataURL(jpg?'image/jpeg':'image/png',.92);c.width=c.height=0;draws.push({id:uid('d'),items:[{id:uid('i'),type:'image',asset:aid,w,h,m:[1,0,0,1,0,0],style:{op:1}}]})}}
+ catch(e){busy();toast('Importazione non riuscita: '+e.message);return}
+ S.assetsDirty=true;const W=Math.round(w0*k0),H=Math.round(h0*k0),empty=docIsEmpty();if(empty){S.doc.w=W;S.doc.h=H}
+ const d=S.doc,k=empty?1:Math.min(d.w/W,d.h/H),ox=(d.w-W*k)/2,oy=(d.h-H*k)/2;draws.forEach(dr=>{const it=dr.items[0];it.m=[k,0,0,k,ox+(W-it.w)*k/2,oy+(H-it.h)*k/2]});
+ const hold=Math.max(1,S.opt.frDur||1),expo=[];draws.forEach((_,i)=>{for(let j=0;j<hold;j++)expo.push(i)});
+ const name=(files[0].name.replace(/\.[^.]+$/,'').replace(/[\s_\-.]*\d+$/,'')||'Sequenza').slice(0,40);
+ const sq={id:uid('i'),type:'seq',name,draws,expo,start:S.mode==='draw'?0:S.frame,after:'none'},LL=d.layers,L=layer(),li=Math.max(0,LL.indexOf(L));
+ const NL={id:uid('L'),name,visible:true,locked:false,opacity:1,items:[sq]};if(empty&&LL.length===1&&!LL[0].items.length)LL.splice(0,1,NL);else LL.splice(li+1,0,NL);S.activeLayer=NL.id;S.frSeq=sq.id;S.sel=[];
+ const A=ADOC();if(sq.start+expo.length>A.dur)A.dur=sq.start+expo.length;
+ busy();commit();if(S.mode==='draw')setMode('frames');if(S.tool!=='select')setTool('select');fitView();updateUI();toast(draws.length+' immagini importate come animazione «'+name+'» ('+hold+' frame ciascuna)')}
+// ---------- PSD: livelli, opacità, visibilità e metodi di fusione ----------
+const PSDBM={norm:'normal',pass:'normal','mul ':'multiply',scrn:'screen',over:'overlay',dark:'darken',lite:'lighten','div ':'color-dodge',idiv:'color-burn',hLit:'hard-light',sLit:'soft-light',diff:'difference',smud:'exclusion','hue ':'hue','sat ':'saturation',colr:'color','lum ':'luminosity'};
+const PSDAPX={lddg:'screen',lbrn:'multiply',dkCl:'darken',lgCl:'lighten',vLit:'hard-light',lLit:'hard-light',pLit:'hard-light',hMix:'hard-light',fsub:'difference',fdiv:'color-dodge',diss:'normal'};
+function parsePSD(buf){const dv=new DataView(buf),u8=new Uint8Array(buf);let p=0;
+ const str=n=>{let s='';for(let i=0;i<n;i++)s+=String.fromCharCode(u8[p+i]);p+=n;return s},u16=()=>{const v=dv.getUint16(p);p+=2;return v},i16=()=>{const v=dv.getInt16(p);p+=2;return v},u32=()=>{const v=dv.getUint32(p);p+=4;return v},i32=()=>{const v=dv.getInt32(p);p+=4;return v};
+ if(str(4)!=='8BPS')throw new Error('non è un file PSD');if(u16()!==1)throw new Error('formato PSB (documento grande) non supportato');p+=6;const nch=u16(),H=u32(),W=u32(),depth=u16(),mode=u16();
+ if(depth!==8)throw new Error('solo PSD a 8 bit per canale (questo è a '+depth+')');if(mode!==3&&mode!==1)throw new Error('solo PSD in RGB o scala di grigi');
+ const skip=()=>{const n=u32();p+=n};skip();skip();const lmLen=u32(),lmEnd=p+lmLen,gray=mode===1;
+ // decodifica di un canale (grezzo o RLE) in un piano w×h
+ const plane=(comp,w,h,counts)=>{const o=new Uint8Array(w*h);if(comp===0){o.set(u8.subarray(p,p+w*h));p+=w*h;return o}
+  for(let y=0;y<h;y++){const end=p+counts[y];let x=y*w;const xe=x+w;while(p<end&&x<xe){const n=dv.getInt8(p++);if(n>=0){const c=Math.min(n+1,xe-x);o.set(u8.subarray(p,p+c),x);p+=n+1;x+=c}else if(n>-128){const c=Math.min(1-n,xe-x);o.fill(u8[p],x,x+c);p++;x+=c}}p=end}return o};
+ const out=[];let skipped=0;
+ if(lmLen>0){const liLen=u32();if(liLen>0){const cnt=Math.abs(i16()),recs=[];
+   for(let i=0;i<cnt;i++){const top=i32(),left=i32(),bottom=i32(),right=i32(),nc=u16(),chs=[];for(let c=0;c<nc;c++)chs.push({id:i16(),len:u32()});
+    p+=4;const bm=str(4),op=u8[p++],clip=u8[p++],flags=u8[p++];p++;const xl=u32(),xe=p+xl;skip();skip();const nl=u8[p++];let name=str(nl);p+=(4-((nl+1)%4))%4;let sect=0;
+    while(p+12<=xe){const sg=str(4);if(sg!=='8BIM'&&sg!=='8B64'){p-=3;continue}const key=str(4),len=u32(),e=p+len;
+     if(key==='luni'){const n=u32();let s='';for(let k=0;k<n&&p+1<e;k++){const ch=u16();if(ch)s+=String.fromCharCode(ch)}if(s)name=s}else if(key==='lsct')sect=u32();p=e}
+    p=xe;recs.push({top,left,w:right-left,h:bottom-top,chs,bm,op,clip,hidden:!!(flags&2),name,sect})}
+   for(const r of recs){const pl={};for(const c of r.chs){const st=p;if(c.id>=-1&&c.id<=2&&r.w>0&&r.h>0&&c.len>2){const comp=u16();if(comp===0)pl[c.id]=plane(0,r.w,r.h);else if(comp===1){const cn=[];for(let y=0;y<r.h;y++)cn.push(u16());pl[c.id]=plane(1,r.w,r.h,cn)}else r.zip=true}p=st+c.len}r.pl=pl}
+   // gruppi: scorro dall'alto; la cartella apre, il divisore chiude
+   const stack=[];for(let i=recs.length-1;i>=0;i--){const r=recs[i];if(r.sect===1||r.sect===2){stack.push({name:r.name,hidden:r.hidden,op:r.op/255});continue}if(r.sect===3){stack.pop();continue}
+    if(r.w<=0||r.h<=0)continue;if(r.zip||!r.pl[0]){skipped++;continue}
+    const n=r.w*r.h,px=new Uint8ClampedArray(n*4),R=r.pl[0],G=gray?R:(r.pl[1]||R),B=gray?R:(r.pl[2]||R),A=r.pl[-1];for(let k=0;k<n;k++){px[k*4]=R[k];px[k*4+1]=G[k];px[k*4+2]=B[k];px[k*4+3]=A?A[k]:255}
+    out.unshift({name:r.name||'Livello',x:r.left,y:r.top,w:r.w,h:r.h,px,opacity:r.op/255*stack.reduce((a,g)=>a*g.op,1),visible:!r.hidden&&!stack.some(g=>g.hidden),blend:PSDBM[r.bm]||PSDAPX[r.bm]||'normal',approx:!PSDBM[r.bm],clip:!!r.clip,group:stack.map(g=>g.name).join(' / ')})}}}
+ if(!out.length){// PSD senza livelli: uso l'immagine composita
+  p=lmEnd;const comp=u16(),n=W*H,ch=Math.min(nch,4),pls=[];if(comp>1)throw new Error('compressione non supportata');let cn=null;if(comp===1){cn=[];for(let i=0;i<nch*H;i++)cn.push(u16())}
+  for(let c=0;c<nch;c++){const pl=plane(comp,W,H,cn?cn.slice(c*H,(c+1)*H):null);if(c<ch)pls.push(pl)}
+  const px=new Uint8ClampedArray(n*4),R=pls[0],G=gray?R:pls[1],B=gray?R:pls[2],A=gray?pls[1]:pls[3];for(let k=0;k<n;k++){px[k*4]=R[k];px[k*4+1]=G[k];px[k*4+2]=B[k];px[k*4+3]=A?A[k]:255}
+  out.push({name:'Immagine',x:0,y:0,w:W,h:H,px,opacity:1,visible:true,blend:'normal'})}
+ return{W,H,layers:out,skipped}}
+async function importPSD(file){if(!file)return;if(S.doc.frEdit)frExit(true);busy('Leggo il PSD…');await tick();let psd;
+ try{psd=parsePSD(await file.arrayBuffer())}catch(e){busy();toast('PSD non importato: '+e.message);return}
+ const k0=Math.min(1,3000/Math.max(psd.W,psd.H)),W=Math.round(psd.W*k0),H=Math.round(psd.H*k0),empty=docIsEmpty(),d=S.doc;if(empty){d.w=W;d.h=H}
+ const k=empty?1:Math.min(d.w/W,d.h/H),ox=(d.w-W*k)/2,oy=(d.h-H*k)/2,NL=[];let apx=0,clp=0;
+ for(let n=0;n<psd.layers.length;n++){const l=psd.layers[n];busy('Importo i livelli… '+(n+1)+' / '+psd.layers.length);await tick();
+  const c=document.createElement('canvas');c.width=l.w;c.height=l.h;c.getContext('2d').putImageData(new ImageData(l.px,l.w,l.h),0,0);let cc=c,w=l.w,h=l.h;
+  if(k0<1){w=Math.max(1,Math.round(l.w*k0));h=Math.max(1,Math.round(l.h*k0));cc=document.createElement('canvas');cc.width=w;cc.height=h;const x=cc.getContext('2d');x.imageSmoothingQuality='high';x.drawImage(c,0,0,w,h)}
+  const aid=uid('a');S.assets[aid]=cc.toDataURL('image/png');c.width=c.height=0;cc.width=cc.height=0;l.px=null;
+  const sx=l.w*k0/w*k,sy=l.h*k0/h*k,it={id:uid('i'),type:'image',name:l.name,asset:aid,w,h,m:[sx,0,0,sy,ox+l.x*k0*k,oy+l.y*k0*k],style:{op:1}};
+  const L={id:uid('L'),name:l.name,visible:l.visible,locked:false,opacity:+Math.max(0,Math.min(1,l.opacity)).toFixed(3),items:[it]};if(l.blend!=='normal')L.blend=l.blend;if(l.approx)apx++;if(l.clip)clp++;NL.push(L)}
+ S.assetsDirty=true;const LL=d.layers;if(empty&&LL.length===1&&!LL[0].items.length)LL.splice(0,1,...NL);else LL.splice(Math.max(0,LL.indexOf(layer()))+1,0,...NL);
+ S.activeLayer=NL[NL.length-1].id;S.sel=[];if(empty&&d.name==='Senza titolo')d.name=file.name.replace(/\.psd$/i,'');busy();commit();fitView();updateUI();
+ const notes=[];if(apx)notes.push(apx+' fusioni non disponibili sostituite con la più simile');if(clp)notes.push(clp+' maschere di ritaglio ignorate');if(psd.skipped)notes.push(psd.skipped+' livelli non leggibili saltati');
+ toast(NL.length+' livelli importati dal PSD'+(notes.length?' · '+notes.join(' · '):''))}
+{const _a=act;act=function(a){if(a==='importSeq'){$('#menu').hidden=true;pickFiles('image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp',true).then(importSeq);return}
+ if(a==='importPsd'){$('#menu').hidden=true;pickFiles('.psd,image/vnd.adobe.photoshop,application/octet-stream',false).then(f=>importPSD(f[0]));return}return _a(a)}}
+// ---------- rig per personaggi a livelli: ogni livello segue l'osso con lo stesso nome ----------
+function rigBindByName(){const norm=s=>String(s||'').trim().toLowerCase(),bs=bones();let n=0;const miss=[];
+ S.doc.layers.forEach(L=>{if(L.rig)return;const b=bs.find(x=>norm(x.name)===norm(L.name));if(!b){if(L.items.length)miss.push(L.name);return}L.items.forEach(it=>{if(isBone(it))return;delete it.bsoft;delete it.bset;delete it.bwp;it.bone=b.id});n++});
+ if(n){RIGW.clear();commit()}toast(n?n+' livelli collegati alle ossa con lo stesso nome'+(miss.length?' · senza osso: '+miss.slice(0,4).join(', ')+(miss.length>4?'…':''):''):'Nessun livello ha il nome di un osso: rinomina le ossa come i livelli (es. «Testa», «Braccio sx»)')}
+function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: punto di partenza da sistemare con lo strumento Ossa
+ const R=rigLayer(true);let n=0;S.doc.layers.forEach(L=>{if(L.rig||!L.items.length||bones().some(b=>b.name.trim().toLowerCase()===L.name.trim().toLowerCase()))return;let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;L.items.forEach(it=>{const b=bboxItem(it);if(!b)return;x0=Math.min(x0,b.x);y0=Math.min(y0,b.y);x1=Math.max(x1,b.x+b.w);y1=Math.max(y1,b.y+b.h)});if(x1<x0)return;
+  const cx=(x0+x1)/2,vert=(y1-y0)>=(x1-x0),b={id:uid('i'),type:'bone',name:L.name,x:vert?cx:x0+(x1-x0)*.1,y:vert?y0+(y1-y0)*.1:(y0+y1)/2,x2:vert?cx:x1-(x1-x0)*.1,y2:vert?y1-(y1-y0)*.1:(y0+y1)/2,parent:null,kind:'fk',p:{},ak:{pv:[0,0],ch:{}}};b.ak.pv=[b.x,b.y];R.items.push(b);L.items.forEach(it=>{it.bone=b.id});n++});
+ if(n){commit();toast(n+' ossa create e collegate ai livelli: con lo strumento Ossa sposta testa e punta sulle giunture, poi scegli il Genitore di ogni osso')}else toast('Ogni livello ha già un osso con il suo nome')}
+{const _a=animAct;animAct=function(a){if(a==='rigbyname'){rigBindByName();return}if(a==='rigfromlayers'){rigBonesFromLayers();return}return _a(a)}}
+{const _ap=animPanel;animPanel=function(){let h=_ap();let i=h.indexOf('<div class="grid g2"><button class="btn" data-act="an:rigtool:weight">');if(i<0||h.indexOf('data-act="an:rignew"',i)-i>260)i=h.indexOf('<button class="btn" data-act="an:rignew"');if(i<0)return h;
+ return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin-bottom:6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
