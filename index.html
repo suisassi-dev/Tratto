@@ -1763,7 +1763,7 @@ function abarHTML(){const A=ADOC(),B=(a,i,t,on,lab)=>`<button class="ab${on?' on
  +`<button class="atime" data-act="an:frameedit" title="Frame corrente"><b>${S.frame}</b><span>/ ${A.dur-1} · ${fmtTC(S.frame)}</span></button>`+sep
  +B('auto','','Auto-key: crea keyframe quando modifichi',A.auto!==false,'Auto')+B('key','keyadd','Aggiungi keyframe (posizione, rotazione, scala, opacità)')+B('delk','trash','Elimina keyframe')
  +`<button class="ab" data-fly="ease" title="Interpolazione">${ic('ease')}<span class="lab">Interpolazione</span><span class="car"></span></button>`
- +B('multi','','Selezione multipla di keyframe e oggetti',S.opt.multi,'Multi')+`<button class="ab" data-fly="mcut" title="Taglia audio / video al frame corrente">${ic('scissors')}</button>`+`<button class="ab" data-fly="kmore" title="Altro">${ic('more')}</button>`+`<button class="ab" data-fly="media" title="Audio e video di riferimento">${ic('avmedia')}</button>`+sep
+ +B('multi','','Selezione multipla di keyframe e oggetti',S.opt.multi,'Multi')+`<button class="ab" data-act="an:msplit" title="Dividi audio / video al frame corrente">${ic('scissors')}</button>`+`<button class="ab" data-fly="kmore" title="Altro">${ic('more')}</button>`+`<button class="ab" data-fly="media" title="Audio e video di riferimento">${ic('avmedia')}</button>`+sep
  +B('onion','onion','Onion skin',S.opt.onion)+B('mpath','mpath','Traccia del movimento',S.opt.mpath)
  +`<span class="asp"></span><div class="seg atabs"><button data-act="an:tab:tl" class="${AN.tab==='tl'?'on':''}">Timeline</button><button data-act="an:tab:gr" class="${AN.tab==='gr'?'on':''}">Graph</button></div>`+B('fold',AN.fold?'chevup':'chevdown','Riduci / espandi')}
 function updAbar(){const b=$('#abar');if(b)b.innerHTML=S.mode==='frames'?frBarHTML():abarHTML();$('#tlc').style.display=AN.tab==='tl'?'':'none';$('#grc').style.display=AN.tab==='gr'?'':'none';$('#agchips').hidden=AN.tab!=='gr'||AN.fold||S.mode==='frames';if(S.mode==='frames'){$('#tlc').style.display='';$('#grc').style.display='none'}if(AN.tab==='gr')grChips()}
@@ -1811,7 +1811,7 @@ function drawTL(){const{x,W,H}=cvFit(tlc),T=AN.T,A=ADOC(),NW=NAMEW(),X=f=>NW+12+
  AN.tlContentH=y+T.y0-RULH;if(AN.tlMq){const[a,b,c,d]=AN.tlMq;x.fillStyle='rgba(255,159,10,.10)';x.strokeStyle='#ff9f0a';x.setLineDash([4,3]);x.fillRect(Math.min(a,c),Math.min(b,d),Math.abs(c-a),Math.abs(d-b));x.strokeRect(Math.min(a,c)+.5,Math.min(b,d)+.5,Math.abs(c-a),Math.abs(d-b));x.setLineDash([])}x.restore();
  x.fillStyle='#2e2e34';x.fillRect(NW-1,0,1,H);drawRulerX(x,W,X,0,T.z,(T.x0-12)/T.z);durMark(x,X,H);x.fillStyle='#18181b';x.fillRect(0,0,NW-1,RULH);x.fillStyle='#8f8f99';x.font='600 10.5px -apple-system,system-ui';x.fillText(`${A.fps} fps`,10,16);
  const ph=X(S.frame);if(ph>=NW-2){x.fillStyle='#ff9f0a';x.fillRect(Math.round(ph)-1,0,2,H);x.beginPath();x.moveTo(ph-7,0);x.lineTo(ph+7,0);x.lineTo(ph+7,13);x.lineTo(ph,19);x.lineTo(ph-7,13);x.closePath();x.fill()}
- if(S.opt.hints!==false&&!rows.some(r=>r.t==='I')){x.fillStyle='#8f8f99';x.font='13px -apple-system,system-ui';x.fillText('Disegna o importa qualcosa, poi selezionalo e muovilo per creare keyframe.',NW+20,RULH+40)}}
+ if(S.opt.hints!==false&&!rows.some(r=>r.t==='I')){x.fillStyle='#8f8f99';x.font='13px -apple-system,system-ui';x.fillText('Disegna o importa qualcosa, poi selezionalo e muovilo per creare keyframe.',NW+20,RULH+rows.reduce((a,r)=>a+r.h,0)+(rows.length?30:40)-AN.T.y0)}}
 function tlHitKey(px,py,tol){const G=AN.tlGeom;if(!G)return null;for(const{r,y}of AN.tlRows){if(py<y||py>y+r.h)continue;if(r.t==='L')return{row:r};if(r.t==='A'||r.t==='V')return{row:r};
  if(r.t==='I'){const fs=keyFrames(r.it);for(const f of fs)if(Math.abs(G.X(f)-px)<=tol)return{row:r,f,keys:Object.keys(r.it.ak.ch).filter(n=>r.it.ak.ch[n].k.some(q=>q.f===f)).map(n=>({id:r.it.id,n,f}))};if(fs.length>1&&px>G.X(fs[0])&&px<G.X(fs[fs.length-1])&&Math.abs(py-(y+r.h/2))<=10)return{row:r,bar:true}}
  else{const c=r.it.ak.ch[r.n];for(const q of c.k)if(Math.abs(G.X(q.f)-px)<=tol)return{row:r,f:q.f,keys:[{id:r.it.id,n:r.n,f:q.f}]}}return{row:r}}return null}
@@ -1839,8 +1839,9 @@ canvasPtr(tlc,(p,e)=>{if(S.mode==='frames')return frTlDown(p,e);const G=AN.tlGeo
  if(p.y<RULH&&p.x>=G.NW){const dd=durDrag(p,G);if(dd)return dd;stopPlay();setFrame(fAt(p.x));return{move(q){setFrame(fAt(q.x))}}}
  const h=tlHitKey(p.x,p.y,tol),dbl=tlDbl(p);
  if(h&&h.row.t==='L'){const l=h.row.l;if(p.x<G.NW){if(!AN.T.lcol)AN.T.lcol=new Set();if(p.x>G.NW-36){l.visible=!l.visible;commit()}else if(p.x<22){AN.T.lcol.has(l.id)?AN.T.lcol.delete(l.id):AN.T.lcol.add(l.id);drawTL()}else{S.activeLayer=l.id;if(dbl)askText('Nome del livello',l.name,v=>{if(v){l.name=v;commit()}});updateUI();drawTL()}return null}stopPlay();setFrame(fAt(p.x),true);return{move(q){setFrame(fAt(q.x))}}}
- if(p.x<G.NW){if(h&&(h.row.t==='A'||h.row.t==='V')){if(p.x>G.NW-34)mediaDel(h.row.t);return null}if(h&&h.row.t==='I'){const it=h.row.it;if(dbl){renameItem(it);return null}if(p.x<32&&p.x>14&&keyed(it)){AN.T.exp.has(it.id)?AN.T.exp.delete(it.id):AN.T.exp.add(it.id)}else{S.sel=[it.id];updateUI()}render();drawTL()}
+ if(p.x<G.NW){if(h&&(h.row.t==='A'||h.row.t==='V')){if(p.x>G.NW-34)mediaDel(h.row.t);else mSelTrack(h.row.t==='A'?'a':'v');return null}if(h&&h.row.t==='I'){const it=h.row.it;if(dbl){renameItem(it);return null}if(p.x<32&&p.x>14&&keyed(it)){AN.T.exp.has(it.id)?AN.T.exp.delete(it.id):AN.T.exp.add(it.id)}else{S.sel=[it.id];updateUI()}render();drawTL()}
   else if(h&&h.row.t==='C'){S.sel=[h.row.it.id];updateUI();render()}return null}
+ if(h&&(h.row.t==='A'||h.row.t==='V')){const mo=mediaTlDown(h.row.t,p,e,G,fAt,tol);if(mo!==undefined)return mo}
  if(h&&(h.row.t==='A'||h.row.t==='V')){const isA=h.row.t==='A',o0=isA?ADOC().audio.off||0:MEDIA.vid.off||0;let d=0;
   return{move(q){d=Math.round((q.x-p.x)/AN.T.z);if(isA)ADOC().audio.off=o0+d;else MEDIA.vid.off=o0+d;drawTL()},up(){if(!d){stopPlay();setFrame(fAt(p.x),true);return}if(isA)commit();else{saveVid();syncVideo()}if(S.tab==='aprops')buildPanel()}}}
  if(h&&h.keys){const all=h.keys.every(k=>kSel(k.id,k.n,k.f));if(S.opt.multi){if(all)AN.selK=AN.selK.filter(s=>!h.keys.some(k=>k.id===s.id&&k.n===s.n&&k.f===s.f));else AN.selK.push(...h.keys)}else if(!all)AN.selK=h.keys.slice();
@@ -2391,7 +2392,7 @@ function frBarHTML(){const A=ADOC(),s=frActive(false),B=(a,i,t,on,lab)=>`<button
  +`<span class="durbox" title="Durata dei nuovi disegni (frame)"><button class="ab tt" data-act="fr:ndur:-1"><span>−</span></button><b>${S.opt.frDur||1}</b><button class="ab tt" data-act="fr:ndur:1"><span>+</span></button></span>`
  +B('an:copyI','copy','Copia gli elementi selezionati')+B('an:pasteI','paste','Incolla nel disegno corrente (stessa posizione)')+sep+`<span class="tgrp">`+B('fr:durm','','Accorcia il disegno corrente',0,'−1')+B('fr:durp','','Allunga il disegno corrente',0,'+1')+B('fr:empty','','Inserisci un frame vuoto dopo il disegno',0,'Vuoto')+`</span>`+B('fr:del','trash','Elimina il disegno corrente')+sep
  +`<button class="ab" data-fly="frseq" title="Animazioni a disegni">${ic('frames')}<span class="lab">${esc(s?s.name||'Animazione':'Nessuna')}</span><span class="car"></span></button>`
- +`<button class="ab" data-fly="frmore" title="Altro">${ic('more')}</button><button class="ab" data-fly="media" title="Audio e video di riferimento">${ic('avmedia')}</button><button class="ab" data-fly="mcut" title="Taglia audio / video al frame corrente">${ic('scissors')}</button>`+sep
+ +`<button class="ab" data-fly="frmore" title="Altro">${ic('more')}</button><button class="ab" data-fly="media" title="Audio e video di riferimento">${ic('avmedia')}</button><button class="ab" data-act="an:msplit" title="Dividi audio / video al frame corrente">${ic('scissors')}</button>`+sep
  +B('an:onion','onion','Onion skin (disegni vicini)',S.opt.onion)+B('an:flip','flipbook','Flipbook: striscia dei disegni sopra la timeline',S.opt.flip)+`<span class="asp"></span>`+B('an:fold',AN.fold?'chevup':'chevdown','Riduci / espandi')}
 
 /* ---------- timeline Frames ---------- */
@@ -2416,11 +2417,12 @@ function drawFR(){const{x,W,H}=cvFit(tlc),T=AN.T,A=ADOC(),NW=NAMEW(),X=f=>NW+12+
  AN.tlContentH=y+T.y0-RULH;x.restore();
  x.fillStyle='#2e2e34';x.fillRect(NW-1,0,1,H);drawRulerX(x,W,X,0,T.z,(T.x0-12)/T.z);durMark(x,X,H);x.fillStyle='#18181b';x.fillRect(0,0,NW-1,RULH);x.fillStyle='#8f8f99';x.font='600 10.5px -apple-system,system-ui';x.fillText(`${A.fps} fps`,10,16);
  const ph=X(S.frame);if(ph>=NW-2){x.fillStyle='rgba(255,159,10,.18)';x.fillRect(ph,RULH,T.z,H-RULH);x.fillStyle='#ff9f0a';x.fillRect(Math.round(ph)-1,0,2,H);x.beginPath();x.moveTo(ph-7,0);x.lineTo(ph+7,0);x.lineTo(ph+7,13);x.lineTo(ph,19);x.lineTo(ph-7,13);x.closePath();x.fill()}
- if(S.opt.hints!==false&&!rows.some(r=>r.t==='S')){x.fillStyle='#8f8f99';x.font='13px -apple-system,system-ui';x.fillText('Disegna sul canvas: si crea un\'animazione a disegni. “Disegno” aggiunge il disegno successivo.',NW+20,RULH+40)}}
+ if(S.opt.hints!==false&&!rows.some(r=>r.t==='S')){x.fillStyle='#8f8f99';x.font='13px -apple-system,system-ui';x.fillText('Disegna sul canvas: si crea un\'animazione a disegni. “Disegno” aggiunge il disegno successivo.',NW+20,RULH+rows.reduce((a,r)=>a+r.h,0)+(rows.length?30:40)-AN.T.y0)}}
 function frTlDown(p,e){const G=AN.tlGeom;if(!G)return null;const fAt=px=>Math.floor((px-G.NW-12+AN.T.x0)/AN.T.z),tol=e.pointerType==='touch'?12:7;
  if(p.y<RULH&&p.x>=G.NW){const dd=durDrag(p,G);if(dd)return dd;stopPlay();setFrame(fAt(p.x),true);return{move(q){setFrame(fAt(q.x),true)}}}
  let hit=null;for(const o of AN.tlRows)if(p.y>=o.y&&p.y<=o.y+o.r.h)hit=o;if(!hit)return null;const r=hit.r;
- if((r.t==='A'||r.t==='V')&&p.x<G.NW){if(p.x>G.NW-34)mediaDel(r.t);return null}
+ if((r.t==='A'||r.t==='V')&&p.x<G.NW){if(p.x>G.NW-34)mediaDel(r.t);else mSelTrack(r.t==='A'?'a':'v');return null}
+ if(r.t==='A'||r.t==='V'){const mo=mediaTlDown(r.t,p,e,G,fAt,tol);if(mo!==undefined)return mo}
  if(r.t==='A'||r.t==='V'){const isA=r.t==='A',o0=isA?ADOC().audio.off||0:MEDIA.vid.off||0;let d=0;return{move(q){d=Math.round((q.x-p.x)/AN.T.z);if(isA)ADOC().audio.off=o0+d;else MEDIA.vid.off=o0+d;drawFR()},up(){if(!d){stopPlay();setFrame(fAt(p.x),true);return}if(isA)commit();else{saveVid();syncVideo()}}}}
  const s=r.it,dbl=tlDbl(p);if(p.x<G.NW&&p.x>G.NW-36){if(S.doc.frEdit)frExit(true);s.hide=!s.hide;commit();toast(s.hide?'Animazione nascosta':'Animazione visibile');return null}
  if(p.x<G.NW){if(dbl){S.frSeq=s.id;frAct('rename');return null}if(S.doc.frEdit&&S.doc.frEdit.seq.id!==s.id)frExit(true);S.frSeq=s.id;updateUI();render();return null}
@@ -3800,7 +3802,8 @@ function fbAct(a){const c=frCur();if(!c){toast('Nessun disegno al frame corrente
  document.addEventListener('pointerdown',e=>{if(!m.hidden&&!e.target.closest('#flipmenu'))m.hidden=true},true)}
 
 /* ===== v10: animazioni a disegni su un livello proprio, rotazione del canvas, taglio di audio e video ===== */
-ICONS.avmedia=[['M3 6.5h12v11H3z'],['M15 10l5-3v10l-5-3'],['M6 9.5v5M9 9.5v5M12 9.5v5']];
+// audio e video: schermo con play + doppia croma (dal disegno dell'utente, nello stile a linee delle altre icone)
+ICONS.avmedia=[['M2.8 6.2h7.6a1.9 1.9 0 0 1 1.9 1.9v7a1.9 1.9 0 0 1-1.9 1.9H2.8a1.9 1.9 0 0 1-1.9-1.9v-7a1.9 1.9 0 0 1 1.9-1.9z'],['M5.1 9.3l3.4 2.3-3.4 2.3z',1],['M15 17.4V7.6l6.6-1.2v9.4'],['M15 10.1l6.6-1.2'],['M11.5 17.4a1.75 1.75 0 1 0 3.5 0a1.75 1.75 0 1 0-3.5 0',1],['M18.1 15.8a1.75 1.75 0 1 0 3.5 0a1.75 1.75 0 1 0-3.5 0',1]];
 ICONS.scissors=[['M8.5 8.5L20 18M8.5 15.5L20 6'],[C(6,7,2.6)],[C(6,17,2.6)]];
 ICONS.rotcv=[['M20 12a8 8 0 1 1-2.3-5.6'],['M20 4v5h-5']];
 // ---- livello proprio per ogni animazione a disegni (anche nei documenti già esistenti) ----
@@ -3838,31 +3841,64 @@ P.addEventListener('change',e=>{if(e.target.dataset.cvrot)e.stopImmediatePropaga
 // ---- taglio di audio e video: si tiene solo la parte utile (t0..t1, in secondi della sorgente) ----
 function mTrim(k){const o=k==='a'?ADOC().audio:MEDIA.vid;if(!o)return null;const len=k==='a'?(MEDIA.buf?MEDIA.buf.duration:0):(o.el&&o.el.duration)||0;return{o,len,t0:o.t0||0,t1:o.t1!=null?o.t1:len}}
 function mAt(k,f){const m=mTrim(k);if(!m)return null;const t=(f-(m.o.off||0))/ADOC().fps;return{t,inside:t>=m.t0&&t<m.t1,...m}}
-FLY.mcut=()=>{const a=ADOC().audio,v=MEDIA.vid,fa=a&&mAt('a',S.frame),fv=v&&mAt('v',S.frame);const L=[];
- L.push(['an:mcut:a:pre','scissors','Audio: elimina prima del frame',!(fa&&fa.t>fa.t0&&fa.t<fa.t1)],['an:mcut:a:post','scissors','Audio: elimina dopo il frame',!(fa&&fa.t>fa.t0&&fa.t<fa.t1)],['an:mcut:a:reset','loopic','Audio: ripristina intero',!(a&&(a.t0||a.t1!=null))]);
- L.push(['an:mcut:v:pre','scissors','Video: elimina prima del frame',!(fv&&fv.t>fv.t0&&fv.t<fv.t1)],['an:mcut:v:post','scissors','Video: elimina dopo il frame',!(fv&&fv.t>fv.t0&&fv.t<fv.t1)],['an:mcut:v:reset','loopic','Video: ripristina intero',!(v&&(v.t0||v.t1!=null))]);return L};
-{const _a=animAct;animAct=function(a){if(a.startsWith('mcut:')){const[,k,w]=a.split(':'),m=mAt(k,S.frame);$('#fly').hidden=true;if(!m)return;const o=m.o;
-  if(w==='reset'){delete o.t0;delete o.t1}else if(w==='pre')o.t0=+m.t.toFixed(3);else o.t1=+m.t.toFixed(3);
-  if(k==='a'){commit();if(AN.playing){mediaPlay(false);mediaPlay(true)}}else{saveVid();syncVideo();render()}drawAnim();toast(w==='reset'?'Ripristinato':'Tagliato al frame '+S.frame);return}return _a(a)}}
-{const _sv=saveVid;saveVid=function(){const v=MEDIA.vid;if(!v)return _sv();IDB.set('refvid',{blob:v.blob,name:v.name,op:v.op,off:v.off,show:v.show,t0:v.t0,t1:v.t1})}}
-IDB.get('refvid').then(r=>{if(r&&MEDIA.vid){if(r.t0!=null)MEDIA.vid.t0=r.t0;if(r.t1!=null)MEDIA.vid.t1=r.t1}}).catch(()=>{});
+// forbice: divide la clip al frame corrente (audio, video o entrambi); poi tocchi la parte da eliminare
+function mSplitOK(k){const r=mAt(k,S.frame);return r&&r.t>r.t0+.02&&r.t<r.t1-.02}
+// traccia selezionata (audio o video): la forbice taglia solo quella
+function mSelTrack(k){MEDIA.trk=MEDIA.trk===k?null:k;MEDIA.seg=null;redrawTL();if(MEDIA.trk)toast((k==='a'?'Audio':'Video')+' selezionato: la forbice taglia solo questa traccia')}
+function mediaSplit(){const has=k=>k==='a'?!!ADOC().audio:!!MEDIA.vid;let k=MEDIA.trk&&has(MEDIA.trk)?MEDIA.trk:null;
+ if(!k){const c=['a','v'].filter(has);if(!c.length){toast('Nessun audio o video di riferimento');return}const under=c.filter(mSplitOK);
+  if(c.length===1)k=c[0];else if(under.length===1)k=under[0];else{toast('Tocca il nome della traccia audio o video da tagliare');return}}
+ if(!mSplitOK(k)){toast('Porta la testina dentro la clip '+(k==='a'?'audio':'video'));return}
+ const r=mAt(k,S.frame);r.o.cut=+r.t.toFixed(3);MEDIA.seg=null;MEDIA.trk=k;if(k==='a')commit();else saveVid();redrawTL();toast((k==='a'?'Audio':'Video')+' diviso al frame '+S.frame+': tocca la parte da eliminare')}
+function redrawTL(){try{S.mode==='frames'?drawFR():drawTL()}catch(_){}}
+function mSegApply(k,side){const r=mTrim(k);if(!r||r.o.cut==null)return;const c=r.o.cut;if(side==='L')r.o.t0=c;else r.o.t1=c;delete r.o.cut;MEDIA.seg=null;
+ if(k==='a'){commit();if(AN.playing){mediaPlay(false);mediaPlay(true)}}else{saveVid();syncVideo();placeVideo()}redrawTL();render();toast('Parte eliminata')}
+function mCutClear(k){const r=mTrim(k);if(r){delete r.o.cut;if(k==='a')commit();else saveVid()}MEDIA.seg=null;redrawTL()}
+function segMenu(k,side,cx,cy){let m=$('#segmenu');if(!m){m=document.createElement('div');m.id='segmenu';document.body.appendChild(m);
+  m.addEventListener('click',e=>{const b=e.target.closest('[data-sm]');if(!b)return;m.hidden=true;const[c,kk,sd]=b.dataset.sm.split(':');if(c==='del')mSegApply(kk,sd);else if(c==='keep')mCutClear(kk);else{MEDIA.seg=null;redrawTL()}});
+  document.addEventListener('pointerdown',e=>{if(!m.hidden&&!e.target.closest('#segmenu')){m.hidden=true;if(MEDIA.seg){MEDIA.seg=null;redrawTL()}}},true)}
+ m.innerHTML=`<button data-sm="del:${k}:${side}" class="dng">Elimina questa parte</button><button data-sm="keep:${k}">Unisci di nuovo</button><button data-sm="no">Annulla</button>`;m.hidden=false;
+ const mw=m.offsetWidth,mh=m.offsetHeight;m.style.left=Math.max(8,Math.min(innerWidth-mw-8,cx-mw/2))+'px';m.style.top=Math.max(8,cy-mh-14)+'px'}
+// timeline: bordi trascinabili (allunga / accorcia), tocco su una parte divisa = selezione, trascinamento = sposta con anteprima dal vivo
+function mediaTlDown(t,p,e,G,fAt,tol){const k=t==='A'?'a':'v',r=mTrim(k);if(!r||!r.len||p.x<G.NW)return undefined;const A=ADOC(),off=r.o.off||0,xa=G.X(off+r.t0*A.fps),xb=G.X(off+r.t1*A.fps),et=Math.max(tol,12);
+ const edge=Math.abs(p.x-xa)<=et?'t0':Math.abs(p.x-xb)<=et?'t1':null;
+ if(edge){stopPlay();let ch=false;const o=r.o;return{move(q){const ts=Math.round(fAt(q.x)-off)/A.fps;ch=true;if(edge==='t0'){o.t0=Math.max(0,Math.min(ts,(o.t1??r.len)-1/A.fps));if(o.t0<=0)delete o.t0}else{o.t1=Math.min(r.len,Math.max(ts,(o.t0||0)+1/A.fps));if(o.t1>=r.len-1e-3)delete o.t1}
+   if(o.cut!=null&&(o.cut<=(o.t0||0)||o.cut>=(o.t1??r.len)))delete o.cut;if(k==='v'){setVidPreview(edge==='t0'?(o.t0||0):(o.t1??r.len))}redrawTL()},
+  up(){if(!ch)return;if(k==='a')commit();else{saveVid();syncVideo();placeVideo()}toast(k==='a'?'Audio regolato':'Video regolato')}}}
+ if(p.x<xa||p.x>xb)return undefined;
+ // dentro la clip: un tocco su una parte divisa la seleziona, un trascinamento sposta la clip
+ const o=r.o;let d=0,o0=off;return{move(q){d=Math.round((q.x-p.x)/AN.T.z);o.off=o0+d;if(k==='v'){syncVideo();placeVideo()}redrawTL()},
+  up(q,ev){if(d){if(k==='a')commit();else{saveVid();syncVideo();placeVideo()}if(S.tab==='aprops')buildPanel();return}
+   MEDIA.trk=k;
+   if(o.cut!=null){const xc=G.X(off+o.cut*A.fps),side=p.x<xc?'L':'R';MEDIA.seg={k,side};redrawTL();const ce=(ev&&ev.clientX!=null)?ev:e;segMenu(k,side,ce.clientX,ce.clientY);return}
+   stopPlay();setFrame(fAt(p.x),true)}}}
+function setVidPreview(ts){const v=MEDIA.vid;if(!v||!v.el||v.el.readyState<1)return;try{v.el.currentTime=Math.max(0,Math.min(ts,(v.el.duration||ts+1)-.001))}catch(_){}v.el.style.visibility=''}
+{const st=document.createElement('style');st.textContent=`#segmenu{position:fixed;z-index:45;background:var(--panel2);border:1px solid var(--line);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.55);padding:5px;display:flex;flex-direction:column;min-width:190px}#segmenu[hidden]{display:none}
+#segmenu button{height:40px;border:0;background:none;color:var(--tx);text-align:left;padding:0 12px;border-radius:9px;font-size:13px}#segmenu button:active{background:var(--panel3)}#segmenu .dng{color:#ff6b62}`;document.head.appendChild(st)}
+{const _sv=saveVid;saveVid=function(){const v=MEDIA.vid;if(!v)return _sv();IDB.set('refvid',{blob:v.blob,name:v.name,op:v.op,off:v.off,show:v.show,t0:v.t0,t1:v.t1,cut:v.cut})}}
+IDB.get('refvid').then(r=>{if(r&&MEDIA.vid){['t0','t1','cut'].forEach(k=>{if(r[k]!=null)MEDIA.vid[k]=r[k]})}}).catch(()=>{});
 // timeline: le parti tagliate spariscono, restano due tacche ai bordi
 {const _dm=drawMediaRow;drawMediaRow=function(x,r,y,W,NW,X){_dm(x,r,y,W,NW,X);const k=r.t==='A'?'a':'v',m=mTrim(k);if(!m||!m.len)return;const A=ADOC(),off=m.o.off||0,xs=X(off),xa=X(off+m.t0*A.fps),xb=X(off+m.t1*A.fps),xe=X(off+m.len*A.fps);
+ if(MEDIA.trk===k){x.fillStyle='rgba(255,159,10,.16)';x.fillRect(0,y,NW,r.h-1);x.fillStyle='#ff9f0a';x.fillRect(0,y,3,r.h-1)}
  x.save();x.beginPath();x.rect(NW,y,W-NW,r.h-1);x.clip();x.fillStyle='#141416';if(xa>xs)x.fillRect(xs-1,y+1,xa-xs+1,r.h-2);if(xe>xb)x.fillRect(xb,y+1,xe-xb+2,r.h-2);
- x.fillStyle=k==='a'?'#29d4c5':'#9aa4ff';if(m.t0>0)x.fillRect(xa-1,y+3,2,r.h-6);if(m.t1<m.len)x.fillRect(xb-1,y+3,2,r.h-6);x.restore()}}
+ x.fillStyle=k==='a'?'#29d4c5':'#9aa4ff';x.fillRect(xa,y+3,3,r.h-6);x.fillRect(xb-3,y+3,3,r.h-6);
+ if(m.o.cut!=null){const xc=X(off+m.o.cut*A.fps),sg=MEDIA.seg&&MEDIA.seg.k===k?MEDIA.seg.side:null;if(sg){x.fillStyle='rgba(255,159,10,.32)';if(sg==='L')x.fillRect(xa,y+1,xc-xa,r.h-2);else x.fillRect(xc,y+1,xb-xc,r.h-2)}
+  x.fillStyle='#fff';x.fillRect(xc-1,y+1,2,r.h-2);x.beginPath();x.moveTo(xc-5,y+1);x.lineTo(xc+5,y+1);x.lineTo(xc,y+7);x.closePath();x.fill()}
+ x.restore()}}
 // trascinamento della traccia: si afferra solo la parte tenuta (il resto non è più cliccabile in modo sensato, ma lo spostamento resta)
 // riproduzione: fuori dalla parte tenuta audio e video tacciono
 let MTRW=0;function mediaWatch(){cancelAnimationFrame(MTRW);if(!AN.playing)return;const f=S.frame,a=ADOC().audio,au=MEDIA.au;
  if(a&&au&&!a.mute){const m=mAt('a',f);if(m){if(!m.inside){if(!au.paused)au.pause()}else if(au.paused){try{au.currentTime=Math.max(m.t0,m.t)}catch(_){}au.play().catch(()=>{})}}}
- const v=MEDIA.vid;if(v&&v.show){const m=mAt('v',f);if(m){v.wrap.style.visibility=m.inside?'':'hidden';if(!m.inside){if(!v.el.paused)v.el.pause()}else if(v.el.paused){try{v.el.currentTime=Math.max(m.t0,m.t)}catch(_){}v.el.play().catch(()=>{})}}}
+ const v=MEDIA.vid;if(v&&v.show){const m=mAt('v',f);if(m){v.el.style.visibility=m.inside?'':'hidden';if(!m.inside){if(!v.el.paused)v.el.pause()}else if(v.el.paused){try{v.el.currentTime=Math.max(m.t0,m.t)}catch(_){}v.el.play().catch(()=>{})}}}
  MTRW=requestAnimationFrame(mediaWatch)}
 {const _mp=mediaPlay;mediaPlay=function(on){_mp(on);if(on)MTRW=requestAnimationFrame(mediaWatch);else cancelAnimationFrame(MTRW)}}
-{const _pv=placeVideo;placeVideo=function(){_pv();const v=MEDIA.vid;if(v){const m=mAt('v',S.frame);v.wrap.style.visibility=m&&!m.inside?'hidden':''}}}
+{const _pv=placeVideo;placeVideo=function(){_pv();const v=MEDIA.vid;if(v){v.wrap.style.visibility='';const m=mAt('v',S.frame);v.el.style.visibility=m&&!m.inside?'hidden':''}}}
 // video MP4: l'audio fuori dalla parte tenuta è silenzioso
 {const _ea=encodeAudio;encodeAudio=async function(AU,muxer,a,b){const au=ADOC().audio,buf=MEDIA.buf;if(!buf||!au||(!au.t0&&au.t1==null))return _ea(AU,muxer,a,b);
  const t0=au.t0||0,t1=au.t1??buf.duration,sr=buf.sampleRate;let nb;try{nb=new AudioBuffer({length:buf.length,numberOfChannels:buf.numberOfChannels,sampleRate:sr})}catch(e){return _ea(AU,muxer,a,b)}
  for(let c=0;c<buf.numberOfChannels;c++){const s=buf.getChannelData(c),d=nb.getChannelData(c);const i0=Math.max(0,Math.floor(t0*sr)),i1=Math.min(s.length,Math.ceil(t1*sr));d.set(s.subarray(i0,i1),i0)}
  MEDIA.buf=nb;try{return await _ea(AU,muxer,a,b)}finally{MEDIA.buf=buf}}}
+{const _a=animAct;animAct=function(a){if(a==='msplit'){mediaSplit();return}return _a(a)}}
 
 /* ===== v10: Home — duplica, rinomina, Cestino (5 giorni) ===== */
 const TRASH_DAYS=5;let TRASH=[];
