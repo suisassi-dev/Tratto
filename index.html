@@ -3820,7 +3820,7 @@ function seqOwnLayers(){let ch=false;const Ls=S.doc.layers;for(let i=0;i<Ls.leng
 {const _u=updateUI;updateUI=function(){if(S.mode==='frames'&&!S.doc.frEdit){const L=layer(),sq=L&&L.items.find(isSeq);if(sq&&S.frSeq!==sq.id)S.frSeq=sq.id}return _u()}}
 {const _fa=frAct;frAct=function(a){const r=_fa(a);if(a.startsWith('active:')){const L=S.doc.layers.find(l=>l.items.some(i=>i.id===S.frSeq));if(L&&S.activeLayer!==L.id){S.activeLayer=L.id;updateUI()}}return r}}
 // ---- rotazione del canvas (Draw e Frames): solo la vista, il documento non cambia ----
-function cvRot(){return S.mode==='anima'?0:(S.opt.cvR||0)}
+function cvRot(){return S.opt.cvR||0}
 function applyCvRot(){const r=cvRot(),st=$('#stage');st.classList.toggle('cvrot',!!r);const t=r?`rotate(${r}deg)`:'';svg.style.transformOrigin='50% 50%';svg.style.transform=t;
  const w=$('#refw');if(w){const W=svg.clientWidth,H=svg.clientHeight;w.style.transformOrigin=`${W/2-(parseFloat(w.style.left)||0)}px ${H/2-(parseFloat(w.style.top)||0)}px`;w.style.transform=t}
  let b=$('#rotReset');if(r){if(!b){b=document.createElement('button');b.id='rotReset';b.title='Riporta la rotazione a 0°';b.addEventListener('click',()=>setCvRot(0));st.appendChild(b)}b.innerHTML=ic('rotcv')+`<span>${Math.round(r)}°</span>`;b.hidden=false}else if(b)b.hidden=true}
@@ -3830,14 +3830,15 @@ evPos=function(e){const W=svg.clientWidth,H=svg.clientHeight,st=$('#stage').getB
 {const _dr=doRender;doRender=function(){_dr();applyCvRot()}}
 {const st=document.createElement('style');st.textContent=`#stage.cvrot .ruler,#stage.cvrot #rcorner{display:none}#stage{overflow:hidden}
 #rotReset{position:absolute;right:12px;bottom:12px;z-index:13;height:36px;border:0;border-radius:18px;padding:0 12px 0 9px;display:flex;align-items:center;gap:6px;background:rgba(28,28,31,.92);color:var(--tx);box-shadow:0 6px 18px rgba(0,0,0,.4);font-size:12.5px;font-variant-numeric:tabular-nums}#rotReset .ic{width:17px;height:17px;color:var(--acc)}#rotReset[hidden]{display:none}`;document.head.appendChild(st)}
-function rotSec(){const r=S.opt.cvR||0;return sec('cv-rot','Rotazione del canvas',`<div class="row"><span class="lbl">Angolo</span><input type="range" min="-180" max="180" step="1" value="${r}" data-cvrot="1"><span class="val">${r}°</span></div>
- <div class="grid g2" style="grid-template-columns:repeat(4,1fr)"><button class="btn" data-act="cvrot:-15">−15°</button><button class="btn" data-act="cvrot:15">+15°</button><button class="btn" data-act="cvrot:90">90°</button><button class="btn pri" data-act="cvrot:0">0°</button></div>
- <div class="hint">Ruota solo la vista per disegnare più comodamente; il documento e l'esportazione non cambiano. In Anima la vista resta dritta.</div>`)}
+function rotSec(){const r=S.opt.cvR||0,on=!!S.opt.cvRotOn;return sec('cv-rot','Rotazione del canvas',`<div class="row"><button class="btn${on?' on':''}" data-act="cvrotlock" style="flex:1;justify-content:flex-start;gap:8px;white-space:nowrap;${on?'color:var(--acc)':''}">${ic(on?'unlock':'lock')}<span>${on?'Due dita: sbloccata':'Due dita: bloccata'}</span></button><button class="btn pri" data-act="cvrot:0" title="Riporta a 0°" style="min-width:56px">0°</button></div>
+ <div class="row"><span class="lbl">Angolo</span><input type="range" min="-180" max="180" step="1" value="${r}" data-cvrot="1"><span class="val">${r}°</span></div>
+ <div class="hint">Sbloccata, due dita sul canvas ruotano la vista insieme a zoom e spostamento (vicino a 0°, 90°, 180° si aggancia). Ruota solo la vista: documento ed esportazioni non cambiano.</div>`)}
 {const _ap=arrangePanel;arrangePanel=function(){return _ap()+rotSec()}}
 {const _fp=framesPanel;framesPanel=function(){return _fp()+rotSec()}}
+{const _anp=animPanel;animPanel=function(){return _anp()+rotSec()}}
 P.addEventListener('input',e=>{if(!e.target.dataset.cvrot)return;e.stopImmediatePropagation();setCvRot(+e.target.value)},true);
 P.addEventListener('change',e=>{if(e.target.dataset.cvrot)e.stopImmediatePropagation()},true);
-{const _a=act;act=function(a){if(a.startsWith('cvrot:')){const v=+a.slice(6);setCvRot(v===0?0:v===90?(S.opt.cvR||0)+90:(S.opt.cvR||0)+v);return}return _a(a)}}
+{const _a=act;act=function(a){if(a==='cvrotlock'){S.opt.cvRotOn=!S.opt.cvRotOn;scheduleSave();buildPanel();toast(S.opt.cvRotOn?'Ruota il canvas con due dita':'Rotazione con due dita bloccata');return}if(a.startsWith('cvrot:')){const v=+a.slice(6);setCvRot(v===0?0:v===90?(S.opt.cvR||0)+90:(S.opt.cvR||0)+v);return}return _a(a)}}
 // ---- taglio di audio e video: si tiene solo la parte utile (t0..t1, in secondi della sorgente) ----
 function mTrim(k){const o=k==='a'?ADOC().audio:MEDIA.vid;if(!o)return null;const len=k==='a'?(MEDIA.buf?MEDIA.buf.duration:0):(o.el&&o.el.duration)||0;return{o,len,t0:o.t0||0,t1:o.t1!=null?o.t1:len}}
 function mAt(k,f){const m=mTrim(k);if(!m)return null;const t=(f-(m.o.off||0))/ADOC().fps;return{t,inside:t>=m.t0&&t<m.t1,...m}}
@@ -3899,6 +3900,19 @@ let MTRW=0;function mediaWatch(){cancelAnimationFrame(MTRW);if(!AN.playing)retur
  for(let c=0;c<buf.numberOfChannels;c++){const s=buf.getChannelData(c),d=nb.getChannelData(c);const i0=Math.max(0,Math.floor(t0*sr)),i1=Math.min(s.length,Math.ceil(t1*sr));d.set(s.subarray(i0,i1),i0)}
  MEDIA.buf=nb;try{return await _ea(AU,muxer,a,b)}finally{MEDIA.buf=buf}}}
 {const _a=animAct;animAct=function(a){if(a==='msplit'){mediaSplit();return}return _a(a)}}
+
+ICONS.lock=[['M6.5 11h11v9h-11z'],['M8.5 11V8a3.5 3.5 0 0 1 7 0v3']];ICONS.unlock=[['M6.5 11h11v9h-11z'],['M8.5 11V8a3.5 3.5 0 0 1 6.8-1.2']];
+// ---- rotazione con due dita (quando è sbloccata): ruota, ingrandisce e sposta insieme, il punto tra le dita resta sotto le dita ----
+{const TP=new Map();let R=null;
+ const ang=()=>{const t=[...TP.values()];return Math.atan2(t[1].y-t[0].y,t[1].x-t[0].x)*180/Math.PI},mid=()=>{const t=[...TP.values()];return{clientX:(t[0].x+t[1].x)/2,clientY:(t[0].y+t[1].y)/2}},dist=()=>{const t=[...TP.values()];return Math.hypot(t[1].x-t[0].x,t[1].y-t[0].y)||1};
+ const start=()=>{const m=mid(),q=evPos(m);R={a0:ang(),r0:S.opt.cvR||0,d0:dist(),z0:S.view.z,w:{x:q.x,y:q.y},on:false}};
+ svg.addEventListener('pointerdown',e=>{if(e.pointerType!=='touch')return;TP.set(e.pointerId,{x:e.clientX,y:e.clientY});if(TP.size===2&&S.opt.cvRotOn)start();else R=null},true);
+ svg.addEventListener('pointermove',e=>{if(e.pointerType!=='touch'||!TP.has(e.pointerId))return;TP.get(e.pointerId).x=e.clientX;TP.get(e.pointerId).y=e.clientY;if(!R||TP.size!==2||!gest)return;
+  let da=ang()-R.a0;while(da>180)da-=360;while(da<-180)da+=360;if(!R.on){if(Math.abs(da)<8)return;R.on=true;R.a0+=Math.sign(da)*8;da-=Math.sign(da)*8;gest.moved=true}
+  let r=R.r0+da;const sn=Math.round(r/90)*90;if(Math.abs(r-sn)<4)r=sn;r=((r+540)%360)-180;S.opt.cvR=Math.round(r*10)/10;
+  const z=Math.max(.05,Math.min(40,R.z0*dist()/R.d0)),q=evPos(mid());S.view={x:q.sx-R.w.x*z,y:q.sy-R.w.y*z,z};applyCvRot();render()});
+ const end=e=>{if(e.pointerType!=='touch')return;TP.delete(e.pointerId);if(TP.size<2){if(R&&R.on){scheduleSave();const i=P.querySelector('[data-cvrot]');if(i){i.value=Math.round(S.opt.cvR);const l=i.parentNode.querySelector('.val');if(l)l.textContent=Math.round(S.opt.cvR)+'°'}}R=null}};
+ svg.addEventListener('pointerup',end,true);svg.addEventListener('pointercancel',end,true)}
 
 /* ===== v10: Home — duplica, rinomina, Cestino (5 giorni) ===== */
 const TRASH_DAYS=5;let TRASH=[];
