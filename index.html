@@ -2444,10 +2444,16 @@ function frOnionHTML(){const o=S.opt;if(!o.onion||S.mode!=='frames')return'';con
  let h='';for(let k=nB;k>=1;k--){const R=runs[(ci<0?i0:ci)-k];if(R)h+=mk(R,-1,k,nB)}for(let k=nA;k>=1;k--){const R=runs[(ci<0?i0-1:ci)+k];if(R)h+=mk(R,1,k,nA)}return h}
 
 /* ---------- matita con pressione (Apple Pencil) ---------- */
-function pressurePoly(pts,w,minR,rough,seed){if(pts.length<2)return null;const n=pts.length;const hsh=i=>{const x=Math.sin(i*127.1+(seed||1)*311.7)*43758.5453;return x-Math.floor(x)};
+function pressurePoly(pts,w,minR,rough,seed,tp){if(pts.length<2)return null;const n=pts.length;const hsh=i=>{const x=Math.sin(i*127.1+(seed||1)*311.7)*43758.5453;return x-Math.floor(x)};
  const sm=pts.map((p,i)=>{let a=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(n-1,i+2);j++){a+=pts[j][2];c++}return a/c});
- const rad=sm.map((p,i)=>Math.max(.15,w/2*(minR+(1-minR)*Math.pow(Math.max(0,Math.min(1,p)),.75))*(rough?1+rough*(hsh(i)-.5)*(i%3?1:1.6):1)));
- const L=[],R=[];for(let i=0;i<n;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(n-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const r=rad[i];L.push([pts[i][0]-dy*r,pts[i][1]+dx*r]);R.push([pts[i][0]+dy*r,pts[i][1]-dx*r])}
+ const cum=[0];for(let i=1;i<n;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const T=cum[n-1]||1,ex=tp?1.25:.75;
+ // bordo "organico": rumore morbido lungo la lunghezza (indipendente sui due lati), niente seghettature
+ const vn=(u,o)=>{const i=Math.floor(u),t=u-i,k=(1-Math.cos(t*Math.PI))/2;return hsh(i+o)*(1-k)+hsh(i+1+o)*k},wl=Math.max(3,w*1.3),amp=rough?rough*.2:0;
+ const nz=(d,o)=>amp?1+amp*((vn(d/wl,o)-.5)*1.5+(vn(d/wl*2.7,o+37)-.5)*.7):1;
+ // punte affusolate (inchiostro): il raggio scende verso gli estremi
+ const tl=tp?Math.min(T*.45,Math.max(w*1.8*tp,2)):0,tpr=d=>{if(!tl)return 1;const t=Math.min(1,Math.min(d,T-d)/tl);return Math.max(.05,Math.pow(Math.sin(t*Math.PI/2),.85))};
+ const rad=sm.map((p,i)=>Math.max(.12,w/2*(minR+(1-minR)*Math.pow(Math.max(0,Math.min(1,p)),ex))*tpr(cum[i])));
+ const L=[],R=[];for(let i=0;i<n;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(n-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const r=rad[i],rl=r*nz(cum[i],11),rr=r*nz(cum[i],503);L.push([pts[i][0]-dy*rl,pts[i][1]+dx*rl]);R.push([pts[i][0]+dy*rr,pts[i][1]-dx*rr])}
  const cap=(c,r,a0,steps)=>{const o=[];for(let k=1;k<steps;k++){const a=a0+Math.PI*k/steps;o.push([c[0]+Math.cos(a)*r,c[1]+Math.sin(a)*r])}return o};
  const e=pts[n-1],e2=pts[n-2],s0=pts[0],s1=pts[1],ae=Math.atan2(e[1]-e2[1],e[0]-e2[0]),as=Math.atan2(s1[1]-s0[1],s1[0]-s0[0]);
  return[...L,...cap(e,rad[n-1],ae-Math.PI/2,12).reverse(),...R.reverse(),...cap(s0,rad[0],as+Math.PI/2,12).reverse()]}
@@ -2483,7 +2489,7 @@ function pwOutline(it){const c=PWC.get(it);if(c&&c.ref===it.subs&&c.sw===it.styl
  const fl=flatten(it),out=[];for(const f of fl){let P=f.pts;if(P.length<2)continue;const dense=[P[0]];for(let i=1;i<P.length;i++){const a=dense[dense.length-1],b=P[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(d/2));for(let k=1;k<=n;k++)dense.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
   const L=[0];for(let i=1;i<dense.length;i++)L.push(L[i-1]+Math.hypot(dense[i][0]-dense[i-1][0],dense[i][1]-dense[i-1][1]));const T=L[L.length-1]||1,S0=it.pw.s,N=S0.length;
   const pts=dense.map((q,i)=>{const u=L[i]/T*(N-1),j=Math.min(N-2,Math.floor(u)),t=u-j;return[q[0],q[1],S0[j]+(S0[j+1]-S0[j])*t]});
-  const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR,it.pw.br==='pencil'?.6:0,it.pw.seed);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
+  const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR,it.pw.br==='pencil'?.6:0,it.pw.seed,it.pw.tp||0);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
  PWC.set(it,{k:key,subs:out,ref:it.subs,sw:it.style.sw,mr:it.pw.minR,pr:it.pw.s});return out}
 // come appare: un riempimento con il colore del tratto (stessa opacità, sfocatura, fusione e rim)
 function pwFlat(it){if(!it||!it.pw||it.type!=='path'||!it.style.stroke)return it;return{...it,subs:pwOutline(it),style:{...it.style,fill:it.style.stroke,fo:it.style.so??1,stroke:null},pw:undefined,rule:'nonzero'}}
@@ -2933,7 +2939,7 @@ ICONS.nocolor=[[C(12,12,8)],['M6.3 17.7L17.7 6.3']];
 function applyHints(){document.body.classList.toggle('nohints',S.opt.hints===false)}
 {const _a=act;act=function(a){if(a==='hints'){S.opt.hints=S.opt.hints===false;applyHints();scheduleSave();$('#menu').hidden=true;toast(S.opt.hints===false?'Aiuti nascosti':'Aiuti visibili');return}
  if(a==='swnone'){swNone();return}return _a(a)}}
-{const st=document.createElement('style');st.textContent=`body.nohints #ctx .lab{display:none!important}body.nohints #ctx .cb{padding:0 6px;min-width:34px}
+{const st=document.createElement('style');st.textContent=`body.nohints #ctx .lab{display:none!important}body.nohints #fly[data-for="brush"] button span{display:none}body.nohints #fly[data-for="brush"] button{min-width:48px;justify-content:center}body.nohints #ctx .cb{padding:0 6px;min-width:34px}
 body.nohints .hint,body.nohints .tiphint,body.nohints .clbl.lab{display:none!important}
 .swb .swn{position:absolute;left:-3px;bottom:-4px;width:20px;height:20px;border:0;background:none;color:var(--tx2);padding:0;display:grid;place-items:center;z-index:3}.swb .swn .ic{width:15px;height:15px}.swb .swn:active{color:var(--acc,#ff9f0a)}
 .swb .sw.none::before{content:'';position:absolute;left:50%;top:-20%;width:2px;height:140%;background:#ff3b30;transform:rotate(45deg);transform-origin:center;z-index:1}
@@ -3249,8 +3255,8 @@ function rigItemsSec(){const its=selItems().filter(i=>!isBone(i));if(!its.length
   <button class="btn" data-act="an:rigunbind" style="width:100%;margin-top:6px"${st.length?'':' disabled'}>Scollega${st.length?` (${st.length})`:''}</button>
   ${sm.length?`<button class="btn" data-act="an:rigsmart" style="width:100%;margin-top:6px">Guida con osso smart «${esc(itName(sm.find(b=>b.id===S.rigBone)||sm[0]))}»</button>`:''}
   <div class="hint">Rigido: l'oggetto segue l'osso. Morbido: i punti dei tracciati si piegano tra l'osso scelto e quelli vicini (padre e figli).</div>`)}
-{const _ap=animPanel;animPanel=function(){const b=boneSel();if(b){const h=_ap(),i=h.indexOf('data-col="an-ease"');let tail='';if(i>=0){const j=h.lastIndexOf('<div class="sec',i);tail=h.slice(j)}return bonePanel(b)+tail}
- let h=_ap();const r=rigItemsSec();if(r){const i=h.indexOf('data-col="an-ease"');if(i>=0){const j=h.lastIndexOf('<div class="sec',i);h=h.slice(0,j)+r+h.slice(j)}else h+=r}return h}}
+{const _ap=animPanel;animPanel=function(){const b=boneSel();if(b){const h=_ap(),i=h.indexOf('data-col="an-ease"');let tail='';if(i>=0){const j=secStart(h,i);tail=h.slice(j)}return bonePanel(b)+tail}
+ let h=_ap();const r=rigItemsSec();if(r){const i=h.indexOf('data-col="an-ease"');if(i>=0){const j=secStart(h,i);h=h.slice(0,j)+r+h.slice(j)}else h+=r}return h}}
 // per piegarsi bene un tracciato morbido ha bisogno di punti lungo la lunghezza: divido i segmenti lunghi
 function rigSubdiv(it,maxL){if(!it.subs)return;it.subs=it.subs.map(sp=>{const P=sp.pts,n=P.length;if(n<2)return sp;const out=[];const segN=sp.closed?n:n-1;
  for(let i=0;i<segN;i++){const a={...P[i]},b=P[(i+1)%n];if(!out.length)out.push(a);const L=Math.hypot(b.x-a.x,b.y-a.y),k=Math.min(24,Math.ceil(L/maxL));
@@ -3304,6 +3310,9 @@ function rigBakedDoc(){const d=clone(S.doc),A=ADOC();const RL=d.layers.find(l=>l
  return d}
 {const _el=exportLottie;exportLottie=function(){if(!bones().length)return _el();const sv=S.doc,d=rigBakedDoc();S.doc=d;try{return _el()}finally{S.doc=sv}}}
 {const _v=selItemsV;selItemsV=function(){return _v().filter(i=>!isBone(i))}}
+
+// inizio della sezione che contiene la posizione i (non l'intestazione «sech»)
+function secStart(h,i){let j=i;for(;;){j=h.lastIndexOf('<div class="sec',j-1);if(j<0)return 0;const c=h[j+15];if(c==='"'||c===' ')return j}}
 
 /* ===== Rig v2: più rig, vincoli IK e Copia rotazione, pesi automatici su tutte le ossa, pittura dei pesi, nomi, modelli ===== */
 ICONS.weight=[['M12 3c-3 4.2-6 7.6-6 11a6 6 0 0 0 12 0c0-3.4-3-6.8-6-11z'],['M9 15.5a3 3 0 0 0 3 2.6']];
@@ -3682,11 +3691,11 @@ OPS.pencil=function(P,e){if(!canDraw())return null;
  const br=S.opt.brush||'ink',pen=!!(e&&e.pointerType==='pen'),st=S.def,w=Math.max(.5,st.sw||2),minR=(S.opt.prMin??20)/100,sm=S.opt.smooth??3;
  const col=st.stroke&&st.stroke.t==='solid'?st.stroke.c:(st.fill&&st.fill.t==='solid'?st.fill.c:'#1a1a1a');
  const usePr=pen&&(br==='ink'?S.opt.pressure!==false:br==='pencil'?S.opt.prPencil!==false:false),rough=br==='pencil',poly=usePr||rough,seed=1+Math.floor(Math.random()*9999);
- const p0=usePr?(e.pressure>0?e.pressure:.35):(rough?.6:.5);const pts=[[P.x,P.y,p0]];const el=liveEl();let raf=0,snap=null,hold=0,cx=P.x,cy=P.y,lastQ=P;
+ const tp=usePr?(br==='ink'?1:.45):0;const p0=usePr?(e.pressure>0?e.pressure:.35):(rough?1:.5);const pts=[[P.x,P.y,p0]];const el=liveEl();let raf=0,snap=null,hold=0,cx=P.x,cy=P.y,lastQ=P;
  const pull=br==='concept'?1/(1+sm*.3):1;
- el.setAttribute('fill',poly?col:'none');el.setAttribute('stroke',poly?'none':col);el.setAttribute('stroke-width',w);el.setAttribute('stroke-linecap','round');el.setAttribute('stroke-linejoin','round');el.setAttribute('opacity',rough?.75:(st.so??1));
+ el.setAttribute('fill',poly?col:'none');el.setAttribute('stroke',poly?'none':col);el.setAttribute('stroke-width',w);el.setAttribute('stroke-linecap','round');el.setAttribute('stroke-linejoin','round');el.setAttribute('opacity',rough&&usePr?.8:(st.so??1));
  const draw=()=>{raf=0;if(pts.length<2){const r=poly?Math.max(.3,w/2*(minR+(1-minR)*Math.pow(pts[0][2],.75))):w/2,x=pts[0][0],y=pts[0][1];el.setAttribute('d',poly?`M${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0Z`:`M${x} ${y}l.01 0`);return}
-  if(poly){const pl=pressurePoly(pts,w,minR,rough?.6:0,seed);el.setAttribute('d',pl?'M'+pl.map(p=>f2(p[0])+' '+f2(p[1])).join('L')+'Z':'')}else el.setAttribute('d','M'+pts.map(p=>f2(p[0])+' '+f2(p[1])).join('L'))};
+  if(poly){const pl=pressurePoly(pts,w,minR,rough?.6:0,seed,tp);el.setAttribute('d',pl?'M'+pl.map(p=>f2(p[0])+' '+f2(p[1])).join('L')+'Z':'')}else el.setAttribute('d','M'+pts.map(p=>f2(p[0])+' '+f2(p[1])).join('L'))};
  const upd=()=>{if(!raf)raf=requestAnimationFrame(draw)};draw();
  const arm=()=>{clearTimeout(hold);if(snap||!S.opt.quick)return;hold=setTimeout(()=>{snap=quickShape(pts);if(snap){pts.length=0;pts.push(...snap.pts);upd();toast(snap.t==='e'?'Ellisse: trascina per regolarla':'Linea dritta')}},520)};
  return{coalesced:true,move(Q,ev){lastQ=Q;if(snap){quickAdjust(snap,Q);pts.length=0;pts.push(...snap.pts);upd();return}
@@ -3700,10 +3709,10 @@ OPS.pencil=function(P,e){if(!canDraw())return null;
     const r=poly?Math.max(.3,w/2*(minR+(1-minR)*Math.pow(pts[0][2],.75))):w/2;it=newPath(ellSubs(pts[0][0],pts[0][1],r,r),{...clone(S.def),fill:{t:'solid',c:col},stroke:null,fo:st.so??1});it.pr=1}
    else{const s2=snap?0:sm,res=[pts[0]];for(let i=1;i<pts.length;i++){const p=pts[i],q=res[res.length-1];if(Math.hypot(p[0]-q[0],p[1]-q[1])>=(s2?Math.max(.6,s2*.35):.5)/S.view.z||i===pts.length-1)res.push(p)}
     const sp=s2&&res.length>2?res.map((p,i)=>{if(i===0||i===res.length-1)return p;const a=res[i-1],b=res[i+1];return[(a[0]+2*p[0]+b[0])/4,(a[1]+2*p[1]+b[1])/4,p[2]]}):res,src=sp.length>1?sp:pts;
-    if(poly){if(S.opt.pencilOutline){const pl=pressurePoly(src,w,minR,rough?.6:0,seed);if(pl){it=newPath([{closed:true,pts:pl.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))}],{...clone(S.def),fill:{t:'solid',c:col},stroke:null,fo:st.so??1});
-       if(!rough){try{const vw={p:src.map(q=>[q[0],q[1],q[2]]),w,minR,tol:(.3+s2*.15)/S.view.z},sb=vwSubs(vw);if(sb.length)it.subs=sb}catch(_){}}it.pr=1}}
-     else{it=pwFromPoints(src,w,minR,col,s2);if(it&&rough){it.pw.br='pencil';it.pw.seed=seed}}
-     if(it&&rough){const k=usePr?.35+.65*Math.min(1,mean*1.25):.8;if(it.style.stroke)it.style.so=(st.so??1)*k;else it.style.fo=(st.so??1)*k}}
+    if(poly){if(S.opt.pencilOutline){const pl=pressurePoly(src,w,minR,rough?.6:0,seed,tp);if(pl){it=newPath([{closed:true,pts:pl.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))}],{...clone(S.def),fill:{t:'solid',c:col},stroke:null,fo:st.so??1});
+       if(!rough&&!tp){try{const vw={p:src.map(q=>[q[0],q[1],q[2]]),w,minR,tol:(.3+s2*.15)/S.view.z},sb=vwSubs(vw);if(sb.length)it.subs=sb}catch(_){}}it.pr=1}}
+     else{it=pwFromPoints(src,w,minR,col,s2);if(it&&rough){it.pw.br='pencil';it.pw.seed=seed}if(it&&tp)it.pw.tp=tp}
+     if(it&&rough){const k=usePr?.45+.55*Math.min(1,mean*1.25):1;if(it.style.stroke)it.style.so=(st.so??1)*k;else it.style.fo=(st.so??1)*k}}
     if(!it){// linea uniforme (Concept, o dito con Ink)
      let subs=null;try{const pp=new paper.Path({segments:src.map(q=>[q[0],q[1]]),insert:false});const closeIt=src.length>10&&Math.hypot(src[0][0]-src[src.length-1][0],src[0][1]-src[src.length-1][1])*S.view.z<14;
       if(src.length>2)pp.simplify((br==='concept'?.5+s2*.45:Math.max(.35,s2))/S.view.z);if(closeIt&&pp.segments.length>3){pp.lastSegment.remove();pp.closed=true}subs=fromPaper(pp)}catch(_){}
@@ -4080,7 +4089,7 @@ function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: p
  if(n){commit();toast(n+' ossa create e collegate ai livelli: con lo strumento Ossa sposta testa e punta sulle giunture, poi scegli il Genitore di ogni osso')}else toast('Ogni livello ha già un osso con il suo nome')}
 {const _a=animAct;animAct=function(a){if(a==='rigbyname'){rigBindByName();return}if(a==='rigfromlayers'){rigBonesFromLayers();return}return _a(a)}}
 {const _ap=animPanel;animPanel=function(){let h=_ap();let i=h.indexOf('<div class="grid g2"><button class="btn" data-act="an:rigtool:weight">');if(i<0||h.indexOf('data-act="an:rignew"',i)-i>260)i=h.indexOf('<button class="btn" data-act="an:rignew"');if(i<0)return h;
- return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin-bottom:6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
+ return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin:8px 0 6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
