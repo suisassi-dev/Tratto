@@ -786,7 +786,7 @@ function buildCtx(){if(S.mode==='anima'){$('#ctx').hidden=true;return}const t=S.
   const RI=(k,icon,title,min,max,step,v)=>`<span class="crng" title="${title}">${ic(icon)}<input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-opt="${k}"></span>`;
   h+=`<button class="cb" data-fly="brush" title="Pennello">${ic('br_'+br)}<span class="lab">${BN[br]}</span><span class="car"></span></button>`;
   if(br==='pencil')h+=B('an:brushpr','Pressione','pressure',prOn,'Matita: usa la pressione della Pencil (spessore e opacità)');
-  h+=sep+RI('psw','strokew','Spessore',.5,60,.5,S.def.sw||2)+RI('smooth','smoothic','Levigatura',0,12,1,S.opt.smooth??3);if(prOn)h+=RI('prMin','prmin','Spessore minimo con la pressione',5,100,5,S.opt.prMin??20);
+  h+=sep+RI('psw','strokew','Spessore',0,100,.25,pswP(S.def.sw||2)).replace('</span>',`<b class="rv">${+(S.def.sw||2)}</b></span>`)+RI('smooth','smoothic','Levigatura',0,12,1,S.opt.smooth??3).replace('</span>',`<b class="rv">${S.opt.smooth??3}</b></span>`);if(prOn)h+=RI('prMin','prmin','Spessore minimo con la pressione',5,100,5,S.opt.prMin??20);
   h+=sep+B('pencilOutline','Contorno','outline',S.opt.pencilOutline,'Crea il tratto come forma piena (contorno), pronta per le booleane')}
  else if(t==='eraser')h+=`<div class="seg">${[['area','Pennello'],['stroke','Oggetti interi']].map(([v,l])=>`<button data-seg="erMode" data-v="${v}" class="${(S.opt.erMode||'area')===v?'on':''}">${l}</button>`).join('')}</div>`+R('erSize','Dimensione',4,160,2,S.opt.erSize||24);
  else if(t==='bucket')h+=`<div class="seg">${[['tap','Tocco'],['lasso','Lazo']].map(([v,l])=>`<button data-seg="bkMode" data-v="${v}" class="${(S.opt.bkMode||'tap')===v?'on':''}">${l}</button>`).join('')}</div>`+((S.opt.bkMode||'tap')==='tap'?R('bkGap','Chiudi buchi',0,10,1,S.opt.bkGap??2)+`<span class="clbl lab">Tocca dentro una zona chiusa</span>`:R('bkSmooth','Levigatura',0,12,1,S.opt.bkSmooth??3)+`<span class="clbl lab">Disegna il contorno da riempire</span>`);
@@ -2448,12 +2448,14 @@ function pressurePoly(pts,w,minR,rough,seed,tp){if(pts.length<2)return null;cons
  const sm=pts.map((p,i)=>{let a=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(n-1,i+2);j++){a+=pts[j][2];c++}return a/c});
  const cum=[0];for(let i=1;i<n;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const T=cum[n-1]||1,ex=tp?1.25:.75;
  // bordo "organico": rumore morbido lungo la lunghezza (indipendente sui due lati), niente seghettature
- const vn=(u,o)=>{const i=Math.floor(u),t=u-i,k=(1-Math.cos(t*Math.PI))/2;return hsh(i+o)*(1-k)+hsh(i+1+o)*k},wl=Math.max(3,w*1.3),amp=rough?rough*.2:0;
- const nz=(d,o)=>amp?1+amp*((vn(d/wl,o)-.5)*1.5+(vn(d/wl*2.7,o+37)-.5)*.7):1;
+ const vn=(u,o)=>{const i=Math.floor(u),t=u-i,k=(1-Math.cos(t*Math.PI))/2;return hsh(i+o)*(1-k)+hsh(i+1+o)*k},wl=Math.max(3,w*1.3),wf=Math.max(7,w*.55),amp=rough?rough*.2:0;
+ const nz=(d,o)=>amp?1+amp*((vn(d/wl,o)-.5)*1.5+(vn(d/wl*2.7,o+37)-.5)*.7+(vn(d/wf,o+71)-.5)*.45):1;
+ // irregolarità "a mano": lo spessore respira e la linea ondeggia appena (uguale sui due lati)
+ const wb=d=>amp?1+rough*.16*(vn(d/(w*4+14),211)-.5)*2:1,jt=d=>amp?rough*Math.min(1.6,w*.07)*(vn(d/(w*3+11),307)-.5)*2:0;
  // punte affusolate (inchiostro): il raggio scende verso gli estremi
  const tl=tp?Math.min(T*.45,Math.max(w*1.8*tp,2)):0,tpr=d=>{if(!tl)return 1;const t=Math.min(1,Math.min(d,T-d)/tl);return Math.max(.05,Math.pow(Math.sin(t*Math.PI/2),.85))};
  const rad=sm.map((p,i)=>Math.max(.12,w/2*(minR+(1-minR)*Math.pow(Math.max(0,Math.min(1,p)),ex))*tpr(cum[i])));
- const L=[],R=[];for(let i=0;i<n;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(n-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const r=rad[i],rl=r*nz(cum[i],11),rr=r*nz(cum[i],503);L.push([pts[i][0]-dy*rl,pts[i][1]+dx*rl]);R.push([pts[i][0]+dy*rr,pts[i][1]-dx*rr])}
+ const L=[],R=[];for(let i=0;i<n;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(n-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const r=rad[i]*wb(cum[i]),j=jt(cum[i])*Math.min(1,rad[i]/(w/2)*2),rl=r*nz(cum[i],11)+j,rr=r*nz(cum[i],503)-j;L.push([pts[i][0]-dy*rl,pts[i][1]+dx*rl]);R.push([pts[i][0]+dy*rr,pts[i][1]-dx*rr])}
  const cap=(c,r,a0,steps)=>{const o=[];for(let k=1;k<steps;k++){const a=a0+Math.PI*k/steps;o.push([c[0]+Math.cos(a)*r,c[1]+Math.sin(a)*r])}return o};
  const e=pts[n-1],e2=pts[n-2],s0=pts[0],s1=pts[1],ae=Math.atan2(e[1]-e2[1],e[0]-e2[0]),as=Math.atan2(s1[1]-s0[1],s1[0]-s0[0]);
  return[...L,...cap(e,rad[n-1],ae-Math.PI/2,12).reverse(),...R.reverse(),...cap(s0,rad[0],as+Math.PI/2,12).reverse()]}
@@ -2489,7 +2491,7 @@ function pwOutline(it){const c=PWC.get(it);if(c&&c.ref===it.subs&&c.sw===it.styl
  const fl=flatten(it),out=[];for(const f of fl){let P=f.pts;if(P.length<2)continue;const dense=[P[0]];for(let i=1;i<P.length;i++){const a=dense[dense.length-1],b=P[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(d/2));for(let k=1;k<=n;k++)dense.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
   const L=[0];for(let i=1;i<dense.length;i++)L.push(L[i-1]+Math.hypot(dense[i][0]-dense[i-1][0],dense[i][1]-dense[i-1][1]));const T=L[L.length-1]||1,S0=it.pw.s,N=S0.length;
   const pts=dense.map((q,i)=>{const u=L[i]/T*(N-1),j=Math.min(N-2,Math.floor(u)),t=u-j;return[q[0],q[1],S0[j]+(S0[j+1]-S0[j])*t]});
-  const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR,it.pw.br==='pencil'?.6:0,it.pw.seed,it.pw.tp||0);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
+  const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR,it.pw.br==='pencil'?1:it.pw.br==='ink'?.35:0,it.pw.seed,it.pw.tp||0);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
  PWC.set(it,{k:key,subs:out,ref:it.subs,sw:it.style.sw,mr:it.pw.minR,pr:it.pw.s});return out}
 // come appare: un riempimento con il colore del tratto (stessa opacità, sfocatura, fusione e rim)
 function pwFlat(it){if(!it||!it.pw||it.type!=='path'||!it.style.stroke)return it;return{...it,subs:pwOutline(it),style:{...it.style,fill:it.style.stroke,fo:it.style.so??1,stroke:null},pw:undefined,rule:'nonzero'}}
@@ -3540,14 +3542,15 @@ OPS.select=dblDefer(OPS.select);OPS.node=dblDefer(OPS.node);AOPS.select=dblDefer
 // ---- campi numerici: tocco = tastierino, trascinamento orizzontale = il valore cambia dal vivo ----
 let SCRUB=false;{const _c=commit;commit=function(){if(SCRUB){S.baked=null;render();if(S.mode!=='draw'){try{S.mode==='frames'?drawFR():drawTL()}catch(_){}}return}return _c()}}
 {const st=document.createElement('style');st.textContent='#P input.num{touch-action:none;cursor:ew-resize}#P input.num.scrub{background:var(--accbg);color:var(--acc)}';document.head.appendChild(st)}
-P.addEventListener('pointerdown',e=>{const t=e.target;if(!(t.matches&&t.matches('input.num,input[type=number]')))return;const touch=TOUCH&&e.pointerType!=='mouse';
- if(touch)e.preventDefault();e.stopPropagation();const x0=e.clientX,v0=parseFloat(t.value)||0,stp=parseFloat(t.step)||1,mn=t.min!==''?+t.min:-Infinity,mx2=t.max!==''?+t.max:Infinity;let scr=false;try{t.setPointerCapture(e.pointerId)}catch(_){}
+P.addEventListener('pointerdown',e=>{const t0=e.target;if(!(t0.matches&&t0.matches('input.num,input[type=number]')))return;const touch=TOUCH&&e.pointerType!=='mouse';
+ if(touch)e.preventDefault();e.stopPropagation();let t=t0;const x0=e.clientX,v0=parseFloat(t.value)||0,stp=parseFloat(t.step)||1,mn=t.min!==''?+t.min:-Infinity,mx2=t.max!==''?+t.max:Infinity;let scr=false;try{t.setPointerCapture(e.pointerId)}catch(_){}
+ const pid=e.pointerId,NQ='input.num,input[type=number]',idx=[...P.querySelectorAll(NQ)].indexOf(t);
  const rate=stp>=1?stp*.5:stp*2,dec=(String(stp).split('.')[1]||'').length;
- const mv=ev=>{const dx=ev.clientX-x0;if(!scr){if(Math.abs(dx)<7)return;scr=true;SCRUB=true;t.classList.add('scrub')}ev.preventDefault();let v=v0+dx*rate;v=Math.round(v/stp)*stp;v=Math.max(mn,Math.min(mx2,v));t.value=+v.toFixed(Math.max(dec,0));t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}))};
- const up=()=>{t.removeEventListener('pointermove',mv);t.removeEventListener('pointerup',up);t.removeEventListener('pointercancel',up);
+ const mv=ev=>{if(ev.pointerId!==pid)return;const dx=ev.clientX-x0;if(!scr){if(Math.abs(dx)<7)return;scr=true;SCRUB=true;t.classList.add('scrub')}ev.preventDefault();ev.stopPropagation();if(!t.isConnected){const n=P.querySelectorAll(NQ)[idx];if(n&&n.className===t.className.replace(/\s*\bscrub\b/,'')&&n.step===t.step){t=n;t.classList.add('scrub')}else return}let v=v0+dx*rate;v=Math.round(v/stp)*stp;v=Math.max(mn,Math.min(mx2,v));t.value=+v.toFixed(Math.max(dec,0));t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}))};
+ const up=ev=>{if(ev&&ev.pointerId!==pid)return;removeEventListener('pointermove',mv,true);removeEventListener('pointerup',up,true);removeEventListener('pointercancel',up,true);
   if(scr){SCRUB=false;t.classList.remove('scrub');commit();return}
   if(touch){const lb=t.closest('.row')&&t.closest('.row').querySelector('.lbl');numPad(lb?lb.textContent:'',t.value,v=>{t.value=v;t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}))})}else{t.focus();try{t.select()}catch(_){}}};
- t.addEventListener('pointermove',mv);t.addEventListener('pointerup',up);t.addEventListener('pointercancel',up)},true);
+ addEventListener('pointermove',mv,true);addEventListener('pointerup',up,true);addEventListener('pointercancel',up,true)},true);
 // ---- salvataggio obbligatorio: prima di tornare alla Home o di aprire un altro file il documento viene salvato (e nominato se è senza titolo) ----
 function ensureSaved(next0){const has=allItems().length>0;if(!has){next0();return}if(!S.docId)S.docId=uid('doc');const sv=libSave;const next=next0;
  if(/^Senza titolo/.test(S.doc.name||'Senza titolo')){askText('Salva il documento: nome',S.doc.name&&S.doc.name!=='Senza titolo'?S.doc.name:'',v=>{v=(v||'').trim();if(v)S.doc.name=v;Promise.resolve(libSave(true)).then(()=>{S.dirty=false;toast('Salvato «'+(S.doc.name||'Senza titolo')+'» nella libreria');next()})});return}
@@ -3577,7 +3580,7 @@ function assetInsert(id,at){const a=ALIB.find(x=>x.id===id);if(!a)return;let L=l
  // pre-composizioni: se esiste già lo stesso id con contenuto diverso, ne faccio una copia
  const cmap={};S.doc.comps=S.doc.comps||{};for(const cid in d.comps||{}){const c=clone(d.comps[cid]);if(S.doc.comps[cid]&&JSON.stringify(S.doc.comps[cid])!==JSON.stringify(c)){const nid=uid('c');cmap[cid]=nid;c.id=nid}S.doc.comps[cmap[cid]||cid]=c}
  const fix=o=>{if(o.type==='inst'&&cmap[o.comp])o.comp=cmap[o.comp];(o.kids||[]).forEach(fix)};Object.values(S.doc.comps).forEach(c=>c.layers.forEach(l=>l.items.forEach(fix)));
- const c=at||{x:(svg.clientWidth/2-S.view.x)/S.view.z,y:(svg.clientHeight/2-S.view.y)/S.view.z},dx=c.x-(a.bb.x+a.bb.w/2),dy=c.y-(a.bb.y+a.bb.h/2);
+ const c=at||{x:($('#stage').clientWidth/2-S.view.x)/S.view.z,y:($('#stage').clientHeight/2-S.view.y)/S.view.z},dx=c.x-(a.bb.x+a.bb.w/2),dy=c.y-(a.bb.y+a.bb.h/2);
  const items=d.items.map(it=>{const n=assetReId(it,map);fix(n);delete n.bone;delete n.bsoft;delete n.bset;delete n.bwp;return moveItem(n,dx,dy)});
  if(a.lay){const NL={id:uid('L'),name:a.lay.name||a.name,visible:true,locked:false,opacity:a.lay.opacity??1,items};if(a.lay.blend)NL.blend=a.lay.blend;if(a.lay.fx)NL.fx=clone(a.lay.fx);const i=S.doc.layers.indexOf(L);S.doc.layers.splice(i+1,0,NL);S.activeLayer=NL.id}
  else L.items.push(...items);
@@ -3604,7 +3607,7 @@ function assetPanel(){const el=$('#assetp');el.innerHTML=`<h4>${ic('asset')} Ass
   if(dn.drag){dn.g.style.left=e.clientX+'px';dn.g.style.top=e.clientY+'px'}});
  const end=e=>{if(!dn)return;const d=dn;dn=null;el.style.opacity='';if(d.g)d.g.remove();
   if(!d.drag){if(e.type==='pointerup'){assetInsert(d.id);el.hidden=true}return}
-  const r=svg.getBoundingClientRect(),inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;const er=el.getBoundingClientRect(),overP=e.clientX>=er.left&&e.clientX<=er.right&&e.clientY>=er.top&&e.clientY<=er.bottom;
+  const r=$('#stage').getBoundingClientRect(),inside=e.clientX>=r.left&&e.clientX<=r.right&&e.clientY>=r.top&&e.clientY<=r.bottom;const er=el.getBoundingClientRect(),overP=e.clientX>=er.left&&e.clientX<=er.right&&e.clientY>=er.top&&e.clientY<=er.bottom;
   if(inside&&!overP&&e.type==='pointerup'){const q=evPos(e);assetInsert(d.id,{x:q.x,y:q.y});el.hidden=true}};
  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end)}
 document.addEventListener('pointerdown',e=>{const el=$('#assetp');if(el.hidden)return;if(e.target.closest('#assetp,[data-act="assets"],#modal,#mbox,#npad'))return;if(e.target.closest('#cv'))el.hidden=true},true);
@@ -3664,7 +3667,7 @@ ICONS.pressure=[['M12 3l3.5 8.5L12 21l-3.5-9.5z']];
 FLY.brush=()=>{const br=S.opt.brush||'ink';return[['an:brush:concept','br_concept','Concept · linea uniforme'+(br==='concept'?' ✓':'')],['an:brush:ink','br_ink','Ink · spessore dalla pressione'+(br==='ink'?' ✓':'')],['an:brush:pencil','br_pencil','Matita · tratto grezzo'+(br==='pencil'?' ✓':'')]]};
 // la linea dei cursori della barra: le tre righe dell'icona Spessore hanno spessori crescenti
 {const st=document.createElement('style');st.textContent='#ctx .crng .ic path:nth-child(1){stroke-width:1}#ctx .crng .ic path:nth-child(2){stroke-width:2}#ctx .crng .ic path:nth-child(3){stroke-width:3.2}#ctx .crng [data-opt="smooth"]~*{}';document.head.appendChild(st)}
-{const _oi=optIn;optIn=function(t){if(t.dataset.opt==='psw'){const v=+t.value;S.def.sw=v;selItems().forEach(it=>{if(it.type==='path'&&it.style&&(it.pw||it.style.stroke)&&it.pr){it.style.sw=v}});render();return}return _oi(t)}}
+{const _oi=optIn;optIn=function(t){if(t.dataset.opt==='psw'){const v=pswV(+t.value);S.def.sw=v;const rv=t.parentNode.querySelector('.rv');if(rv)rv.textContent=v;selItems().forEach(it=>{if(it.type==='path'&&it.style&&(it.pw||it.style.stroke)&&it.pr){it.style.sw=v}});render();return}return _oi(t)}}
 {const _oc=optCh;optCh=function(t){if(t.dataset.opt==='psw'){if(selItems().some(i=>i.pr))commit();else scheduleSave();return}return _oc(t)}}
 {const _a=animAct;animAct=function(a){if(a.startsWith('brush:')){S.opt.brush=a.slice(6);$('#fly').hidden=true;buildCtx();scheduleSave();return}if(a==='brushpr'){S.opt.prPencil=S.opt.prPencil===false;buildCtx();scheduleSave();return}return _a(a)}}
 // anteprima del tratto: un solo elemento aggiornato una volta per fotogramma (niente ridisegno dell'intera sovrimpressione ad ogni punto)
@@ -3685,17 +3688,20 @@ function lazyNow(){if(LAZY){clearTimeout(LAZY);LAZY=0;commit()}}
 document.addEventListener('pointerdown',e=>{if(LAZY&&!(e.target.closest&&e.target.closest('#cv')&&S.tool==='pencil'))lazyNow()},true);
 addEventListener('pagehide',()=>{try{lazyNow()}catch(_){}});document.addEventListener('visibilitychange',()=>{if(document.hidden)try{lazyNow()}catch(_){}});
 // un tratto iniziato senza che arrivi l'evento di appoggio (capita con tratti molto rapidi): lo avvio al primo movimento con pressione
-svg.addEventListener('pointermove',e=>{if(e.pointerType!=='pen'||!(e.pressure>0)||op||ptrs.has(e.pointerId)||S.tool!=='pencil'||!e.isTrusted)return;
+const PEN_OUT=new Set();// penne appoggiate fuori dal foglio (campi, cursori, pannelli): non devono mai far partire un tratto
+document.addEventListener('pointerdown',e=>{if(e.isTrusted===false&&e.target===svg)return;if(e.target.closest&&e.target.closest('#cv'))PEN_OUT.delete(e.pointerId);else PEN_OUT.add(e.pointerId)},true);
+for(const t of['pointerup','pointercancel'])document.addEventListener(t,e=>{PEN_OUT.delete(e.pointerId)},true);
+svg.addEventListener('pointermove',e=>{if(e.pointerType!=='pen'||!(e.pressure>0)||op||ptrs.has(e.pointerId)||PEN_OUT.has(e.pointerId)||SCRUB||S.tool!=='pencil'||!e.isTrusted)return;
  svg.dispatchEvent(new PointerEvent('pointerdown',{pointerId:e.pointerId,pointerType:'pen',pressure:e.pressure,clientX:e.clientX,clientY:e.clientY,isPrimary:true,bubbles:true,buttons:1}))});
 OPS.pencil=function(P,e){if(!canDraw())return null;
  const br=S.opt.brush||'ink',pen=!!(e&&e.pointerType==='pen'),st=S.def,w=Math.max(.5,st.sw||2),minR=(S.opt.prMin??20)/100,sm=S.opt.smooth??3;
  const col=st.stroke&&st.stroke.t==='solid'?st.stroke.c:(st.fill&&st.fill.t==='solid'?st.fill.c:'#1a1a1a');
  const usePr=pen&&(br==='ink'?S.opt.pressure!==false:br==='pencil'?S.opt.prPencil!==false:false),rough=br==='pencil',poly=usePr||rough,seed=1+Math.floor(Math.random()*9999);
- const tp=usePr?(br==='ink'?1:.45):0;const p0=usePr?(e.pressure>0?e.pressure:.35):(rough?1:.5);const pts=[[P.x,P.y,p0]];const el=liveEl();let raf=0,snap=null,hold=0,cx=P.x,cy=P.y,lastQ=P;
+ const rg=rough?1:(br==='ink'&&usePr?.35:0);const tp=usePr?(br==='ink'?1:.45):0;const p0=usePr?(e.pressure>0?e.pressure:.35):(rough?1:.5);const pts=[[P.x,P.y,p0]];const el=liveEl();let raf=0,snap=null,hold=0,cx=P.x,cy=P.y,lastQ=P;
  const pull=br==='concept'?1/(1+sm*.3):1;
  el.setAttribute('fill',poly?col:'none');el.setAttribute('stroke',poly?'none':col);el.setAttribute('stroke-width',w);el.setAttribute('stroke-linecap','round');el.setAttribute('stroke-linejoin','round');el.setAttribute('opacity',rough&&usePr?.8:(st.so??1));
  const draw=()=>{raf=0;if(pts.length<2){const r=poly?Math.max(.3,w/2*(minR+(1-minR)*Math.pow(pts[0][2],.75))):w/2,x=pts[0][0],y=pts[0][1];el.setAttribute('d',poly?`M${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0Z`:`M${x} ${y}l.01 0`);return}
-  if(poly){const pl=pressurePoly(pts,w,minR,rough?.6:0,seed,tp);el.setAttribute('d',pl?'M'+pl.map(p=>f2(p[0])+' '+f2(p[1])).join('L')+'Z':'')}else el.setAttribute('d','M'+pts.map(p=>f2(p[0])+' '+f2(p[1])).join('L'))};
+  if(poly){const pl=pressurePoly(pts,w,minR,rg,seed,tp);el.setAttribute('d',pl?'M'+pl.map(p=>f2(p[0])+' '+f2(p[1])).join('L')+'Z':'')}else el.setAttribute('d','M'+pts.map(p=>f2(p[0])+' '+f2(p[1])).join('L'))};
  const upd=()=>{if(!raf)raf=requestAnimationFrame(draw)};draw();
  const arm=()=>{clearTimeout(hold);if(snap||!S.opt.quick)return;hold=setTimeout(()=>{snap=quickShape(pts);if(snap){pts.length=0;pts.push(...snap.pts);upd();toast(snap.t==='e'?'Ellisse: trascina per regolarla':'Linea dritta')}},520)};
  return{coalesced:true,move(Q,ev){lastQ=Q;if(snap){quickAdjust(snap,Q);pts.length=0;pts.push(...snap.pts);upd();return}
@@ -3709,9 +3715,9 @@ OPS.pencil=function(P,e){if(!canDraw())return null;
     const r=poly?Math.max(.3,w/2*(minR+(1-minR)*Math.pow(pts[0][2],.75))):w/2;it=newPath(ellSubs(pts[0][0],pts[0][1],r,r),{...clone(S.def),fill:{t:'solid',c:col},stroke:null,fo:st.so??1});it.pr=1}
    else{const s2=snap?0:sm,res=[pts[0]];for(let i=1;i<pts.length;i++){const p=pts[i],q=res[res.length-1];if(Math.hypot(p[0]-q[0],p[1]-q[1])>=(s2?Math.max(.6,s2*.35):.5)/S.view.z||i===pts.length-1)res.push(p)}
     const sp=s2&&res.length>2?res.map((p,i)=>{if(i===0||i===res.length-1)return p;const a=res[i-1],b=res[i+1];return[(a[0]+2*p[0]+b[0])/4,(a[1]+2*p[1]+b[1])/4,p[2]]}):res,src=sp.length>1?sp:pts;
-    if(poly){if(S.opt.pencilOutline){const pl=pressurePoly(src,w,minR,rough?.6:0,seed,tp);if(pl){it=newPath([{closed:true,pts:pl.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))}],{...clone(S.def),fill:{t:'solid',c:col},stroke:null,fo:st.so??1});
+    if(poly){if(S.opt.pencilOutline){const pl=pressurePoly(src,w,minR,rg,seed,tp);if(pl){it=newPath([{closed:true,pts:pl.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))}],{...clone(S.def),fill:{t:'solid',c:col},stroke:null,fo:st.so??1});
        if(!rough&&!tp){try{const vw={p:src.map(q=>[q[0],q[1],q[2]]),w,minR,tol:(.3+s2*.15)/S.view.z},sb=vwSubs(vw);if(sb.length)it.subs=sb}catch(_){}}it.pr=1}}
-     else{it=pwFromPoints(src,w,minR,col,s2);if(it&&rough){it.pw.br='pencil';it.pw.seed=seed}if(it&&tp)it.pw.tp=tp}
+     else{it=pwFromPoints(src,w,minR,col,s2);if(it&&rg){it.pw.br=rough?'pencil':'ink';it.pw.seed=seed}if(it&&tp)it.pw.tp=tp}
      if(it&&rough){const k=usePr?.45+.55*Math.min(1,mean*1.25):1;if(it.style.stroke)it.style.so=(st.so??1)*k;else it.style.fo=(st.so??1)*k}}
     if(!it){// linea uniforme (Concept, o dito con Ink)
      let subs=null;try{const pp=new paper.Path({segments:src.map(q=>[q[0],q[1]]),insert:false});const closeIt=src.length>10&&Math.hypot(src[0][0]-src[src.length-1][0],src[0][1]-src[src.length-1][1])*S.view.z<14;
@@ -3720,6 +3726,12 @@ OPS.pencil=function(P,e){if(!canDraw())return null;
      const s3=clone(S.def);s3.fill=null;s3.stroke={t:'solid',c:col};s3.sw=w;s3.cap='round';s3.join='round';it=newPath(subs,s3);if(S.opt.pencilOutline){const o=strokeOutline(it);if(o)it=o}}}
    if(!it){liveClear();render();return}
    layer().items.push(it);finishNew(it);strokeCommit()}}};
+
+// cursore dello spessore: corsa non lineare (fine sugli spessori sottili, più rapida su quelli grandi)
+function pswV(p){const v=.5+59.5*Math.pow(Math.max(0,Math.min(100,p))/100,2.2);return v<4?Math.round(v*4)/4:v<12?Math.round(v*2)/2:Math.round(v)}
+function pswP(v){return +(Math.pow(Math.max(0,Math.min(1,((+v||2)-.5)/59.5)),1/2.2)*100).toFixed(2)}
+{const _oi=optIn;optIn=function(t){const r=_oi(t);if(t.dataset.opt==='smooth'){const rv=t.parentNode.querySelector('.rv');if(rv)rv.textContent=t.value}return r}}
+{const st=document.createElement('style');st.textContent='#ctx .crng input[type=range]{width:128px}#ctx .crng .rv{min-width:24px;font-size:11px;color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:500;text-align:left}@media(max-width:700px){#ctx .crng input[type=range]{width:104px}}';document.head.appendChild(st)}
 
 /* ===== v9: aiuti coerenti, sezioni chiuse per documento, Documento in Anima, fusione e barra delle animazioni a disegni ===== */
 {const _u=updateUI;updateUI=function(){applyHints();return _u()}}
@@ -3760,7 +3772,15 @@ ICONS.fbprev=[['M14 6l-6 6 6 6z']];ICONS.fbnext=[['M10 6l6 6-6 6z']];ICONS.fbtra
 #flipmenu{position:fixed;z-index:40;background:var(--panel2);border:1px solid var(--line);border-radius:13px;box-shadow:0 14px 40px rgba(0,0,0,.55);padding:5px;display:flex;flex-direction:column;min-width:170px}#flipmenu[hidden]{display:none}
 #flipmenu button{height:40px;border:0;background:none;color:var(--tx);text-align:left;padding:0 12px;border-radius:9px;font-size:13px}#flipmenu button:active{background:var(--panel3)}#flipmenu button.dng{color:#ff6b62}`;document.head.appendChild(st)}
 {const d=document.createElement('div');d.id='flipbook';d.hidden=true;$('#stage').appendChild(d);const m=document.createElement('div');m.id='flipmenu';m.hidden=true;document.body.appendChild(m)}
-const FB={sig:'',w0:0,clip:null};
+const FB={sig:'',w0:0,clip:null,th:new Map(),cur:'',tm:0,doc:null};
+// miniature: una per disegno, ricalcolata solo quando quel disegno cambia (non tutte ad ogni tratto)
+function fbKey(s,d){return s.id+'_'+((s.draws[d]&&s.draws[d].id)||('d'+d))}
+function fbCurKey(s){const E=S.doc.frEdit;return E&&E.seq===s&&s.draws[E.di]?fbKey(s,E.di):''}
+function fbSg(s,d){const its=fbItems(s,d);return its.length+':'+(its.length?its[its.length-1].id:'')}
+function fbTh(s,d){const k=fbKey(s,d),sg=fbSg(s,d);let c=FB.th.get(k);if(!c||c.sg!==sg||c.dirty){c={sg,html:fbThumb(s,d,k.replace(/[^\w]/g,'_'))};FB.th.set(k,c);if(FB.th.size>400)FB.th.delete(FB.th.keys().next().value)}return c.html}
+function fbCellUpd(s,k){const c=$('#flipbook').querySelector(`.fbc[data-k="${k}"]`);if(!c)return;const th=c.querySelector('.th'),em=th.querySelector('em'),e2=em?em.outerHTML:'';th.innerHTML=fbTh(s,+c.dataset.d)+e2}
+function fbLater(){clearTimeout(FB.tm);FB.tm=setTimeout(()=>{if(op||LAZY){fbLater();return}const s=frActive(false);if(!s||$('#flipbook').hidden)return;const k=fbCurKey(s);if(!k)return;const c=FB.th.get(k);if(c)c.dirty=1;fbCellUpd(s,k)},450)}
+{const _u=undo;undo=function(){FB.th.clear();FB.sig='';return _u()}}{const _r=redo;redo=function(){FB.th.clear();FB.sig='';return _r()}}
 {const _a=animAct;animAct=function(a){if(a==='flip'){S.opt.flip=!S.opt.flip;scheduleSave();updAbar();flipSync(true);return}return _a(a)}}
 function fbN(){return $('#stage').clientWidth>=640?10:5}
 // oggetti del disegno d (quello in modifica vive nel livello)
@@ -3770,10 +3790,17 @@ function fbThumb(s,d,k){const its=fbItems(s,d);if(!its.length)return'';let m='';
 function flipSync(force){const el=$('#flipbook');if(!el)return;const on=S.mode==='frames'&&!!S.opt.flip;if(!on){if(!el.hidden){el.hidden=true;$('#flipmenu').hidden=true}FB.sig='';return}
  const s=frActive(false),A=ADOC(),N=fbN(),runs=s?frRuns(s):[],t=s?S.frame-(s.start||0):0;let ci=-1;runs.forEach((r,i)=>{if(t>=r.s&&t<r.s+r.n)ci=i});
  let w0=FB.w0;if(ci>=0){if(ci<w0)w0=ci;if(ci>=w0+N)w0=ci-N+1}w0=Math.max(0,Math.min(w0,Math.max(0,runs.length-N+1)));FB.w0=w0;
- const E=S.doc.frEdit,sig=[s?s.id:'',w0,N,runs.map(r=>r.d+'x'+r.n).join(','),s?s.draws.map((d,i)=>fbItems(s,i).length).join(','):'',s&&s.hide?1:0,S.doc.w,S.doc.h,FB.ver||0].join('|');
- if(force||sig!==FB.sig||el.hidden){FB.sig=sig;let cells='';for(let k=0;k<N;k++){const i=w0+k,r=runs[i];
+ if(FB.doc!==S.doc){FB.doc=S.doc;FB.th.clear();FB.cur=''}
+ const ck=s?fbCurKey(s):'',vch=FB.ver!==FB.v0;FB.v0=FB.ver;
+ const sig=[s?s.id:'',w0,N,runs.map(r=>r.d+'x'+r.n).join(','),s&&s.hide?1:0,S.doc.w,S.doc.h].join('|'),full=force||sig!==FB.sig||el.hidden;
+ // il disegno che si è appena lasciato va ridisegnato una volta; quello in modifica si aggiorna a penna ferma
+ if(FB.cur&&FB.cur!==ck){const c=FB.th.get(FB.cur);if(c)c.dirty=1;if(!full&&s)fbCellUpd(s,FB.cur)}FB.cur=ck;
+ if(vch&&ck){if(full){const c=FB.th.get(ck);if(c)c.dirty=1}else fbLater()}
+ // disegni cambiati senza essere in modifica (incolla, cancella, annulla…) o cambio di fotogramma: controllo leggero, si ridisegna solo la miniatura diversa
+ if(!full&&s&&(vch||FB.fr!==S.frame))el.querySelectorAll('.fbc[data-k]').forEach(c=>{const k=c.dataset.k;if(k===ck&&vch&&FB.fr===S.frame)return;const o=FB.th.get(k);if(!o||o.dirty||o.sg!==fbSg(s,+c.dataset.d))fbCellUpd(s,k)});FB.fr=S.frame;
+ if(full){FB.sig=sig;let cells='';for(let k=0;k<N;k++){const i=w0+k,r=runs[i];
    if(!r)cells+=`<div class="fbc empty" data-fbi="${i}"><b></b><div class="th"></div></div>`;
-   else cells+=`<div class="fbc${r.d<0?' gap':''}" data-fbi="${i}"><b>${i+1}</b><div class="th">${r.d>=0?fbThumb(s,r.d,k):''}${r.n>1?`<em>×${r.n}</em>`:''}</div></div>`}
+   else cells+=`<div class="fbc${r.d<0?' gap':''}" data-fbi="${i}"${r.d>=0?` data-k="${fbKey(s,r.d)}" data-d="${r.d}"`:''}><b>${i+1}</b><div class="th">${r.d>=0?fbTh(s,r.d):''}${r.n>1?`<em>×${r.n}</em>`:''}</div></div>`}
   el.innerHTML=`<div class="fbt"><button data-fb="play" title="Play / Pausa">${ic(AN.playing?'tpause':'tplay')}</button><button data-fb="prev" title="Disegno precedente">${ic('fbprev')}</button><button data-fb="next" title="Disegno successivo">${ic('fbnext')}</button><button data-fb="loop" class="${A.loop?'on':''}" title="Loop">${ic('loopic')}</button><span class="fbsp"></span><span class="fbi"></span><button data-fb="track" title="Nuova animazione a disegni (traccia)">${ic('fbtrack')}</button><button data-fb="add" title="Nuovo disegno">${ic('plus')}</button></div>
    <div class="fbr"><button class="fbn${s&&!s.hide?' vis':''}" data-fb="vis" title="Mostra / nascondi la traccia"><i>${s&&!s.hide?'✓':''}</i><span>${esc(s?s.name||'Animazione':'Nessuna traccia')}</span></button><div class="fbs">${cells}</div></div>`;el.hidden=false}
  el.querySelectorAll('.fbc').forEach(c=>c.classList.toggle('cur',+c.dataset.fbi===ci));const inf=el.querySelector('.fbi');if(inf)inf.textContent=runs.length?(ci>=0?ci+1:'–')+' / '+runs.length:'';
@@ -3803,13 +3830,17 @@ function fbAct(a){const c=frCur();if(!c){toast('Nessun disegno al frame corrente
   const f=cells[0].getBoundingClientRect(),l=cells[cells.length-1].getBoundingClientRect();let i=+best.dataset.fbi;const now=performance.now();
   if(e.clientX<f.left-10||e.clientX>l.right+10){if(now-(dn.tick||0)<140)return;dn.tick=now;i+=e.clientX<f.left?-1:1}fbGo(i)});
  const end=e=>{if(!dn)return;const d=dn;dn=null;clearTimeout(d.long);if(e.type==='pointercancel')return;
-  if(d.b){const k=d.b.dataset.fb;if(e.target.closest('[data-fb]')!==d.b)return;lazyNow();
+  if(d.b){const k=d.b.dataset.fb;{const t2=e.target.closest&&e.target.closest('[data-fb]');if(!t2||t2.dataset.fb!==k)return}lazyNow();
    if(k==='play')animAct('play');else if(k==='prev')frAct('prevd');else if(k==='next')frAct('nextd');else if(k==='loop'){animAct('loop');flipSync(true)}else if(k==='track')frAct('newseq');else if(k==='add')frAct('add');
    else if(k==='vis'){if(S.doc.frEdit)frExit(true);const s=frActive(false);if(s){s.hide=!s.hide;commit()}}return}
   if(d.empty&&!d.moved){const s=frActive(false),runs=s?frRuns(s):[];if(d.i===runs.length||!s){if(s&&runs.length){const L=runs[runs.length-1],f=(s.start||0)+L.s+L.n-1;if(f<ADOC().dur)setFrame(f,true)}frAct('add')}}};
  el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end);
  m.addEventListener('click',e=>{const b=e.target.closest('[data-fm]');if(!b||b.disabled)return;m.hidden=true;fbAct(b.dataset.fm)});
  document.addEventListener('pointerdown',e=>{if(!m.hidden&&!e.target.closest('#flipmenu'))m.hidden=true},true)}
+
+// barra di Frames: durante la riproduzione viene ridisegnata ad ogni fotogramma; mentre un dito/penna è appoggiato su un pulsante si aspetta, altrimenti il tocco va perso (Play non si fermava)
+{let dn=0,pend=false;const ab=$('#abar');if(ab){ab.addEventListener('pointerdown',()=>{dn=1},true);const rel=()=>{if(!dn)return;setTimeout(()=>{dn=0;if(pend){pend=false;updAbar()}},300)};addEventListener('pointerup',rel,true);addEventListener('pointercancel',rel,true)}
+ const _u=updAbar;updAbar=function(){if(dn&&AN.playing&&S.mode==='frames'){pend=true;return}return _u()}}
 
 /* ===== v10: animazioni a disegni su un livello proprio, rotazione del canvas, taglio di audio e video ===== */
 // audio e video: schermo con play + doppia croma (dal disegno dell'utente, nello stile a linee delle altre icone)
@@ -3832,10 +3863,13 @@ function seqOwnLayers(){let ch=false;const Ls=S.doc.layers;for(let i=0;i<Ls.leng
 // ---- rotazione del canvas (Draw e Frames): solo la vista, il documento non cambia ----
 function cvRot(){return S.opt.cvR||0}
 function applyCvRot(){const r=cvRot(),st=$('#stage');st.classList.toggle('cvrot',!!r);const t=r?`rotate(${r}deg)`:'';svg.style.transformOrigin='50% 50%';svg.style.transform=t;
- const w=$('#refw');if(w){const W=svg.clientWidth,H=svg.clientHeight;w.style.transformOrigin=`${W/2-(parseFloat(w.style.left)||0)}px ${H/2-(parseFloat(w.style.top)||0)}px`;w.style.transform=t}
+ // foglio ruotato: l'area di disegno diventa un quadrato grande quanto la diagonale dello schermo, così ruotando non si "taglia" e si disegna ovunque; le coordinate restano le stesse (viewBox)
+ {const W=st.clientWidth,H=st.clientHeight,k=r?W+'x'+H:'';if(svg.dataset.rb!==k){svg.dataset.rb=k;if(r){const D=Math.ceil(Math.hypot(W,H))+2,ox=Math.round((D-W)/2),oy=Math.round((D-H)/2);svg.style.inset='auto';svg.style.left=-ox+'px';svg.style.top=-oy+'px';svg.style.width=D+'px';svg.style.height=D+'px';svg.setAttribute('viewBox',`${-ox} ${-oy} ${D} ${D}`)}
+   else{svg.style.inset='';svg.style.left='';svg.style.top='';svg.style.width='';svg.style.height='';svg.removeAttribute('viewBox')}}}
+ const w=$('#refw');if(w){const W=st.clientWidth,H=st.clientHeight;w.style.transformOrigin=`${W/2-(parseFloat(w.style.left)||0)}px ${H/2-(parseFloat(w.style.top)||0)}px`;w.style.transform=t}
  let b=$('#rotReset');if(r){if(!b){b=document.createElement('button');b.id='rotReset';b.title='Riporta la rotazione a 0°';b.addEventListener('click',()=>setCvRot(0));st.appendChild(b)}b.innerHTML=ic('rotcv')+`<span>${Math.round(r)}°</span>`;b.hidden=false}else if(b)b.hidden=true}
 function setCvRot(v){v=((Math.round(v)+540)%360)-180;S.opt.cvR=v;applyCvRot();render();scheduleSave();const i=P.querySelector('[data-cvrot]');if(i){i.value=v;const l=i.parentNode.querySelector('.val');if(l)l.textContent=v+'°'}}
-evPos=function(e){const W=svg.clientWidth,H=svg.clientHeight,st=$('#stage').getBoundingClientRect(),ox=st.left,oy=st.top;let sx=e.clientX-ox,sy=e.clientY-oy;const r=cvRot();
+evPos=function(e){const sE=$('#stage'),W=sE.clientWidth,H=sE.clientHeight,st=sE.getBoundingClientRect(),ox=st.left,oy=st.top;let sx=e.clientX-ox,sy=e.clientY-oy;const r=cvRot();
  if(r){const a=-r*Math.PI/180,c=Math.cos(a),s=Math.sin(a),dx=sx-W/2,dy=sy-H/2;sx=W/2+dx*c-dy*s;sy=H/2+dx*s+dy*c}return{sx,sy,x:(sx-S.view.x)/S.view.z,y:(sy-S.view.y)/S.view.z}};
 {const _dr=doRender;doRender=function(){_dr();applyCvRot()}}
 {const st=document.createElement('style');st.textContent=`#stage.cvrot .ruler,#stage.cvrot #rcorner{display:none}#stage{overflow:hidden}
@@ -3923,6 +3957,10 @@ ICONS.lock=[['M6.5 11h11v9h-11z'],['M8.5 11V8a3.5 3.5 0 0 1 7 0v3']];ICONS.unloc
   const z=Math.max(.05,Math.min(40,R.z0*dist()/R.d0)),q=evPos(mid());S.view={x:q.sx-R.w.x*z,y:q.sy-R.w.y*z,z};applyCvRot();render()});
  const end=e=>{if(e.pointerType!=='touch')return;TP.delete(e.pointerId);if(TP.size<2){if(R&&R.on){scheduleSave();const i=P.querySelector('[data-cvrot]');if(i){i.value=Math.round(S.opt.cvR);const l=i.parentNode.querySelector('.val');if(l)l.textContent=Math.round(S.opt.cvR)+'°'}}R=null}};
  svg.addEventListener('pointerup',end,true);svg.addEventListener('pointercancel',end,true)}
+
+// dimensioni dell'area visibile: sempre quelle dello stage (con il foglio ruotato l'svg è più grande)
+fitView=function(){const sE=$('#stage'),r={width:sE.clientWidth,height:sE.clientHeight},d=S.doc,pad=Math.min(48,r.width*.06);const z=Math.min((r.width-pad*2)/d.w,(r.height-pad*2-50)/d.h)||1;S.view={z,x:(r.width-d.w*z)/2,y:(r.height-d.h*z)/2+20};render()};
+addEventListener('resize',()=>{try{applyCvRot()}catch(_){}});
 
 /* ===== v10: Home — duplica, rinomina, Cestino (5 giorni) ===== */
 const TRASH_DAYS=5;let TRASH=[];
