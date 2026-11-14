@@ -512,7 +512,7 @@ const S={doc:newDoc(),assets:{},assetsDirty:true,sel:[],nsel:[],tool:'select',vi
  opt:{starN:5,starR:.45,polyN:6,rectR:0,prop:false,smooth:3,multi:false,alignTo:'sel',sym:false,symAxis:'v',pencilOnly:false,propScale:true,rulers:true,guides:true,lockGuides:false,snap:true,penHover:false,freeHandles:false,pencilOutline:false,addPt:false,col:{},lassoMode:'obj',starRound:0,polyRound:0},lastShape:'rect',
  tab:'style',panelOpen:innerWidth>=900,ptarget:'fill',gstop:{fill:0,stroke:0},
  recent:['#1a1a1a','#ffffff','#ff6a3d','#ffc83d','#2bb673','#3d7bff','#8a5cff','#ff4d8d']};
-const TOOLS=[['select','Seleziona','v'],['node','Modifica punti','a'],['lasso','Lazo','l'],'|',['pen','Penna','p'],['pencil','Matita','n'],['shape','Forme',''],'|',['gradient','Gradiente','g'],['bucket','Secchiello','k'],['picker','Contagocce','i'],['hand','Mano','h']];
+const TOOLS=[['select','Seleziona','v'],['node','Modifica punti','a'],['lasso','Lazo','l'],'|',['pen','Penna','p'],['pencil','Matita','n'],['shape','Forme',''],'|',['eraser','Gomma','e'],['gradient','Gradiente','g'],['bucket','Secchiello','k'],['picker','Contagocce','i'],['hand','Mano','h']];
 const SHAPES=[['rect','Rettangolo','r'],['ellipse','Ellisse','e'],['star','Stella','s'],['poly','Poligono','y']];
 const isShape=t=>SHAPES.some(x=>x[0]===t);
 
@@ -2261,10 +2261,13 @@ P.addEventListener('click',e=>{const d=e.target.closest('[data-paldel]');if(!d)r
 /* ---------- Home: nuovo documento e ultimi file con anteprima ---------- */
 let LIB=[],libT=0,thumbT=0;
 async function libBoot(restored){try{LIB=(await IDB.get('lib'))||[]}catch(e){LIB=[]}if(!S.docId){S.docId=uid('doc');if(restored&&allItems().length)libSave(true)}showHome(true)}
+// salvataggio in libreria senza scatti mentre si disegna: miniatura solo a mani ferme, asset (audio/video) riscritti solo se cambiano
+const LIBA=new Map();let LIBIN=0,LIBTT=0;['pointerdown','pointermove'].forEach(t=>addEventListener(t,()=>{LIBIN=performance.now()},{capture:true,passive:true}));
 function libSave(now){clearTimeout(libT);const run=async snap=>{const{id,doc,view,assets,frame}=snap;if(!id)return;if(!snap.n&&!LIB.some(l=>l.id===id))return;
- await IDB.set('d_'+id,{doc,view});await IDB.set('a_'+id,assets);
+ await IDB.set('d_'+id,{doc,view});{const sg=Object.keys(assets).sort().map(k=>k+':'+(assets[k]?assets[k].length:0)).join('|');if(LIBA.get(id)!==sg||now){await IDB.set('a_'+id,assets);LIBA.set(id,sg)}}
  let e=LIB.find(l=>l.id===id);if(!e){e={id};LIB.unshift(e)}e.name=doc.name||'Senza titolo';e.t=Date.now();e.w=doc.w;e.h=doc.h;
- if(!e.thumb||now||Date.now()-thumbT>20000){thumbT=Date.now();try{const k=Math.min(1,320/Math.max(doc.w,doc.h));const sc={w:doc.w,h:doc.h,bg:doc.bg,layers:doc.layers.map(L=>({...L,items:L.items.map(it=>it.type==='seq'?seqGroup(it,frame):it)}))};
+ if(!now&&e.thumb&&Date.now()-thumbT>20000&&performance.now()-LIBIN<2500){clearTimeout(LIBTT);LIBTT=setTimeout(()=>libSave(),3000)}
+ else if(!e.thumb||now||Date.now()-thumbT>20000){thumbT=Date.now();try{const k=Math.min(1,320/Math.max(doc.w,doc.h));const sc={w:doc.w,h:doc.h,bg:doc.bg,layers:doc.layers.map(L=>({...L,items:L.items.map(it=>it.type==='seq'?seqGroup(it,frame):it)}))};
   const r=await rasterize('image/jpeg',k,sc,true);e.thumb=r.cv.toDataURL('image/jpeg',.72);r.cv.width=r.cv.height=0}catch(err){}}
  LIB.sort((a,b)=>b.t-a.t);if(LIB.length>150){for(const x of LIB.slice(150)){IDB.set('d_'+x.id,null);IDB.set('a_'+x.id,null)}LIB=LIB.slice(0,150)}await IDB.set('lib',LIB)};
  const snap=()=>{const used={},set=new Set();allItems().forEach(i=>itemAssets(i,set));const au=S.doc.anim&&S.doc.anim.audio;if(au)set.add(au.asset);set.forEach(a=>{if(S.assets[a])used[a]=S.assets[a]});
@@ -2317,7 +2320,7 @@ function kPosAt(px){const i=$('#askIn'),cv=caretUpd.cv||(caretUpd.cv=document.cr
    ===================================================================== */
 Object.assign(S.opt,{pressure:true,prMin:20,erSize:24,erMode:'area',bkGap:2,bkMode:'tap',frDur:2,quick:true},Object.fromEntries(Object.entries(S.opt).filter(([k])=>['pressure','prMin','erSize','erMode','bkGap','frDur','bkMode','quick','bkSmooth'].includes(k))));
 S.frSeq=null;
-const TOOLS_F=[['select','Seleziona','v'],['node','Punti','a'],['lasso','Lazo','l'],'|',['pencil','Matita','n'],['pen','Penna','p'],['shape','Forme',''],'|',['eraser','Gomma','e'],['bucket','Secchiello','k'],['picker','Contagocce','i'],'|',['hand','Mano','h']];
+const TOOLS_F=[['select','Seleziona','v'],['node','Punti','a'],['lasso','Lazo','l'],'|',['pen','Penna','p'],['pencil','Matita','n'],['shape','Forme',''],'|',['eraser','Gomma','e'],['bucket','Secchiello','k'],['picker','Contagocce','i'],'|',['hand','Mano','h']];
 ICONS.eraser=[['M8.5 19.5h11'],['M4.6 14.4l8.8-8.8a2 2 0 012.8 0l3.2 3.2a2 2 0 010 2.8L12 19H8.2z'],['M9 10l5 5']];
 ICONS.bucket=[['M5 11l6-6 7 7-6 6a2 2 0 01-2.8 0L5 13.8a2 2 0 010-2.8z'],['M5 12h13'],['M20 15s1.6 2 1.6 3.1a1.6 1.6 0 01-3.2 0C18.4 17 20 15 20 15z',1]];
 ICONS.frames=[['M4 6h16v12H4z'],['M8 6v12M16 6v12']];
@@ -2387,8 +2390,8 @@ FLY.frseq=()=>allSeqs().map(({it})=>['fr:active:'+it.id,'frames',(it.name||'Anim
 function frBarHTML(){const A=ADOC(),s=frActive(false),B=(a,i,t,on,lab)=>`<button class="ab${on?' on':''}" data-act="${a}" title="${t}">${i?ic(i):''}${lab?`<span>${lab}</span>`:''}</button>`,sep='<span class="asep"></span>';
  const c=s&&frRunAt(s,S.frame-s.start),cur=c&&c.i>=0?c.runs[c.i]:null;
  return B('an:start','tstart','Inizio')+B('fr:prevd','tprevk','Disegno precedente')+`<button class="ab play" data-act="an:play" title="Play / Pausa">${ic(AN.playing?'tpause':'tplay')}</button>`+B('fr:nextd','tnextk','Disegno successivo')+B('an:end','tend','Fine')+B('an:loop','loopic','Riproduzione in loop',A.loop)
- +`<button class="atime" data-act="an:frameedit" title="Frame corrente"><b>${S.frame}</b><span>/ ${A.dur-1}${cur?` · disegno ${cur.d>=0?cur.d+1:'vuoto'} × ${cur.n}`:''}</span></button>`+sep
- +B('fr:add','plus','Nuovo disegno al frame corrente',0,'Disegno')+B('fr:dup','copy','Duplica il disegno corrente')
+ +`<button class="atime" data-act="an:frameedit" title="Frame corrente"><b>${S.frame}</b><span>/ ${A.dur-1}</span></button>`+sep
+ +B('fr:add','plus','Nuovo disegno al frame corrente')+B('fr:dup','copy','Duplica il disegno corrente')
  +`<span class="durbox" title="Durata dei nuovi disegni (frame)"><button class="ab tt" data-act="fr:ndur:-1"><span>−</span></button><b>${S.opt.frDur||1}</b><button class="ab tt" data-act="fr:ndur:1"><span>+</span></button></span>`
  +B('an:copyI','copy','Copia gli elementi selezionati')+B('an:pasteI','paste','Incolla nel disegno corrente (stessa posizione)')+sep+`<span class="tgrp">`+B('fr:durm','','Accorcia il disegno corrente',0,'−1')+B('fr:durp','','Allunga il disegno corrente',0,'+1')+B('fr:empty','','Inserisci un frame vuoto dopo il disegno',0,'Vuoto')+`</span>`+B('fr:del','trash','Elimina il disegno corrente')+sep
  +`<button class="ab" data-fly="frseq" title="Animazioni a disegni">${ic('frames')}<span class="lab">${esc(s?s.name||'Animazione':'Nessuna')}</span><span class="car"></span></button>`
@@ -2447,13 +2450,15 @@ function frOnionHTML(){const o=S.opt;if(!o.onion||S.mode!=='frames')return'';con
 function pressurePoly(pts,w,minR,rough,seed,tp){if(pts.length<2)return null;const n=pts.length;const hsh=i=>{const x=Math.sin(i*127.1+(seed||1)*311.7)*43758.5453;return x-Math.floor(x)};
  const sm=pts.map((p,i)=>{let a=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(n-1,i+2);j++){a+=pts[j][2];c++}return a/c});
  const cum=[0];for(let i=1;i<n;i++)cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));const T=cum[n-1]||1,ex=tp?1.25:.75;
+ // punte affusolate: la salita di pressione della penna agli estremi viene accorciata, l'assottigliamento lo fa la punta (più corta)
+ if(tp&&n>3){const dl=Math.min(T*.3,Math.max(w*1.2,3));let a=0;while(a<n-1&&cum[a]<dl)a++;let b=n-1;while(b>0&&T-cum[b]<dl)b--;if(a<b){for(let i=0;i<a;i++)sm[i]=Math.max(sm[i],sm[a]);for(let i=b+1;i<n;i++)sm[i]=Math.max(sm[i],sm[b])}}
  // bordo "organico": rumore morbido lungo la lunghezza (indipendente sui due lati), niente seghettature
  const vn=(u,o)=>{const i=Math.floor(u),t=u-i,k=(1-Math.cos(t*Math.PI))/2;return hsh(i+o)*(1-k)+hsh(i+1+o)*k},wl=Math.max(3,w*1.3),wf=Math.max(7,w*.55),amp=rough?rough*.2:0;
  const nz=(d,o)=>amp?1+amp*((vn(d/wl,o)-.5)*1.5+(vn(d/wl*2.7,o+37)-.5)*.7+(vn(d/wf,o+71)-.5)*.45):1;
  // irregolarità "a mano": lo spessore respira e la linea ondeggia appena (uguale sui due lati)
  const wb=d=>amp?1+rough*.16*(vn(d/(w*4+14),211)-.5)*2:1,jt=d=>amp?rough*Math.min(1.6,w*.07)*(vn(d/(w*3+11),307)-.5)*2:0;
  // punte affusolate (inchiostro): il raggio scende verso gli estremi
- const tl=tp?Math.min(T*.45,Math.max(w*1.8*tp,2)):0,tpr=d=>{if(!tl)return 1;const t=Math.min(1,Math.min(d,T-d)/tl);return Math.max(.05,Math.pow(Math.sin(t*Math.PI/2),.85))};
+ const tl=tp?Math.min(T*.3,Math.max(w*.75*tp,1.5)):0,tpr=d=>{if(!tl)return 1;const t=Math.min(1,Math.min(d,T-d)/tl);return Math.max(.06,Math.pow(Math.sin(t*Math.PI/2),.6))};
  const rad=sm.map((p,i)=>Math.max(.12,w/2*(minR+(1-minR)*Math.pow(Math.max(0,Math.min(1,p)),ex))*tpr(cum[i])));
  const L=[],R=[];for(let i=0;i<n;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(n-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const r=rad[i]*wb(cum[i]),j=jt(cum[i])*Math.min(1,rad[i]/(w/2)*2),rl=r*nz(cum[i],11)+j,rr=r*nz(cum[i],503)-j;L.push([pts[i][0]-dy*rl,pts[i][1]+dx*rl]);R.push([pts[i][0]+dy*rr,pts[i][1]-dx*rr])}
  const cap=(c,r,a0,steps)=>{const o=[];for(let k=1;k<steps;k++){const a=a0+Math.PI*k/steps;o.push([c[0]+Math.cos(a)*r,c[1]+Math.sin(a)*r])}return o};
@@ -2487,12 +2492,14 @@ function pwFromPoints(src,w,minR,col,sm){if(src.length<2)return null;
  const sm2=pr.map((v,i)=>{let a=0,c=0;for(let j=Math.max(0,i-2);j<=Math.min(N-1,i+2);j++){a+=pr[j];c++}return +(a/c).toFixed(3)});
  const st=S.def;const it=newPath(subs,{...clone(st),fill:null,stroke:{t:'solid',c:col},sw:w,so:st.so??1,cap:'round',join:'round'});it.pw={s:sm2,minR};it.pr=1;return it}
 const PWC=new WeakMap();
-function pwOutline(it){const c=PWC.get(it);if(c&&c.ref===it.subs&&c.sw===it.style.sw&&c.mr===it.pw.minR&&c.pr===it.pw.s)return c.subs;const key=JSON.stringify(it.subs)+'|'+it.style.sw+'|'+it.pw.minR;if(c&&c.k===key){c.ref=it.subs;c.sw=it.style.sw;c.mr=it.pw.minR;c.pr=it.pw.s;return c.subs}
+// impronta numerica dei punti: la modifica punti sposta i nodi senza cambiare l'array, il contorno va ricalcolato
+function pwHash(subs){let h=0,k=1;for(const sb of subs){for(const q of sb.pts){h+=(q.x*1.3+q.y*2.7+q.ix*.71+q.iy*1.9+q.ox*3.1+q.oy*.37)*k;k=k*1.0007%7.3+.5}h+=sb.closed?17*k:0}return h}
+function pwOutline(it){const c=PWC.get(it),hh=pwHash(it.subs);if(c&&c.ref===it.subs&&c.h===hh&&c.sw===it.style.sw&&c.mr===it.pw.minR&&c.pr===it.pw.s)return c.subs;const key=JSON.stringify(it.subs)+'|'+it.style.sw+'|'+it.pw.minR;if(c&&c.k===key){c.ref=it.subs;c.h=hh;c.sw=it.style.sw;c.mr=it.pw.minR;c.pr=it.pw.s;return c.subs}
  const fl=flatten(it),out=[];for(const f of fl){let P=f.pts;if(P.length<2)continue;const dense=[P[0]];for(let i=1;i<P.length;i++){const a=dense[dense.length-1],b=P[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(d/2));for(let k=1;k<=n;k++)dense.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
   const L=[0];for(let i=1;i<dense.length;i++)L.push(L[i-1]+Math.hypot(dense[i][0]-dense[i-1][0],dense[i][1]-dense[i-1][1]));const T=L[L.length-1]||1,S0=it.pw.s,N=S0.length;
   const pts=dense.map((q,i)=>{const u=L[i]/T*(N-1),j=Math.min(N-2,Math.floor(u)),t=u-j;return[q[0],q[1],S0[j]+(S0[j+1]-S0[j])*t]});
   const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR,it.pw.br==='pencil'?1:it.pw.br==='ink'?.35:0,it.pw.seed,it.pw.tp||0);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
- PWC.set(it,{k:key,subs:out,ref:it.subs,sw:it.style.sw,mr:it.pw.minR,pr:it.pw.s});return out}
+ PWC.set(it,{k:key,h:hh,subs:out,ref:it.subs,sw:it.style.sw,mr:it.pw.minR,pr:it.pw.s});return out}
 // come appare: un riempimento con il colore del tratto (stessa opacità, sfocatura, fusione e rim)
 function pwFlat(it){if(!it||!it.pw||it.type!=='path'||!it.style.stroke)return it;return{...it,subs:pwOutline(it),style:{...it.style,fill:it.style.stroke,fo:it.style.so??1,stroke:null},pw:undefined,rule:'nonzero'}}
 {const _m=itemMarkup;itemMarkup=function(it,exp,nested,noBlend){return _m(it&&it.pw?pwFlat(it):it,exp,nested,noBlend)}}
@@ -2526,7 +2533,7 @@ P.addEventListener('change',e=>{if(e.target.dataset.vw||e.target.dataset.pw){e.s
 {const _c=commit;commit=function(){allItems().forEach(it=>{if(it.vw&&it.vwh!==vwHash(it.subs||[])){delete it.vw;delete it.vwh}});return _c()}}
 
 /* ---------- gomma ---------- */
-OPS.eraser=function(P,e){const r=()=>Math.max(2,(S.opt.erSize||24)/2)/S.view.z,mode=S.opt.erMode||'stroke',pts=[[P.x,P.y]];let removed=false;
+OPS.eraser=function(P,e){const r=()=>Math.max(2,(S.opt.erSize||24)/2)/S.view.z,mode=S.opt.erMode||'area',pts=[[P.x,P.y]];let removed=false;
  const pool=()=>S.mode==='frames'?frInside():editable();
  const strokeHit=(x,y)=>{const rr=r();for(const it of pool()){if(it.type==='image')continue;if(hitItem(it,x,y,rr)){const f=find(it.id);if(f){f.L.items.splice(f.i,1);removed=true}}}};
  const show=()=>{S.ov.erase={pts:pts.slice(),r:r()};renderOverlay()};if(mode==='stroke')strokeHit(P.x,P.y);show();render();
@@ -2602,6 +2609,18 @@ function quickAdjust(sn,Q){if(sn.t==='l'){if(Q)sn.b=[Q.x,Q.y];const n=24;sn.pts=
    const pool=S.mode==='frames'?frInside():editable(),it=newPath(subs,{...clone(S.def),fill:{t:'solid',c:fc},stroke:null,fo:1});it.bk=1;const L=layer(),first=L.items.findIndex(i=>pool.includes(i));L.items.splice(first<0?L.items.length:first,0,it);commit()}}}}
 {const _o=onSeg;onSeg=function(k,v){if(k==='bkMode'){S.opt.bkMode=v;buildCtx();scheduleSave();return}return _o(k,v)}}
 {const _am=applyM;applyM=function(it,m){const n=_am(it,m);if(n&&it.vw&&n.vw){const k=Math.sqrt(Math.abs(m[0]*m[3]-m[1]*m[2]));n.vw={...it.vw,p:it.vw.p.map(q=>{const[x,y]=mx(m,q[0],q[1]);return[x,y,q[2]]}),w:it.vw.w*k,tol:(it.vw.tol||.3)*k};n.vwh=vwHash(n.subs)}return n}}
+
+// barra di Frames compatta: tutte le icone visibili senza scorrere
+{const st=document.createElement('style');st.textContent=`#abar:has([data-act="fr:prevd"]){gap:0;padding:4px 6px}
+#abar:has([data-act="fr:prevd"]) .ab{min-width:34px;padding:0 5px}
+#abar:has([data-act="fr:prevd"]) .ab.play{width:42px;min-width:42px;margin:0 1px}
+#abar:has([data-act="fr:prevd"]) .ab[data-act="an:start"],#abar:has([data-act="fr:prevd"]) .ab[data-act="an:end"],#abar:has([data-act="fr:prevd"]) .ab[data-act="fr:prevd"],#abar:has([data-act="fr:prevd"]) .ab[data-act="fr:nextd"]{min-width:30px;padding:0 3px}
+#abar:has([data-act="fr:prevd"]) .ab[data-act="an:loop"]{margin-left:3px}
+#abar:has([data-act="fr:prevd"]) .atime{padding:0 8px;margin:0 3px}
+#abar:has([data-act="fr:prevd"]) .asep{margin:0 3px}
+#abar:has([data-act="fr:prevd"]) .tgrp .ab{min-width:28px;padding:0 3px}
+#abar:has([data-act="fr:prevd"]) .durbox .ab{min-width:26px;padding:0 3px}
+#abar:has([data-act="fr:prevd"]) [data-fly="frseq"] .lab{max-width:86px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}`;document.head.appendChild(st)}
 
 /* =====================================================================
    PRE-COMPOSIZIONI ed EFFETTI (come nella versione desktop)
@@ -3658,6 +3677,15 @@ function docAnimated(){for(const L of S.doc.layers){if(L.rig)continue;for(const 
  document.addEventListener('pointerup',e=>{if(!flyDn)return;const d=flyDn;flyDn=null;const b=e.target.closest('[data-fly]');if(b!==d.b||Math.hypot(e.clientX-d.x,e.clientY-d.y)>14)return;flyT=performance.now();openCtxFly(b,b.dataset.fly)},true);
  document.addEventListener('click',e=>{const b=e.target.closest('[data-fly]');if(b&&performance.now()-flyT<700){e.stopImmediatePropagation();e.preventDefault()}},true)}
 
+// Apple Pencil: la scrittura a mano di iPadOS (Scribble) si attiva trascinando la penna su campi numerici e cursori (o vicino ad essi) e disegna la sua linea bianca. Il trascinamento con lo stilo su questi controlli non deve mai diventare scrittura: si blocca il touchmove (il tocco singolo per scrivere con la tastiera resta).
+{const SCR_Q='input[type=number],input.num,input[type=range],.crng,.slrow,.rng';
+ const isStylus=e=>{for(const t of e.changedTouches||[])if(t.touchType==='stylus')return true;return false};
+ let lock=false;
+ document.addEventListener('touchstart',e=>{lock=isStylus(e)&&!!(e.target.closest&&e.target.closest(SCR_Q))},{passive:true,capture:true});
+ document.addEventListener('touchmove',e=>{if(lock||(isStylus(e)&&e.target.closest&&e.target.closest(SCR_Q))){if(e.cancelable)e.preventDefault()}},{passive:false,capture:true});
+ document.addEventListener('touchend',()=>{lock=false},{passive:true,capture:true});document.addEventListener('touchcancel',()=>{lock=false},{passive:true,capture:true});
+}
+
 /* ===== v9: pennelli (Ink, Matita, Concept), matita più reattiva, salvataggio dei tratti differito ===== */
 ICONS.br_ink=[['M4 20c2-6 6-11 14-15l1.5 1.5C15.5 14 10.5 18 4 20z']];
 ICONS.br_pencil=[['M5 19l1.2-4.2L16.5 4.5l3 3L9.2 17.8 5 19z'],['M14.5 6.5l3 3']];
@@ -3803,6 +3831,7 @@ function flipSync(force){const el=$('#flipbook');if(!el)return;const on=S.mode==
    else cells+=`<div class="fbc${r.d<0?' gap':''}" data-fbi="${i}"${r.d>=0?` data-k="${fbKey(s,r.d)}" data-d="${r.d}"`:''}><b>${i+1}</b><div class="th">${r.d>=0?fbTh(s,r.d):''}${r.n>1?`<em>×${r.n}</em>`:''}</div></div>`}
   el.innerHTML=`<div class="fbt"><button data-fb="play" title="Play / Pausa">${ic(AN.playing?'tpause':'tplay')}</button><button data-fb="prev" title="Disegno precedente">${ic('fbprev')}</button><button data-fb="next" title="Disegno successivo">${ic('fbnext')}</button><button data-fb="loop" class="${A.loop?'on':''}" title="Loop">${ic('loopic')}</button><span class="fbsp"></span><span class="fbi"></span><button data-fb="track" title="Nuova animazione a disegni (traccia)">${ic('fbtrack')}</button><button data-fb="add" title="Nuovo disegno">${ic('plus')}</button></div>
    <div class="fbr"><button class="fbn${s&&!s.hide?' vis':''}" data-fb="vis" title="Mostra / nascondi la traccia"><i>${s&&!s.hide?'✓':''}</i><span>${esc(s?s.name||'Animazione':'Nessuna traccia')}</span></button><div class="fbs">${cells}</div></div>`;el.hidden=false}
+ {const pb=el.querySelector('[data-fb="play"]'),ps=AN.playing?'1':'0';if(pb&&pb.dataset.st!==ps){pb.dataset.st=ps;pb.innerHTML=ic(AN.playing?'tpause':'tplay')}}
  el.querySelectorAll('.fbc').forEach(c=>c.classList.toggle('cur',+c.dataset.fbi===ci));const inf=el.querySelector('.fbi');if(inf)inf.textContent=runs.length?(ci>=0?ci+1:'–')+' / '+runs.length:'';
  const pb=el.querySelector('[data-fb="play"]');if(pb){const want=AN.playing?'tpause':'tplay';if(pb.dataset.i!==want){pb.dataset.i=want;pb.innerHTML=ic(want)}}}
 {const _d=drawAnim;drawAnim=function(){const r=_d();try{flipSync()}catch(_){}return r}}
@@ -3841,6 +3870,9 @@ function fbAct(a){const c=frCur();if(!c){toast('Nessun disegno al frame corrente
 // barra di Frames: durante la riproduzione viene ridisegnata ad ogni fotogramma; mentre un dito/penna è appoggiato su un pulsante si aspetta, altrimenti il tocco va perso (Play non si fermava)
 {let dn=0,pend=false;const ab=$('#abar');if(ab){ab.addEventListener('pointerdown',()=>{dn=1},true);const rel=()=>{if(!dn)return;setTimeout(()=>{dn=0;if(pend){pend=false;updAbar()}},300)};addEventListener('pointerup',rel,true);addEventListener('pointercancel',rel,true)}
  const _u=updAbar;updAbar=function(){if(dn&&AN.playing&&S.mode==='frames'){pend=true;return}return _u()}}
+
+// l'icona Play della striscia segue sempre lo stato reale (anche quando la riproduzione si ferma da sola o da un altro pulsante)
+{const _s=stopPlay;stopPlay=function(){const r=_s.apply(this,arguments);try{flipSync()}catch(_){}return r}}
 
 /* ===== v10: animazioni a disegni su un livello proprio, rotazione del canvas, taglio di audio e video ===== */
 // audio e video: schermo con play + doppia croma (dal disegno dell'utente, nello stile a linee delle altre icone)
@@ -4128,6 +4160,25 @@ function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: p
 {const _a=animAct;animAct=function(a){if(a==='rigbyname'){rigBindByName();return}if(a==='rigfromlayers'){rigBonesFromLayers();return}return _a(a)}}
 {const _ap=animPanel;animPanel=function(){let h=_ap();let i=h.indexOf('<div class="grid g2"><button class="btn" data-act="an:rigtool:weight">');if(i<0||h.indexOf('data-act="an:rignew"',i)-i>260)i=h.indexOf('<button class="btn" data-act="an:rignew"');if(i<0)return h;
  return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin:8px 0 6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
+
+// menu ☰: intestazione con logo e versione, Importa / Esporta raggruppati (si aprono sul posto)
+const APPV='v11.3';
+toggleMenu=function(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
+ const I=(a,i,l,ck)=>`<button data-act="${a}">${ic(i)}<span>${l}</span>${ck?`<span class="ck">✓</span>`:''}</button>`,
+  G=(k,i,l,body)=>`<button class="mg${MG[k]?' open':''}" data-mg="${k}">${ic(i)}<span>${l}</span><span class="mgc"></span></button><div class="msub"${MG[k]?'':' hidden'}>${body}</div>`;
+ m.innerHTML=`<div class="mhead"><span class="mlogo">${HLOGO.replace('id="logo"','')}</span><span class="mver">${APPV}</span></div><div class="ms"></div>`
+  +I('home','file','Home: nuovo e recenti')+I('open','open','Apri… (progetto, Lottie o SVG)')+I('save','save','Salva progetto (.json)')
+  +G('imp','img','Importa',I('importImg','img','Immagine')+I('importSeq','img','Sequenza di immagini…')+I('importPsd','layers','PSD (livelli)…'))
+  +G('exp','exp','Esporta',I('expSVG','exp','SVG a livelli')+I('expPNG','exp','PNG')+I('expJPG','exp','JPEG')+I('an:exp:lottie','exp','Animazione Lottie (.json)')+I('an:exp:mp4','exp','Video MP4')+I('an:exp:png','exp','Sequenza PNG (.zip)'))
+  +I('trace','trace','Vettorizza schizzo…')+'<div class="ms"></div>'
+  +I('doc','doc','Documento…')+I('rulers','ruler','Righelli',S.opt.rulers)+I('pencilOnly','pencilonly','Solo Apple Pencil disegna',S.opt.pencilOnly)+I('hints','help','Mostra gli aiuti',S.opt.hints!==false);m.hidden=false};
+const MG={};
+$('#menu').addEventListener('click',e=>{const g=e.target.closest('[data-mg]');if(!g)return;const k=g.dataset.mg;MG[k]=!MG[k];g.classList.toggle('open',MG[k]);const sb=g.nextElementSibling;if(sb)sb.hidden=!MG[k]});
+{const st=document.createElement('style');st.textContent=`#menu .mhead{display:flex;align-items:center;gap:8px;padding:8px 10px 6px}
+#menu .mlogo svg{height:20px;width:auto;display:block}#menu .mver{font-size:11px;color:var(--tx2);font-variant-numeric:tabular-nums;margin-top:3px}
+#menu .mgc{margin-left:auto;width:8px;height:8px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);transform:rotate(-45deg);margin-right:4px;transition:transform .15s}
+#menu .mg.open .mgc{transform:rotate(45deg);margin-top:-4px}
+#menu .msub{padding-left:16px}#menu .msub button{height:38px}`;document.head.appendChild(st)}
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
