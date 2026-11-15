@@ -3677,14 +3677,13 @@ function docAnimated(){for(const L of S.doc.layers){if(L.rig)continue;for(const 
  document.addEventListener('pointerup',e=>{if(!flyDn)return;const d=flyDn;flyDn=null;const b=e.target.closest('[data-fly]');if(b!==d.b||Math.hypot(e.clientX-d.x,e.clientY-d.y)>14)return;flyT=performance.now();openCtxFly(b,b.dataset.fly)},true);
  document.addEventListener('click',e=>{const b=e.target.closest('[data-fly]');if(b&&performance.now()-flyT<700){e.stopImmediatePropagation();e.preventDefault()}},true)}
 
-// Apple Pencil: la scrittura a mano di iPadOS (Scribble) si attiva trascinando la penna su campi numerici e cursori (o vicino ad essi) e disegna la sua linea bianca. Il trascinamento con lo stilo su questi controlli non deve mai diventare scrittura: si blocca il touchmove (il tocco singolo per scrivere con la tastiera resta).
-{const SCR_Q='input[type=number],input.num,input[type=range],.crng,.slrow,.rng';
- const isStylus=e=>{for(const t of e.changedTouches||[])if(t.touchType==='stylus')return true;return false};
- let lock=false;
- document.addEventListener('touchstart',e=>{lock=isStylus(e)&&!!(e.target.closest&&e.target.closest(SCR_Q))},{passive:true,capture:true});
- document.addEventListener('touchmove',e=>{if(lock||(isStylus(e)&&e.target.closest&&e.target.closest(SCR_Q))){if(e.cancelable)e.preventDefault()}},{passive:false,capture:true});
- document.addEventListener('touchend',()=>{lock=false},{passive:true,capture:true});document.addEventListener('touchcancel',()=>{lock=false},{passive:true,capture:true});
-}
+// Apple Pencil: la scrittura a mano di iPadOS (Scribble) si aggancia ai campi modificabili vicini alla penna e disegna la sua linea bianca.
+// Mentre la Pencil è appoggiata sui pannelli (non sul foglio) i campi numerici diventano per un attimo di sola lettura: Scribble li ignora, slider e trascinamento dei valori funzionano normalmente; un tocco senza trascinare li rende di nuovo scrivibili.
+{const NQ='input[type=number],input.num';let ro=null;
+ const rel=e=>{if(!ro)return;const L=ro;ro=null;setTimeout(()=>L.forEach(i=>{if(i.dataset.ro==='1'){i.readOnly=false;delete i.dataset.ro}}),60)};
+ document.addEventListener('pointerdown',e=>{if(e.pointerType!=='pen'||!e.target.closest||e.target.closest('#cv'))return;const box=e.target.closest('#panel,#ctx,#fly,#abar,#modal,#flipbook,#mbox');if(!box)return;
+  ro=[...box.querySelectorAll(NQ)].filter(i=>!i.readOnly);ro.forEach(i=>{i.readOnly=true;i.dataset.ro='1'})},true);
+ document.addEventListener('pointerup',rel,true);document.addEventListener('pointercancel',rel,true)}
 
 /* ===== v9: pennelli (Ink, Matita, Concept), matita più reattiva, salvataggio dei tratti differito ===== */
 ICONS.br_ink=[['M4 20c2-6 6-11 14-15l1.5 1.5C15.5 14 10.5 18 4 20z']];
@@ -4162,7 +4161,7 @@ function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: p
  return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin:8px 0 6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
 
 // menu ☰: intestazione con logo e versione, Importa / Esporta raggruppati (si aprono sul posto)
-const APPV='v11.3';
+const APPV='v11.4';
 toggleMenu=function(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
  const I=(a,i,l,ck)=>`<button data-act="${a}">${ic(i)}<span>${l}</span>${ck?`<span class="ck">✓</span>`:''}</button>`,
   G=(k,i,l,body)=>`<button class="mg${MG[k]?' open':''}" data-mg="${k}">${ic(i)}<span>${l}</span><span class="mgc"></span></button><div class="msub"${MG[k]?'':' hidden'}>${body}</div>`;
@@ -4174,8 +4173,8 @@ toggleMenu=function(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
   +I('doc','doc','Documento…')+I('rulers','ruler','Righelli',S.opt.rulers)+I('pencilOnly','pencilonly','Solo Apple Pencil disegna',S.opt.pencilOnly)+I('hints','help','Mostra gli aiuti',S.opt.hints!==false);m.hidden=false};
 const MG={};
 $('#menu').addEventListener('click',e=>{const g=e.target.closest('[data-mg]');if(!g)return;const k=g.dataset.mg;MG[k]=!MG[k];g.classList.toggle('open',MG[k]);const sb=g.nextElementSibling;if(sb)sb.hidden=!MG[k]});
-{const st=document.createElement('style');st.textContent=`#menu .mhead{display:flex;align-items:center;gap:8px;padding:8px 10px 6px}
-#menu .mlogo svg{height:20px;width:auto;display:block}#menu .mver{font-size:11px;color:var(--tx2);font-variant-numeric:tabular-nums;margin-top:3px}
+{const st=document.createElement('style');st.textContent=`#menu .mhead{display:flex;align-items:center;gap:8px;padding:10px 12px 8px 10px}
+#menu .mlogo svg{height:26px;width:auto;display:block}#menu .mver{margin-left:auto;font-size:11px;color:var(--tx2);font-variant-numeric:tabular-nums;margin-top:4px}
 #menu .mgc{margin-left:auto;width:8px;height:8px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);transform:rotate(-45deg);margin-right:4px;transition:transform .15s}
 #menu .mg.open .mgc{transform:rotate(45deg);margin-top:-4px}
 #menu .msub{padding-left:16px}#menu .msub button{height:38px}`;document.head.appendChild(st)}
