@@ -1761,7 +1761,7 @@ const fmtTC=f=>{const A=ADOC(),s=Math.floor(f/A.fps),fr=f%A.fps;return`${String(
 function abarHTML(){const A=ADOC(),B=(a,i,t,on,lab)=>`<button class="ab${on?' on':''}" data-act="an:${a}" title="${t}">${i?ic(i):''}${lab?`<span>${lab}</span>`:''}</button>`,sep='<span class="asep"></span>';
  return B('start','tstart','Inizio')+B('prevk','tprevk','Keyframe precedente')+`<button class="ab play" data-act="an:play" title="Play / Pausa">${ic(AN.playing?'tpause':'tplay')}</button>`+B('nextk','tnextk','Keyframe successivo')+B('end','tend','Fine')+B('loop','loopic','Riproduzione in loop',A.loop)
  +`<button class="atime" data-act="an:frameedit" title="Frame corrente"><b>${S.frame}</b><span>/ ${A.dur-1} · ${fmtTC(S.frame)}</span></button>`+sep
- +B('auto','','Auto-key: crea keyframe quando modifichi',A.auto!==false,'Auto')+B('key','keyadd','Aggiungi keyframe (posizione, rotazione, scala, opacità)')+B('delk','trash','Elimina keyframe')
+ +B('auto','','Auto-key: crea keyframe quando modifichi',A.auto!==false,'Auto')+B('key','keyadd','Aggiungi keyframe (posizione, rotazione, scala, opacità)')+B('copy','copy','Copia keyframe (selezionati, o quelli al frame corrente)')+B('paste','paste','Incolla keyframe al frame corrente')+B('delk','trash','Elimina keyframe')
  +`<button class="ab" data-fly="ease" title="Interpolazione">${ic('ease')}<span class="lab">Interpolazione</span><span class="car"></span></button>`
  +B('multi','','Selezione multipla di keyframe e oggetti',S.opt.multi,'Multi')+`<button class="ab" data-act="an:msplit" title="Dividi audio / video al frame corrente">${ic('scissors')}</button>`+`<button class="ab" data-fly="kmore" title="Altro">${ic('more')}</button>`+`<button class="ab" data-fly="media" title="Audio e video di riferimento">${ic('avmedia')}</button>`+sep
  +B('onion','onion','Onion skin',S.opt.onion)+B('mpath','mpath','Traccia del movimento',S.opt.mpath)
@@ -2140,7 +2140,7 @@ P.addEventListener('change',e=>{const t=e.target,d=t.dataset.amed||t.dataset.ame
  else if(v){if(d==='voff')v.off=Math.round(+t.value||0);if(d==='vshow')v.show=t.checked;saveVid();syncVideo();render();drawAnim()}},true);
 
 /* ---------- rim light (luce di contorno) ---------- */
-const RIMDEF={on:true,c:'#ffffff',size:5,ang:-45,amt:1,bl:1.5};
+const RIMDEF={on:false,c:'#ffffff',size:5,ang:-45,amt:1,bl:1.5};
 function rimSVG(it){const r=it.style&&it.style.rim;if(!r||!r.on||!(r.amt>0)||!it.subs||!it.subs.length)return'';const b=bboxItem(it);if(!b)return'';const a=r.ang*Math.PI/180,dx=f2(Math.cos(a)*r.size),dy=f2(Math.sin(a)*r.size),d=pathD(it),id=it.id,pad=Math.abs(r.size)+r.bl*3+20,fr=it.rule==='evenodd'?' fill-rule="evenodd"':'';
  return`<defs><mask id="rm${id}" maskUnits="userSpaceOnUse" x="${f2(b.x-pad)}" y="${f2(b.y-pad)}" width="${f2(b.w+pad*2)}" height="${f2(b.h+pad*2)}"><path d="${d}" fill="#fff" stroke="#fff" stroke-width="1" stroke-linejoin="round"${fr}/><path d="${d}" fill="#000"${fr} transform="translate(${dx} ${dy})"/></mask>${r.bl>0?`<filter id="rf${id}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${f2(r.bl)}"/></filter>`:''}</defs><g mask="url(#rm${id})" opacity="${f2(Math.min(1,r.amt))}"><path d="${d}" fill="${r.c}" stroke="${r.c}" stroke-width="1" stroke-linejoin="round"${fr}${r.bl>0?` filter="url(#rf${id})"`:''}/></g>`.replace(/^/,'').replace(/(<g mask=[\s\S]*<\/g>)$/,(it.style.blur>0?`<g filter="url(#fb${id})">$1</g>`:'$1'))}
 function rimPanel(st){const r=st.rim,on=!!(r&&r.on),v=r||RIMDEF,R=(k,l,mn,mx,step,val,u)=>`<div class="row"><span class="lbl">${l}</span><input type="range" min="${mn}" max="${mx}" step="${step}" value="${val}" data-rim="${k}"><span class="val">${val}${u||''}</span></div>`;
@@ -2148,7 +2148,7 @@ function rimPanel(st){const r=st.rim,on=!!(r&&r.on),v=r||RIMDEF,R=(k,l,mn,mx,ste
   +R('size','Spessore',0,80,.5,v.size)+R('ang','Angolo',-180,180,1,v.ang,'°')+R('amt','Intensità',0,1,.05,v.amt)+R('bl','Sfumatura',0,40,.5,v.bl)+`<div class="hint">La luce compare sul bordo opposto alla direzione dell'angolo (stesso comportamento della versione desktop).</div>`:''}`)}
 P.addEventListener('input',e=>{const t=e.target,k=t.dataset.rim;if(k==null)return;e.stopImmediatePropagation();const v=k==='c'?t.value:+t.value;editStyle(s=>{s.rim={...RIMDEF,...(s.rim||{}),on:true,[k]:v}},1);
  const val=t.parentNode.querySelector('.val');if(val)val.textContent=v+(k==='ang'?'°':'');if(k==='c')t.parentNode.style.background=v},true);
-P.addEventListener('change',e=>{const t=e.target;if(t.dataset.rim!=null){e.stopImmediatePropagation();if(t.type==='color'){commitQuiet();t.addEventListener('blur',()=>updateUI(),{once:true})}else editStyle(()=>{});return}if(t.dataset.rimon!=null){e.stopImmediatePropagation();const on=t.checked;editStyle(s=>{s.rim={...RIMDEF,...(s.rim||{}),on}})}},true);
+P.addEventListener('change',e=>{const t=e.target;if(t.dataset.rim!=null){e.stopImmediatePropagation();if(t.type==='color'){commitQuiet();t.addEventListener('blur',()=>updateUI(),{once:true})}else editStyle(()=>{});return}if(t.dataset.rimon!=null){e.stopImmediatePropagation();const on=t.checked;if(!on&&S.def.rim)S.def.rim.on=false;editStyle(s=>{s.rim={...RIMDEF,...(s.rim||{}),on}})}},true);
 
 /* ---------- contagocce ---------- */
 const PK={cv:null,key:'',k:1,busy:null};
@@ -2312,6 +2312,23 @@ function kPosAt(px){const i=$('#askIn'),cv=caretUpd.cv||(caretUpd.cv=document.cr
  w.addEventListener('pointerdown',e=>{if(e.target.closest('#askLoupe'))return;e.preventDefault();w.setPointerCapture(e.pointerId);const mv=ev=>{AN.kPos=kPosAt(at(ev));caretUpd();const r=i.getBoundingClientRect(),c=$('#askCaret');
    lp.hidden=false;lp.style.left=(parseFloat(c.style.left)-60)+'px';lp.innerHTML=`<div style="transform:scale(1.8);transform-origin:${parseFloat(c.style.left)}px 50%;white-space:pre;padding-left:${getComputedStyle(i).paddingLeft};margin-left:${60-parseFloat(c.style.left)}px">${esc(i.value.slice(0,AN.kPos))}<b class="lpc"></b>${esc(i.value.slice(AN.kPos))}</div>`};
   mv(e);const up=()=>{lp.hidden=true;w.removeEventListener('pointermove',mv);w.removeEventListener('pointerup',up);w.removeEventListener('pointercancel',up)};w.addEventListener('pointermove',mv);w.addEventListener('pointerup',up);w.addEventListener('pointercancel',up)})}}
+
+// barra di Anima compatta (come Frames): più icone visibili senza scorrere
+{const A='#abar:has([data-act="an:prevk"])',st=document.createElement('style');st.textContent=`${A}{gap:0;padding:4px 6px}
+${A} .ab{min-width:32px;padding:0 4px}${A} .ab.play{width:42px;min-width:42px;margin:0 1px}
+${A} .ab[data-act="an:start"],${A} .ab[data-act="an:end"],${A} .ab[data-act="an:prevk"],${A} .ab[data-act="an:nextk"]{min-width:30px;padding:0 3px}
+${A} .ab[data-act="an:loop"]{margin-left:3px}${A} .atime{padding:0 8px;margin:0 3px}${A} .asep{margin:0 3px}`;document.head.appendChild(st)}
+
+// tastiere dell'app più comode: tasti più grandi e distanziati, il tasto si illumina quando lo tocchi
+{const st=document.createElement('style');st.textContent=`.mbox:has(.kbd){width:min(680px,100%)}
+.kbd{gap:9px;margin-top:14px}.kr{gap:8px}
+.kbd button{height:54px;font-size:20px;border-radius:11px;transition:background .06s,transform .06s}
+.kbd button.wide{font-size:15px}.kbd button.space{font-size:15px}
+.npbox{width:min(380px,92vw);padding:16px}.npk,.npk2{gap:10px}.npbox button{height:62px;font-size:22px;transition:background .06s,transform .06s}.npk2 button{height:50px;font-size:16px}
+.kbd button.hit{background:var(--acc) !important;color:#1a1205;transform:scale(.94)}
+.npbox button.hit{background:var(--acc);color:#1a1205;transform:scale(.94)}`;document.head.appendChild(st);
+ const hit=b=>{b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),140)};
+ document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.kbd button,.npbox button');if(b)hit(b)},true)}
 
 /* =====================================================================
    FRAMES — animazione a disegni (frame by frame)
@@ -3916,16 +3933,16 @@ P.addEventListener('change',e=>{if(e.target.dataset.cvrot)e.stopImmediatePropaga
 {const _a=act;act=function(a){if(a==='cvrotlock'){S.opt.cvRotOn=!S.opt.cvRotOn;scheduleSave();buildPanel();toast(S.opt.cvRotOn?'Ruota il canvas con due dita':'Rotazione con due dita bloccata');return}if(a.startsWith('cvrot:')){const v=+a.slice(6);setCvRot(v===0?0:v===90?(S.opt.cvR||0)+90:(S.opt.cvR||0)+v);return}return _a(a)}}
 // ---- taglio di audio e video: si tiene solo la parte utile (t0..t1, in secondi della sorgente) ----
 function mTrim(k){const o=k==='a'?ADOC().audio:MEDIA.vid;if(!o)return null;const len=k==='a'?(MEDIA.buf?MEDIA.buf.duration:0):(o.el&&o.el.duration)||0;return{o,len,t0:o.t0||0,t1:o.t1!=null?o.t1:len}}
-function mAt(k,f){const m=mTrim(k);if(!m)return null;const t=(f-(m.o.off||0))/ADOC().fps;return{t,inside:t>=m.t0&&t<m.t1,...m}}
+function mediaAt(k,f){const m=mTrim(k);if(!m)return null;const t=(f-(m.o.off||0))/ADOC().fps;return{t,inside:t>=m.t0&&t<m.t1,...m}}
 // forbice: divide la clip al frame corrente (audio, video o entrambi); poi tocchi la parte da eliminare
-function mSplitOK(k){const r=mAt(k,S.frame);return r&&r.t>r.t0+.02&&r.t<r.t1-.02}
+function mSplitOK(k){const r=mediaAt(k,S.frame);return r&&r.t>r.t0+.02&&r.t<r.t1-.02}
 // traccia selezionata (audio o video): la forbice taglia solo quella
 function mSelTrack(k){MEDIA.trk=MEDIA.trk===k?null:k;MEDIA.seg=null;redrawTL();if(MEDIA.trk)toast((k==='a'?'Audio':'Video')+' selezionato: la forbice taglia solo questa traccia')}
 function mediaSplit(){const has=k=>k==='a'?!!ADOC().audio:!!MEDIA.vid;let k=MEDIA.trk&&has(MEDIA.trk)?MEDIA.trk:null;
  if(!k){const c=['a','v'].filter(has);if(!c.length){toast('Nessun audio o video di riferimento');return}const under=c.filter(mSplitOK);
   if(c.length===1)k=c[0];else if(under.length===1)k=under[0];else{toast('Tocca il nome della traccia audio o video da tagliare');return}}
  if(!mSplitOK(k)){toast('Porta la testina dentro la clip '+(k==='a'?'audio':'video'));return}
- const r=mAt(k,S.frame);r.o.cut=+r.t.toFixed(3);MEDIA.seg=null;MEDIA.trk=k;if(k==='a')commit();else saveVid();redrawTL();toast((k==='a'?'Audio':'Video')+' diviso al frame '+S.frame+': tocca la parte da eliminare')}
+ const r=mediaAt(k,S.frame);r.o.cut=+r.t.toFixed(3);MEDIA.seg=null;MEDIA.trk=k;if(k==='a')commit();else saveVid();redrawTL();toast((k==='a'?'Audio':'Video')+' diviso al frame '+S.frame+': tocca la parte da eliminare')}
 function redrawTL(){try{S.mode==='frames'?drawFR():drawTL()}catch(_){}}
 function mSegApply(k,side){const r=mTrim(k);if(!r||r.o.cut==null)return;const c=r.o.cut;if(side==='L')r.o.t0=c;else r.o.t1=c;delete r.o.cut;MEDIA.seg=null;
  if(k==='a'){commit();if(AN.playing){mediaPlay(false);mediaPlay(true)}}else{saveVid();syncVideo();placeVideo()}redrawTL();render();toast('Parte eliminata')}
@@ -3964,11 +3981,11 @@ IDB.get('refvid').then(r=>{if(r&&MEDIA.vid){['t0','t1','cut'].forEach(k=>{if(r[k
 // trascinamento della traccia: si afferra solo la parte tenuta (il resto non è più cliccabile in modo sensato, ma lo spostamento resta)
 // riproduzione: fuori dalla parte tenuta audio e video tacciono
 let MTRW=0;function mediaWatch(){cancelAnimationFrame(MTRW);if(!AN.playing)return;const f=S.frame,a=ADOC().audio,au=MEDIA.au;
- if(a&&au&&!a.mute){const m=mAt('a',f);if(m){if(!m.inside){if(!au.paused)au.pause()}else if(au.paused){try{au.currentTime=Math.max(m.t0,m.t)}catch(_){}au.play().catch(()=>{})}}}
- const v=MEDIA.vid;if(v&&v.show){const m=mAt('v',f);if(m){v.el.style.visibility=m.inside?'':'hidden';if(!m.inside){if(!v.el.paused)v.el.pause()}else if(v.el.paused){try{v.el.currentTime=Math.max(m.t0,m.t)}catch(_){}v.el.play().catch(()=>{})}}}
+ if(a&&au&&!a.mute){const m=mediaAt('a',f);if(m){if(!m.inside){if(!au.paused)au.pause()}else if(au.paused){try{au.currentTime=Math.max(m.t0,m.t)}catch(_){}au.play().catch(()=>{})}}}
+ const v=MEDIA.vid;if(v&&v.show){const m=mediaAt('v',f);if(m){v.el.style.visibility=m.inside?'':'hidden';if(!m.inside){if(!v.el.paused)v.el.pause()}else if(v.el.paused){try{v.el.currentTime=Math.max(m.t0,m.t)}catch(_){}v.el.play().catch(()=>{})}}}
  MTRW=requestAnimationFrame(mediaWatch)}
 {const _mp=mediaPlay;mediaPlay=function(on){_mp(on);if(on)MTRW=requestAnimationFrame(mediaWatch);else cancelAnimationFrame(MTRW)}}
-{const _pv=placeVideo;placeVideo=function(){_pv();const v=MEDIA.vid;if(v){v.wrap.style.visibility='';const m=mAt('v',S.frame);v.el.style.visibility=m&&!m.inside?'hidden':''}}}
+{const _pv=placeVideo;placeVideo=function(){_pv();const v=MEDIA.vid;if(v){v.wrap.style.visibility='';const m=mediaAt('v',S.frame);v.el.style.visibility=m&&!m.inside?'hidden':''}}}
 // video MP4: l'audio fuori dalla parte tenuta è silenzioso
 {const _ea=encodeAudio;encodeAudio=async function(AU,muxer,a,b){const au=ADOC().audio,buf=MEDIA.buf;if(!buf||!au||(!au.t0&&au.t1==null))return _ea(AU,muxer,a,b);
  const t0=au.t0||0,t1=au.t1??buf.duration,sr=buf.sampleRate;let nb;try{nb=new AudioBuffer({length:buf.length,numberOfChannels:buf.numberOfChannels,sampleRate:sr})}catch(e){return _ea(AU,muxer,a,b)}
@@ -4161,7 +4178,7 @@ function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: p
  return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin:8px 0 6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
 
 // menu ☰: intestazione con logo e versione, Importa / Esporta raggruppati (si aprono sul posto)
-const APPV='v11.5';
+const APPV='v11.6';
 toggleMenu=function(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
  const I=(a,i,l,ck)=>`<button data-act="${a}">${ic(i)}<span>${l}</span>${ck?`<span class="ck">✓</span>`:''}</button>`,
   G=(k,i,l,body)=>`<button class="mg${MG[k]?' open':''}" data-mg="${k}">${ic(i)}<span>${l}</span><span class="mgc"></span></button><div class="msub"${MG[k]?'':' hidden'}>${body}</div>`;
@@ -4183,7 +4200,7 @@ $('#menu').addEventListener('click',e=>{const g=e.target.closest('[data-mg]');if
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
 buildTools();
 (async()=>{await IDB.open();const saved=await IDB.get('doc');let restored=false;
- if(saved&&saved.doc&&saved.doc.layers){S.doc=saved.doc;S.doc.guides=S.doc.guides||[];S.assets=(await IDB.get('assets'))||{};S.assetsDirty=false;if(saved.def)S.def=saved.def;if(saved.opt)Object.assign(S.opt,saved.opt,{multi:false});if(saved.recent)S.recent=saved.recent;if(saved.view)S.view=saved.view;S.docId=saved.docId||null;restored=true}
+ if(saved&&saved.doc&&saved.doc.layers){S.doc=saved.doc;S.doc.guides=S.doc.guides||[];S.assets=(await IDB.get('assets'))||{};S.assetsDirty=false;if(saved.def)S.def=saved.def;if(saved.opt)Object.assign(S.opt,saved.opt,{multi:false});if(!S.opt.rimOff1){if(S.def&&S.def.rim)S.def.rim.on=false;S.opt.rimOff1=true}if(saved.recent)S.recent=saved.recent;if(saved.view)S.view=saved.view;S.docId=saved.docId||null;restored=true}
  fixUID();S.activeLayer=S.doc.layers[S.doc.layers.length-1].id;resetHistory();updateUI();
  requestAnimationFrame(()=>{if(!restored||!(S.view.z>0))fitView();else render();libBoot(restored)})})();
 (async()=>{try{if(window.claude&&window.claude.use)DL=await window.claude.use('downloads')}catch(e){DL=null}})();
