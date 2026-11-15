@@ -2329,6 +2329,8 @@ ${A} .ab[data-act="an:loop"]{margin-left:3px}${A} .atime{padding:0 8px;margin:0 
 .npbox button.hit{background:var(--acc);color:#1a1205;transform:scale(.94)}`;document.head.appendChild(st);
  const hit=b=>{b.classList.add('hit');setTimeout(()=>b.classList.remove('hit'),140)};
  document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.kbd button,.npbox button');if(b)hit(b)},true)}
+// aiuti spenti: nella barra di Anima l'interpolazione resta solo icona
+{const st=document.createElement('style');st.textContent='body.nohints #abar [data-fly="ease"] .lab{display:none}';document.head.appendChild(st)}
 
 /* =====================================================================
    FRAMES — animazione a disegni (frame by frame)
@@ -2477,7 +2479,11 @@ function pressurePoly(pts,w,minR,rough,seed,tp){if(pts.length<2)return null;cons
  // punte affusolate (inchiostro): il raggio scende verso gli estremi
  const tl=tp?Math.min(T*.3,Math.max(w*.75*tp,1.5)):0,tpr=d=>{if(!tl)return 1;const t=Math.min(1,Math.min(d,T-d)/tl);return Math.max(.06,Math.pow(Math.sin(t*Math.PI/2),.6))};
  const rad=sm.map((p,i)=>Math.max(.12,w/2*(minR+(1-minR)*Math.pow(Math.max(0,Math.min(1,p)),ex))*tpr(cum[i])));
- const L=[],R=[];for(let i=0;i<n;i++){const a=pts[Math.max(0,i-1)],b=pts[Math.min(n-1,i+1)];let dx=b[0]-a[0],dy=b[1]-a[1];const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const r=rad[i]*wb(cum[i]),j=jt(cum[i])*Math.min(1,rad[i]/(w/2)*2),rl=r*nz(cum[i],11)+j,rr=r*nz(cum[i],503)-j;L.push([pts[i][0]-dy*rl,pts[i][1]+dx*rl]);R.push([pts[i][0]+dy*rr,pts[i][1]-dx*rr])}
+ // direzione del contorno su una finestra di lunghezza (non sui soli punti vicini) e centro leggermente ammorbidito:
+ // con levigatura 0 il tremolio dell'input non crea più nodi, rigonfiamenti o punte nel bordo
+ const hT=Math.max(1.5,w*.55),hP=Math.max(.8,w*.35),at=(d)=>{d=Math.max(0,Math.min(T,d));let k=0,lo=0,hi=n-1;while(lo<hi){const m=(lo+hi)>>1;if(cum[m]<d)lo=m+1;else hi=m}k=Math.max(1,lo);const s0=cum[k-1],s1=cum[k],u=s1>s0?(d-s0)/(s1-s0):0;return[pts[k-1][0]+(pts[k][0]-pts[k-1][0])*u,pts[k-1][1]+(pts[k][1]-pts[k-1][1])*u]};
+ const cp=pts.map((p,i)=>{if(i===0||i===n-1)return p;const a=at(cum[i]-hP),b=at(cum[i]+hP);return[(a[0]+2*p[0]+b[0])/4,(a[1]+2*p[1]+b[1])/4]});
+ const L=[],R=[];for(let i=0;i<n;i++){const a=at(cum[i]-hT),b=at(cum[i]+hT);let dx=b[0]-a[0],dy=b[1]-a[1];if(Math.hypot(dx,dy)<1e-6){const a2=pts[Math.max(0,i-1)],b2=pts[Math.min(n-1,i+1)];dx=b2[0]-a2[0];dy=b2[1]-a2[1]}const l=Math.hypot(dx,dy)||1;dx/=l;dy/=l;const r=rad[i]*wb(cum[i]),j=jt(cum[i])*Math.min(1,rad[i]/(w/2)*2),rl=r*nz(cum[i],11)+j,rr=r*nz(cum[i],503)-j;L.push([cp[i][0]-dy*rl,cp[i][1]+dx*rl]);R.push([cp[i][0]+dy*rr,cp[i][1]-dx*rr])}
  const cap=(c,r,a0,steps)=>{const o=[];for(let k=1;k<steps;k++){const a=a0+Math.PI*k/steps;o.push([c[0]+Math.cos(a)*r,c[1]+Math.sin(a)*r])}return o};
  const e=pts[n-1],e2=pts[n-2],s0=pts[0],s1=pts[1],ae=Math.atan2(e[1]-e2[1],e[0]-e2[0]),as=Math.atan2(s1[1]-s0[1],s1[0]-s0[0]);
  return[...L,...cap(e,rad[n-1],ae-Math.PI/2,12).reverse(),...R.reverse(),...cap(s0,rad[0],as+Math.PI/2,12).reverse()]}
@@ -2515,7 +2521,7 @@ function pwOutline(it){const c=PWC.get(it),hh=pwHash(it.subs);if(c&&c.ref===it.s
  const fl=flatten(it),out=[];for(const f of fl){let P=f.pts;if(P.length<2)continue;const dense=[P[0]];for(let i=1;i<P.length;i++){const a=dense[dense.length-1],b=P[i],d=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(d/2));for(let k=1;k<=n;k++)dense.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}
   const L=[0];for(let i=1;i<dense.length;i++)L.push(L[i-1]+Math.hypot(dense[i][0]-dense[i-1][0],dense[i][1]-dense[i-1][1]));const T=L[L.length-1]||1,S0=it.pw.s,N=S0.length;
   const pts=dense.map((q,i)=>{const u=L[i]/T*(N-1),j=Math.min(N-2,Math.floor(u)),t=u-j;return[q[0],q[1],S0[j]+(S0[j+1]-S0[j])*t]});
-  const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR,it.pw.br==='pencil'?1:it.pw.br==='ink'?.35:0,it.pw.seed,it.pw.tp||0);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
+  const poly=pressurePoly(pts,it.style.sw||2,it.pw.minR,it.pw.br==='pencil'?1:it.pw.br==='ink'?.55:0,it.pw.seed,it.pw.tp||0);if(!poly)continue;out.push({closed:true,pts:poly.map(([x,y])=>({x,y,ix:x,iy:y,ox:x,oy:y,s:false}))})}
  PWC.set(it,{k:key,h:hh,subs:out,ref:it.subs,sw:it.style.sw,mr:it.pw.minR,pr:it.pw.s});return out}
 // come appare: un riempimento con il colore del tratto (stessa opacità, sfocatura, fusione e rim)
 function pwFlat(it){if(!it||!it.pw||it.type!=='path'||!it.style.stroke)return it;return{...it,subs:pwOutline(it),style:{...it.style,fill:it.style.stroke,fo:it.style.so??1,stroke:null},pw:undefined,rule:'nonzero'}}
@@ -2822,6 +2828,10 @@ function lExtra(it,base,L,A,assets,nextInd){
   const id='fx_'+it.id;assets.push({id,w:W,h:H,u:'',p:cv.toDataURL('image/jpeg',.78),e:1});
   return[lay({ty:2,refId:id,bm:it.kind==='flare'?(LBM[p.blend||'screen']??2):it.kind==='noise'?3:(LBM[p.blend]||0),ks:{...full,o:{a:0,k:Math.round((it.kind==='grad4'?p.op:1)*100)},s:{a:0,k:[100/k*k*100/100,100,100]}}})]}
  return null}
+
+// effetti (vignettatura, gradienti, rumore, lens flare): ognuno nel suo livello dedicato, sopra quello attivo, invece di finire dentro il livello selezionato
+addFx=function(kind){exitMask();const d=FXK[kind];const it={id:uid('i'),type:'fx',kind,name:d.n,p:clone(d.p),style:{}};if(kind==='flare'){it.p.x=S.doc.w*.3;it.p.y=S.doc.h*.25}
+ const Ls=S.doc.layers,i=Ls.indexOf(layer()),L={id:uid('L'),name:d.n,visible:true,locked:false,opacity:1,items:[it]};Ls.splice(i+1,0,L);S.activeLayer=L.id;S.sel=[it.id];commit();toast(d.n+' aggiunto in un nuovo livello');buildPanel()};
 
 /* ===== effetti v7: fusione, target, regioni filtro, animazione proprietà ===== */
 FXK.vignette.p.blend='normal';FXK.flare.p.blend='screen';
@@ -3741,7 +3751,7 @@ OPS.pencil=function(P,e){if(!canDraw())return null;
  const br=S.opt.brush||'ink',pen=!!(e&&e.pointerType==='pen'),st=S.def,w=Math.max(.5,st.sw||2),minR=(S.opt.prMin??20)/100,sm=S.opt.smooth??3;
  const col=st.stroke&&st.stroke.t==='solid'?st.stroke.c:(st.fill&&st.fill.t==='solid'?st.fill.c:'#1a1a1a');
  const usePr=pen&&(br==='ink'?S.opt.pressure!==false:br==='pencil'?S.opt.prPencil!==false:false),rough=br==='pencil',poly=usePr||rough,seed=1+Math.floor(Math.random()*9999);
- const rg=rough?1:(br==='ink'&&usePr?.35:0);const tp=usePr?(br==='ink'?1:.45):0;const p0=usePr?(e.pressure>0?e.pressure:.35):(rough?1:.5);const pts=[[P.x,P.y,p0]];const el=liveEl();let raf=0,snap=null,hold=0,cx=P.x,cy=P.y,lastQ=P;
+ const rg=rough?1:(br==='ink'&&usePr?.55:0);const tp=usePr?(br==='ink'?1:.45):0;const p0=usePr?(e.pressure>0?e.pressure:.35):(rough?1:.5);const pts=[[P.x,P.y,p0]];const el=liveEl();let raf=0,snap=null,hold=0,cx=P.x,cy=P.y,lastQ=P;
  const pull=br==='concept'?1/(1+sm*.3):1;
  el.setAttribute('fill',poly?col:'none');el.setAttribute('stroke',poly?'none':col);el.setAttribute('stroke-width',w);el.setAttribute('stroke-linecap','round');el.setAttribute('stroke-linejoin','round');el.setAttribute('opacity',rough&&usePr?.8:(st.so??1));
  const draw=()=>{raf=0;if(pts.length<2){const r=poly?Math.max(.3,w/2*(minR+(1-minR)*Math.pow(pts[0][2],.75))):w/2,x=pts[0][0],y=pts[0][1];el.setAttribute('d',poly?`M${x-r} ${y}a${r} ${r} 0 1 0 ${2*r} 0a${r} ${r} 0 1 0 ${-2*r} 0Z`:`M${x} ${y}l.01 0`);return}
@@ -4058,6 +4068,12 @@ document.addEventListener('click',e=>{const m=$('#homemenu');if(!m||m.hidden)ret
 #homemenu button{height:40px;border:0;background:none;color:var(--tx);text-align:left;padding:0 12px;border-radius:9px;font-size:13.5px}#homemenu button:active{background:var(--panel3)}#homemenu .dng,#home .dng{color:#ff6b62}
 #home .hsec>.hopen{margin-left:10px}#home .htt{cursor:pointer;gap:10px;-webkit-user-select:none;user-select:none}#home .htt .chev.cl{transform:rotate(-45deg)}#home .htt .hcount{background:var(--panel2);color:var(--tx2);border-radius:9px;padding:1px 8px;font-size:11px;letter-spacing:0}#home .htbar{display:flex;align-items:center;gap:12px;margin:-2px 2px 12px;font-size:12.5px}#home .htbar .muted{flex:1}#home .htbar .hopen .ic{width:16px;height:16px}#home .htrash{margin-bottom:26px}#home .trashc{cursor:default}#home .trashc .hth{opacity:.6}#home .hta{display:flex;gap:6px;margin-top:6px}#home .hta .btn{flex:1;height:34px}#home .hta .btn.dng{flex:none;width:40px;padding:0;display:grid;place-items:center}`;document.head.appendChild(st)}
 
+// tocco sul nome del documento in alto: rinomina
+{const el=$('#docName');if(el){const st=document.createElement('style');st.textContent='#docName{cursor:pointer;border-radius:8px;pointer-events:auto}#docName:active{background:var(--panel2);color:var(--tx)}';document.head.appendChild(st);
+ el.title='Rinomina il documento';
+ el.addEventListener('click',e=>{e.stopPropagation();if(S.docId&&LIB.some(l=>l.id===S.docId)){hRen(S.docId);return}
+  askText('Nome del documento',S.doc.name||'',v=>{v=(v||'').trim();if(!v)return;S.doc.name=v;el.textContent=v;commit();try{libSave(true)}catch(_){}})})}}
+
 /* ===== v11: importa sequenza di immagini e PSD (livelli e fusioni), effetto Tonalità e saturazione, rig per livelli ===== */
 // ---------- Tonalità e saturazione (effetto di livello, anche sui livelli sottostanti, animabile) ----------
 LFXK.hsl={n:'Tonalità e saturazione',p:{h:0,s:0,l:0,below:false}};FXIC.hsl='fxhsl';
@@ -4178,7 +4194,7 @@ function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: p
  return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin:8px 0 6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
 
 // menu ☰: intestazione con logo e versione, Importa / Esporta raggruppati (si aprono sul posto)
-const APPV='v11.6';
+const APPV='v11.7';
 toggleMenu=function(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
  const I=(a,i,l,ck)=>`<button data-act="${a}">${ic(i)}<span>${l}</span>${ck?`<span class="ck">✓</span>`:''}</button>`,
   G=(k,i,l,body)=>`<button class="mg${MG[k]?' open':''}" data-mg="${k}">${ic(i)}<span>${l}</span><span class="mgc"></span></button><div class="msub"${MG[k]?'':' hidden'}>${body}</div>`;
