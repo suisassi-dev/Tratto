@@ -781,7 +781,7 @@ function buildCtx(){if(S.mode==='anima'){$('#ctx').hidden=true;return}const t=S.
   if(n)h+=sep+B('closeToggle','','close',0,'Chiudi/apri tracciato')+B('clean','Pulisci','simplify',0,'Riduci i punti');
   if(!S.nsel.length)h+=`<span class="clbl lab">Doppio tap o tieni premuto sul tracciato = nuovo punto</span>`;}
  else if(t==='lasso'){h+=`<div class="seg">${[['obj','Oggetti'],['pts','Punti']].map(([v,l])=>`<button data-seg="lassoMode" data-v="${v}" class="${S.opt.lassoMode===v?'on':''}">${l}</button>`).join('')}</div>`+B('multi','','multisel',S.opt.multi,'Aggiungi alla selezione')+`<span class="clbl lab">Disegna un contorno attorno a ciò che vuoi selezionare</span>`}
- else if(t==='pen'){h+=S.penId?B('penDone','Fine',null,1):'';h+=`<span class="clbl lab">Tocca = punto · trascina = curva · 1° punto = chiudi · doppio tocco sull'ultimo = fine</span>`}
+ else if(t==='pen'){h+=S.penId?B('penDone','Fine',null,1):B('penDone','Fine',null,0).replace('<button ','<button disabled style="opacity:.35" ');h+=`<span class="clbl lab">Tocca = punto · trascina = curva · 1° punto = chiudi · doppio tocco sull'ultimo = fine</span>`}
  else if(t==='pencil'){const br=S.opt.brush||'ink',BN={ink:'Ink',pencil:'Matita',concept:'Concept'},prOn=br==='pencil'?S.opt.prPencil!==false:br==='ink'?S.opt.pressure!==false:false;
   const RI=(k,icon,title,min,max,step,v)=>`<span class="crng" title="${title}">${ic(icon)}<input type="range" min="${min}" max="${max}" step="${step}" value="${v}" data-opt="${k}"></span>`;
   h+=`<button class="cb" data-fly="brush" title="Pennello">${ic('br_'+br)}<span class="lab">${BN[br]}</span><span class="car"></span></button>`;
@@ -854,7 +854,7 @@ function arrangePanel(){const TB=(a,i,l)=>`<button class="tb" data-act="${a}">${
  +sec('a-mask','Maschera',`<div class="grid g3">${TB('mask','mask','Crea maschera')}${TB('inside','inside','Metti dentro')}${TB('unmask','unmask','Rilascia')}</div><div class="hint">L’oggetto più in alto della selezione diventa la forma che ritaglia gli altri.</div>`)
  +sec('a-group','Gruppi',`<div class="grid g3">${TB('group','group','Raggruppa')}${TB('ungroup','ungroup','Separa')}${TB('editgroup','edit','Modifica')}</div><div class="hint">Doppio tap su un gruppo per modificarne gli oggetti. Con tastiera: ⌘G / ⇧⌘G.</div>`)
  +sec('a-order','Ordine',`<div class="grid g4">${TB('ztop','top','In cima')}${TB('zup','up','Su')}${TB('zdown','down','Giù')}${TB('zbottom','bottom','In fondo')}</div>`)
- +sec('a-sym','Simmetria live',`<div class="hint">Penna, matita e forme generano anche la copia specchiata sull'asse del documento.</div>`,seg('sym',[['off','Off'],['v','Vert.'],['h','Oriz.']],S.opt.sym?S.opt.symAxis:'off'))
+ +sec('a-sym','Simmetria live',`<div class="row">${seg('sym',[['off','Off'],['v','Vert.'],['h','Oriz.']],S.opt.sym?S.opt.symAxis:'off')}</div><div class="hint">Penna, matita e forme generano anche la copia specchiata sull'asse del documento.</div>`)
  +sec('a-rulers','Righelli e guide',`<label class="tog"><input type="checkbox" data-optc="rulers"${S.opt.rulers?' checked':''}> Mostra righelli</label>
  <label class="tog"><input type="checkbox" data-optc="guides"${S.opt.guides?' checked':''}> Mostra guide</label>
  <label class="tog"><input type="checkbox" data-optc="lockGuides"${S.opt.lockGuides?' checked':''}> Blocca guide</label>
@@ -1381,10 +1381,10 @@ async function rasterize(type,scale,scene,keep){const d=scene||S.doc;let k=scale
   const s=it.style,p=new Path2D(pathD(it));
   if(s.fill){cx.globalAlpha=s.fo;cx.fillStyle=paintFor(cx,s.fill);cx.fill(p,it.rule||'nonzero')}
   if(s.stroke&&s.sw>0){cx.globalAlpha=s.so;cx.strokeStyle=paintFor(cx,s.stroke);cx.lineWidth=s.sw;cx.lineCap=s.cap;cx.lineJoin=s.join;cx.stroke(p)}cx.globalAlpha=1;if(s.rim&&s.rim.on&&s.rim.amt>0)drawRim(cx,it,p)};
- const drawRim=(cx,it,p)=>{const r=it.style.rim,a=r.ang*Math.PI/180,dx=Math.cos(a)*r.size,dy=Math.sin(a)*r.size,b=bboxItem(it);if(!b)return;const tc=document.createElement('canvas');tc.width=W;tc.height=H;const t=tc.getContext('2d',{willReadFrequently:true});t.setTransform(k,0,0,k,0,0);t.fillStyle=r.c;t.fill(p,it.rule||'nonzero');
+ const drawRim=(cx,it,p)=>{const r=it.style.rim,a=r.ang*Math.PI/180,dx=Math.cos(a)*r.size,dy=Math.sin(a)*r.size,b=bboxItem(it);if(!b)return;const tc=document.createElement('canvas');tc.width=W;tc.height=H;const t=tc.getContext('2d',{willReadFrequently:true});t.setTransform(k,0,0,k,0,0);t.fillStyle=r.c;t.fill(p,it.rule||'nonzero');t.strokeStyle=r.c;t.lineWidth=1;t.lineJoin='round';t.stroke(p);
   if(r.bl>0){const sig=r.bl*k,pad=sig*3+2,x0=Math.max(0,Math.floor(b.x*k-pad)),y0=Math.max(0,Math.floor(b.y*k-pad)),x1=Math.min(W,Math.ceil((b.x+b.w)*k+pad)),y1=Math.min(H,Math.ceil((b.y+b.h)*k+pad));if(x1>x0&&y1>y0){t.setTransform(1,0,0,1,0,0);const id=t.getImageData(x0,y0,x1-x0,y1-y0);gaussRGBA(id.data,x1-x0,y1-y0,sig);t.putImageData(id,x0,y0);t.setTransform(k,0,0,k,0,0)}}
-  t.globalCompositeOperation='destination-in';t.fill(p,it.rule||'nonzero');t.globalCompositeOperation='destination-out';t.translate(dx,dy);t.fill(p,it.rule||'nonzero');
-  const m=cx.getTransform();cx.save();cx.setTransform(1,0,0,1,0,0);cx.globalAlpha=Math.min(1,r.amt);cx.globalCompositeOperation='screen';cx.drawImage(tc,0,0);cx.restore();cx.setTransform(m);tc.width=tc.height=0};
+  t.globalCompositeOperation='destination-in';t.fillStyle='#000';t.fill(p,it.rule||'nonzero');t.strokeStyle='#000';t.lineWidth=1;t.stroke(p);t.globalCompositeOperation='destination-out';t.translate(dx,dy);t.fill(p,it.rule||'nonzero');
+  const m=cx.getTransform();cx.save();cx.setTransform(1,0,0,1,0,0);cx.globalAlpha=Math.min(1,r.amt);cx.drawImage(tc,0,0);cx.restore();cx.setTransform(m);tc.width=tc.height=0};
  const drawItem=(cx0,it)=>{const bl=it.type==='path'?(it.style.blur||0):0,bm=itemBlend(it),ao=it.aop??1;
   if(!bl&&bm==='normal'&&ao>=1){drawRaw(cx0,it);return}
   const tc=document.createElement('canvas');tc.width=W;tc.height=H;const cx=tc.getContext('2d',{willReadFrequently:true});cx.setTransform(k,0,0,k,0,0);drawRaw(cx,it);
@@ -2028,7 +2028,7 @@ function exportLottie(){exitMask();const A=ADOC(),d=S.doc,layers=[],assets=[];le
    {const xl=lExtra(it,base,L,A,assets,()=>ind++);if(xl){layers.push(...xl);continue}}
    const g=lShapeGroup(it,A,true);if(!g)continue;let ef=lBlurEf(it,A);{const le=lLayerBlur(L,A);if(le){const ib=(it.style&&it.style.blur)||0;if(!ef||!(ef.ef[0].v.a))ef=(ib>0&&!le.ef[0].v.a)?lBlurEffect(Math.hypot(le.ef[0].v.k*.3,ib)):le}}
    const rm=it.type==='path'&&it.style.rim;if(rm&&rm.on&&rm.amt>0){const a=rm.ang*Math.PI/180,dx=Math.cos(a)*rm.size,dy=Math.sin(a)*rm.size,sh=sp=>({...sp,pts:sp.pts.map(p=>({...p,x:p.x+dx,y:p.y+dy,ix:p.ix+dx,iy:p.iy+dy,ox:p.ox+dx,oy:p.oy+dy}))});
-    const rl={...base,ty:4,ind:ind++,nm:itName(it)+' (rim light)',bm:2,ks:{...base.ks,o:lProp(['op'],v=>Math.round(v*L.opacity*Math.min(1,rm.amt)*100),it,A)},hasMask:true,
+    const rl={...base,ty:4,ind:ind++,nm:itName(it)+' (rim light)',bm:0,ks:{...base.ks,o:lProp(['op'],v=>Math.round(v*L.opacity*Math.min(1,rm.amt)*100),it,A)},hasMask:true,
      masksProperties:[...it.subs.map(sp=>({inv:false,mode:'a',pt:{a:0,k:lpath(sp)},o:{a:0,k:100},x:{a:0,k:0},nm:'Forma'})),...it.subs.map(sp=>({inv:false,mode:'s',pt:{a:0,k:lpath(sh(sp))},o:{a:0,k:100},x:{a:0,k:0},nm:'Spostata'}))],
      shapes:[{ty:'gr',nm:'Rim',it:[...it.subs.map(sp=>({ty:'sh',ks:{a:0,k:lpath(sp)}})),{ty:'fl',c:{a:0,k:lcol(rm.c)},o:{a:0,k:100},r:it.rule==='evenodd'?2:1},lTr()]}]};
     {const bt=Math.hypot(rm.bl||0,it.style.blur||0);if(bt>0)rl.ef=[lBlurEffect(bt)]}layers.push(rl)}
@@ -2142,7 +2142,7 @@ P.addEventListener('change',e=>{const t=e.target,d=t.dataset.amed||t.dataset.ame
 /* ---------- rim light (luce di contorno) ---------- */
 const RIMDEF={on:true,c:'#ffffff',size:5,ang:-45,amt:1,bl:1.5};
 function rimSVG(it){const r=it.style&&it.style.rim;if(!r||!r.on||!(r.amt>0)||!it.subs||!it.subs.length)return'';const b=bboxItem(it);if(!b)return'';const a=r.ang*Math.PI/180,dx=f2(Math.cos(a)*r.size),dy=f2(Math.sin(a)*r.size),d=pathD(it),id=it.id,pad=Math.abs(r.size)+r.bl*3+20,fr=it.rule==='evenodd'?' fill-rule="evenodd"':'';
- return`<defs><mask id="rm${id}" maskUnits="userSpaceOnUse" x="${f2(b.x-pad)}" y="${f2(b.y-pad)}" width="${f2(b.w+pad*2)}" height="${f2(b.h+pad*2)}"><path d="${d}" fill="#fff"${fr}/><path d="${d}" fill="#000"${fr} transform="translate(${dx} ${dy})"/></mask>${r.bl>0?`<filter id="rf${id}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${f2(r.bl)}"/></filter>`:''}</defs><g mask="url(#rm${id})" opacity="${f2(Math.min(1,r.amt))}" style="mix-blend-mode:screen"><path d="${d}" fill="${r.c}"${fr}${r.bl>0?` filter="url(#rf${id})"`:''}/></g>`.replace(/^/,'').replace(/(<g mask=[\s\S]*<\/g>)$/,(it.style.blur>0?`<g filter="url(#fb${id})">$1</g>`:'$1'))}
+ return`<defs><mask id="rm${id}" maskUnits="userSpaceOnUse" x="${f2(b.x-pad)}" y="${f2(b.y-pad)}" width="${f2(b.w+pad*2)}" height="${f2(b.h+pad*2)}"><path d="${d}" fill="#fff" stroke="#fff" stroke-width="1" stroke-linejoin="round"${fr}/><path d="${d}" fill="#000"${fr} transform="translate(${dx} ${dy})"/></mask>${r.bl>0?`<filter id="rf${id}" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${f2(r.bl)}"/></filter>`:''}</defs><g mask="url(#rm${id})" opacity="${f2(Math.min(1,r.amt))}"><path d="${d}" fill="${r.c}" stroke="${r.c}" stroke-width="1" stroke-linejoin="round"${fr}${r.bl>0?` filter="url(#rf${id})"`:''}/></g>`.replace(/^/,'').replace(/(<g mask=[\s\S]*<\/g>)$/,(it.style.blur>0?`<g filter="url(#fb${id})">$1</g>`:'$1'))}
 function rimPanel(st){const r=st.rim,on=!!(r&&r.on),v=r||RIMDEF,R=(k,l,mn,mx,step,val,u)=>`<div class="row"><span class="lbl">${l}</span><input type="range" min="${mn}" max="${mx}" step="${step}" value="${val}" data-rim="${k}"><span class="val">${val}${u||''}</span></div>`;
  return sec('s-rim','Rim light',`<label class="tog"><input type="checkbox" data-rimon${on?' checked':''}> Luce di contorno</label>${on?`<div class="row"><span class="lbl">Colore</span>${colorBox('data-rim="c"',v.c)}<span class="sp1"></span></div>`
   +R('size','Spessore',0,80,.5,v.size)+R('ang','Angolo',-180,180,1,v.ang,'°')+R('amt','Intensità',0,1,.05,v.amt)+R('bl','Sfumatura',0,40,.5,v.bl)+`<div class="hint">La luce compare sul bordo opposto alla direzione dell'angolo (stesso comportamento della versione desktop).</div>`:''}`)}
@@ -3545,7 +3545,7 @@ OPS.select=dblDefer(OPS.select);OPS.node=dblDefer(OPS.node);AOPS.select=dblDefer
 // se il pannello si ridisegna tra pressione e rilascio, il "click" non arriva o colpisce un elemento vecchio: qui uso la chiave e cerco l'elemento attuale
 {let T0=null,skipT=0;const SEL='[data-col],.fxdel,[data-fxopen]';
  const keyOf=el=>el.matches('.fxdel')?'del:'+(el.dataset.fxdel??('L'+el.dataset.lfxdel)):el.matches('[data-fxopen]')?'open:'+el.dataset.fxopen:'col:'+el.dataset.col;
- P.addEventListener('pointerdown',e=>{const el=e.target.closest(SEL);if(!el||e.target.closest('select,input,label,.kb,[data-fxkey]')){T0=null;return}const inner=e.target.closest('.fxdel');T0={k:keyOf(inner||el),x:e.clientX,y:e.clientY,t:performance.now(),el:inner||el}},true);
+ P.addEventListener('pointerdown',e=>{const el=e.target.closest(SEL);if(!el||e.target.closest('select,input,label,.kb,[data-fxkey],[data-seg]')){T0=null;return}const inner=e.target.closest('.fxdel');T0={k:keyOf(inner||el),x:e.clientX,y:e.clientY,t:performance.now(),el:inner||el}},true);
  P.addEventListener('pointerup',e=>{if(!T0)return;const t=T0;T0=null;if(Math.hypot(e.clientX-t.x,e.clientY-t.y)>12||performance.now()-t.t>1200)return;skipT=performance.now();const[c,...r]=t.k.split(':'),k=r.join(':');
   if(c==='col'){secToggle(k);return}
   if(c==='open'){AN.fxOpen=AN.fxOpen===k?null:k;const r2=find(k);if(r2&&r2.it.type==='fx'&&AN.fxOpen){S.sel=[k];if(S.tool!=='select')setTool('select')}buildPanel();render();return}
@@ -4161,7 +4161,7 @@ function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: p
  return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin:8px 0 6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
 
 // menu ☰: intestazione con logo e versione, Importa / Esporta raggruppati (si aprono sul posto)
-const APPV='v11.4';
+const APPV='v11.5';
 toggleMenu=function(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
  const I=(a,i,l,ck)=>`<button data-act="${a}">${ic(i)}<span>${l}</span>${ck?`<span class="ck">✓</span>`:''}</button>`,
   G=(k,i,l,body)=>`<button class="mg${MG[k]?' open':''}" data-mg="${k}">${ic(i)}<span>${l}</span><span class="mgc"></span></button><div class="msub"${MG[k]?'':' hidden'}>${body}</div>`;
