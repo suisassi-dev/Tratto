@@ -1341,7 +1341,7 @@ function closeModal(){$('#modal').hidden=true;modalCb=null}
 $('#modal').addEventListener('pointerdown',e=>{if(e.target.id==='modal')closeModal()});
 function ask(msg,ok,fn){modal(`<h3>${msg}</h3><div class="btns"><button class="btn" data-m="no">Annulla</button><button class="btn pri" data-m="ok">${ok}</button></div>`,v=>{if(v==='ok')fn()})}
 function askText(title,val,fn,mode){modal(`<h3>${title}</h3><input class="txt" id="askIn"${mode?` inputmode="${mode}" type="text" pattern="[0-9]*"`:''} value="${esc(val)}"><div class="btns"><button class="btn" data-m="no">Annulla</button><button class="btn pri" data-m="ok">OK</button></div>`,v=>{if(v==='ok')fn($('#askIn').value.trim())});{const i=$('#askIn');if(i){i.focus();try{i.select()}catch(e){}}}}
-let toastT=0;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2000)}
+let toastT=0;function toast(m,ms){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),ms||2000)}
 function docDialog(){const d=S.doc;
  modal(`<h3>Documento</h3><label>Nome</label><input class="txt" id="dName" value="${esc(d.name)}">
  <div class="r2"><div><label>Larghezza px</label><input class="txt" id="dW" type="number" inputmode="numeric" value="${d.w}"></div><div><label>Altezza px</label><input class="txt" id="dH" type="number" inputmode="numeric" value="${d.h}"></div></div>
@@ -4194,14 +4194,14 @@ function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: p
  return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin:8px 0 6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
 
 // menu ☰: intestazione con logo e versione, Importa / Esporta raggruppati (si aprono sul posto)
-const APPV='v11.7';
+const APPV='v11.8';
 toggleMenu=function(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
  const I=(a,i,l,ck)=>`<button data-act="${a}">${ic(i)}<span>${l}</span>${ck?`<span class="ck">✓</span>`:''}</button>`,
   G=(k,i,l,body)=>`<button class="mg${MG[k]?' open':''}" data-mg="${k}">${ic(i)}<span>${l}</span><span class="mgc"></span></button><div class="msub"${MG[k]?'':' hidden'}>${body}</div>`;
  m.innerHTML=`<div class="mhead"><span class="mlogo">${HLOGO.replace('id="logo"','')}</span><span class="mver">${APPV}</span></div><div class="ms"></div>`
   +I('home','file','Home: nuovo e recenti')+I('open','open','Apri… (progetto, Lottie o SVG)')+I('save','save','Salva progetto (.json)')
   +G('imp','img','Importa',I('importImg','img','Immagine')+I('importSeq','img','Sequenza di immagini…')+I('importPsd','layers','PSD (livelli)…'))
-  +G('exp','exp','Esporta',I('expSVG','exp','SVG a livelli')+I('expPNG','exp','PNG')+I('expJPG','exp','JPEG')+I('an:exp:lottie','exp','Animazione Lottie (.json)')+I('an:exp:mp4','exp','Video MP4')+I('an:exp:png','exp','Sequenza PNG (.zip)'))
+  +G('exp','exp','Esporta',I('expSVG','exp','SVG a livelli')+I('expPNG','exp','PNG')+I('expJPG','exp','JPEG')+I('an:exp:lottie','exp','Animazione Lottie (.json)')+I('an:exp:mp4','exp','Video MP4')+I('an:exp:png','exp','Sequenza PNG (.zip)')+I('an:exp:gp','exp','Blender · Grease Pencil (.json)'))
   +I('trace','trace','Vettorizza schizzo…')+'<div class="ms"></div>'
   +I('doc','doc','Documento…')+I('rulers','ruler','Righelli',S.opt.rulers)+I('pencilOnly','pencilonly','Solo Apple Pencil disegna',S.opt.pencilOnly)+I('hints','help','Mostra gli aiuti',S.opt.hints!==false);m.hidden=false};
 const MG={};
@@ -4211,6 +4211,226 @@ $('#menu').addEventListener('click',e=>{const g=e.target.closest('[data-mg]');if
 #menu .mgc{margin-left:auto;width:8px;height:8px;border-right:2px solid var(--acc);border-bottom:2px solid var(--acc);transform:rotate(-45deg);margin-right:4px;transition:transform .15s}
 #menu .mg.open .mgc{transform:rotate(45deg);margin-top:-4px}
 #menu .msub{padding-left:16px}#menu .msub button{height:38px}`;document.head.appendChild(st)}
+
+/* ===== Export per Blender (Grease Pencil) — stesso formato della versione desktop (animati-gp v1) =====
+   Ogni frame viene disegnato dal motore dell'app (animazione, disegni di Frames, rig ed effetti già applicati) come SVG;
+   per ogni forma si scrivono geometria (Bézier in coordinate del documento), colori, opacità, fusione e sfocatura.
+   Un frame si scrive solo quando qualcosa cambia rispetto al precedente. Funzioni con prefisso gp per non collidere con altre. */
+function gpArc(x1,y1,rx,ry,phi,fa,fs,x2,y2){
+  const out=[];
+  if(rx===0||ry===0){ out.push([x1,y1,x2,y2,x2,y2]); return out; }
+  rx=Math.abs(rx); ry=Math.abs(ry);
+  const rad=phi*Math.PI/180, cosPhi=Math.cos(rad), sinPhi=Math.sin(rad);
+  const dx2=(x1-x2)/2, dy2=(y1-y2)/2;
+  const x1p= cosPhi*dx2 + sinPhi*dy2;
+  const y1p=-sinPhi*dx2 + cosPhi*dy2;
+  let l=(x1p*x1p)/(rx*rx)+(y1p*y1p)/(ry*ry);
+  if(l>1){ const s=Math.sqrt(l); rx*=s; ry*=s; }
+  let sq=(rx*rx*ry*ry - rx*rx*y1p*y1p - ry*ry*x1p*x1p)/(rx*rx*y1p*y1p + ry*ry*x1p*x1p);
+  sq = sq<0?0:sq;
+  let coef=Math.sqrt(sq); if(fa===fs) coef=-coef;
+  const cxp= coef*rx*y1p/ry, cyp=-coef*ry*x1p/rx;
+  const cx= cosPhi*cxp - sinPhi*cyp + (x1+x2)/2;
+  const cy= sinPhi*cxp + cosPhi*cyp + (y1+y2)/2;
+  const ang=(ux,uy,vx,vy)=>{
+    const d=Math.sqrt((ux*ux+uy*uy)*(vx*vx+vy*vy));
+    let c=(ux*vx+uy*vy)/(d||1); c=Math.max(-1,Math.min(1,c));
+    let a=Math.acos(c); if(ux*vy-uy*vx<0) a=-a; return a;
+  };
+  let th1=ang(1,0,(x1p-cxp)/rx,(y1p-cyp)/ry);
+  let dth=ang((x1p-cxp)/rx,(y1p-cyp)/ry,(-x1p-cxp)/rx,(-y1p-cyp)/ry);
+  if(!fs && dth>0) dth-=2*Math.PI;
+  if(fs && dth<0) dth+=2*Math.PI;
+  const segs=Math.ceil(Math.abs(dth/(Math.PI/2)));
+  const d=dth/segs, t=4/3*Math.tan(d/4);
+  let px=x1,py=y1, th=th1;
+  for(let i=0;i<segs;i++){
+    const c1=Math.cos(th), s1=Math.sin(th);
+    const th2=th+d, c2=Math.cos(th2), s2=Math.sin(th2);
+    const ex= cosPhi*rx*c2 - sinPhi*ry*s2 + cx;
+    const ey= sinPhi*rx*c2 + cosPhi*ry*s2 + cy;
+    const d1x=-rx*s1, d1y= ry*c1;
+    const d2x=-rx*s2, d2y= ry*c2;
+    const c1x=px + t*(cosPhi*d1x - sinPhi*d1y);
+    const c1y=py + t*(sinPhi*d1x + cosPhi*d1y);
+    const c2x=ex - t*(cosPhi*d2x - sinPhi*d2y);
+    const c2y=ey - t*(sinPhi*d2x + cosPhi*d2y);
+    out.push([c1x,c1y,c2x,c2y,ex,ey]);
+    px=ex; py=ey; th=th2;
+  }
+  return out;
+}
+function gpTok(d){
+  const t=[]; const re=/([MmZzLlHhVvCcSsQqTtAa])|(-?(?:\d*\.\d+|\d+\.?)(?:[eE][-+]?\d+)?)/g;
+  let m;
+  while((m=re.exec(d))){ t.push(m[1]?m[1]:parseFloat(m[2])); }
+  return t;
+}
+function gpParse(d){
+  if(!d) return [];
+  const t=gpTok(d), subs=[];
+  let i=0, cmd=null, x=0,y=0,sx=0,sy=0, cur=null, lastC=null, lastQ=null;
+  const node=(px,py)=>({x:px,y:py,ix:px,iy:py,ox:px,oy:py});
+  const push=(c1x,c1y,c2x,c2y,ex,ey)=>{
+    if(!cur) return;
+    const prev=cur.pts[cur.pts.length-1];
+    prev.ox=c1x; prev.oy=c1y;
+    const n=node(ex,ey); n.ix=c2x; n.iy=c2y;
+    cur.pts.push(n);
+  };
+  const num=()=>{ const v=t[i++]; return typeof v==='number'?v:0; };
+  while(i<t.length){
+    if(typeof t[i]==='string'){ cmd=t[i++]; }
+    else if(cmd==='M') cmd='L'; else if(cmd==='m') cmd='l';
+    const rel = cmd===cmd.toLowerCase();
+    const C = cmd.toUpperCase();
+    if(C==='M'){
+      let px=num(), py=num(); if(rel){px+=x;py+=y;}
+      cur={closed:false,pts:[node(px,py)]}; subs.push(cur);
+      x=sx=px; y=sy=py; lastC=lastQ=null;
+    } else if(C==='L'){
+      let px=num(), py=num(); if(rel){px+=x;py+=y;}
+      push(x,y,px,py,px,py); x=px;y=py; lastC=lastQ=null;
+    } else if(C==='H'){
+      let px=num(); if(rel) px+=x;
+      push(x,y,px,y,px,y); x=px; lastC=lastQ=null;
+    } else if(C==='V'){
+      let py=num(); if(rel) py+=y;
+      push(x,y,x,py,x,py); y=py; lastC=lastQ=null;
+    } else if(C==='C'){
+      let a=num(),b=num(),c=num(),e=num(),f=num(),g=num();
+      if(rel){a+=x;b+=y;c+=x;e+=y;f+=x;g+=y;}
+      push(a,b,c,e,f,g); lastC=[c,e]; lastQ=null; x=f;y=g;
+    } else if(C==='S'){
+      let c=num(),e=num(),f=num(),g=num();
+      if(rel){c+=x;e+=y;f+=x;g+=y;}
+      const a = lastC? 2*x-lastC[0] : x, b = lastC? 2*y-lastC[1] : y;
+      push(a,b,c,e,f,g); lastC=[c,e]; lastQ=null; x=f;y=g;
+    } else if(C==='Q'){
+      let a=num(),b=num(),f=num(),g=num();
+      if(rel){a+=x;b+=y;f+=x;g+=y;}
+      push(x+2/3*(a-x), y+2/3*(b-y), f+2/3*(a-f), g+2/3*(b-g), f,g);
+      lastQ=[a,b]; lastC=null; x=f;y=g;
+    } else if(C==='T'){
+      let f=num(),g=num(); if(rel){f+=x;g+=y;}
+      const a = lastQ? 2*x-lastQ[0] : x, b = lastQ? 2*y-lastQ[1] : y;
+      push(x+2/3*(a-x), y+2/3*(b-y), f+2/3*(a-f), g+2/3*(b-g), f,g);
+      lastQ=[a,b]; lastC=null; x=f;y=g;
+    } else if(C==='A'){
+      let rx=num(),ry=num(),ph=num(),fa=num(),fs=num(),f=num(),g=num();
+      if(rel){f+=x;g+=y;}
+      const cs=gpArc(x,y,rx,ry,ph,fa,fs,f,g);
+      for(const c of cs) push(c[0],c[1],c[2],c[3],c[4],c[5]);
+      x=f;y=g; lastC=lastQ=null;
+    } else if(C==='Z'){
+      if(cur){
+        cur.closed=true;
+        const p0=cur.pts[0], pl=cur.pts[cur.pts.length-1];
+        if(cur.pts.length>1 && Math.abs(pl.x-p0.x)<1e-9 && Math.abs(pl.y-p0.y)<1e-9){
+          p0.ix=pl.ix; p0.iy=pl.iy; cur.pts.pop();
+        }
+      }
+      x=sx;y=sy; lastC=lastQ=null;
+    } else { i++; }
+  }
+  return subs.filter(s=>s.pts.length>0);
+}
+function gpPrimD(el){
+  const A=n=>parseFloat(el.getAttribute(n)||0);
+  const tag=el.tagName.toLowerCase();
+  if(tag==='rect'){
+    const x=A('x'),y=A('y'),w=A('width'),h=A('height');
+    let rx=el.hasAttribute('rx')?A('rx'):0, ry=el.hasAttribute('ry')?A('ry'):rx;
+    if(!rx&&ry) rx=ry; if(!ry&&rx) ry=rx;
+    rx=Math.min(rx,w/2); ry=Math.min(ry,h/2);
+    if(!rx&&!ry) return 'M'+x+' '+y+'H'+(x+w)+'V'+(y+h)+'H'+x+'Z';
+    return 'M'+(x+rx)+' '+y+'H'+(x+w-rx)+'A'+rx+' '+ry+' 0 0 1 '+(x+w)+' '+(y+ry)+
+           'V'+(y+h-ry)+'A'+rx+' '+ry+' 0 0 1 '+(x+w-rx)+' '+(y+h)+
+           'H'+(x+rx)+'A'+rx+' '+ry+' 0 0 1 '+x+' '+(y+h-ry)+
+           'V'+(y+ry)+'A'+rx+' '+ry+' 0 0 1 '+(x+rx)+' '+y+'Z';
+  }
+  if(tag==='circle'||tag==='ellipse'){
+    const cx=A('cx'),cy=A('cy');
+    const rx=tag==='circle'?A('r'):A('rx'), ry=tag==='circle'?A('r'):A('ry');
+    return 'M'+(cx-rx)+' '+cy+'A'+rx+' '+ry+' 0 0 1 '+(cx+rx)+' '+cy+
+           'A'+rx+' '+ry+' 0 0 1 '+(cx-rx)+' '+cy+'Z';
+  }
+  if(tag==='line') return 'M'+A('x1')+' '+A('y1')+'L'+A('x2')+' '+A('y2');
+  if(tag==='polygon'||tag==='polyline'){
+    const nums=(el.getAttribute('points')||'').trim().split(/[\s,]+/).map(parseFloat).filter(n=>!isNaN(n));
+    if(nums.length<4) return '';
+    let d='M'+nums[0]+' '+nums[1];
+    for(let i=2;i+1<nums.length;i+=2) d+='L'+nums[i]+' '+nums[i+1];
+    if(tag==='polygon') d+='Z';
+    return d;
+  }
+  return null;
+}
+function gpCssEsc(v){return(window.CSS&&CSS.escape)?CSS.escape(v):String(v).replace(/[^\w-]/g,'\\$&')}
+// SVG del frame f: scena calcolata dal motore (come in riproduzione), un gruppo per livello e uno per oggetto con il nome
+function gpSVGAt(f){S.frame=f;const d=S.doc,sc=bakeScene(f);let defs='',body='';
+ sc.layers.forEach(L=>{if(!L.visible)return;const st=[];if(L.blend&&L.blend!=='normal')st.push('mix-blend-mode:'+L.blend);
+  let flt='';const b=typeof layerBlur==='function'?layerBlur(L):0;if(b>0.05){defs+=`<filter id="gpb_${L.id}" filterUnits="userSpaceOnUse" x="${-d.w}" y="${-d.h}" width="${d.w*3}" height="${d.h*3}"><feGaussianBlur stdDeviation="${f2(b)}"/></filter>`;flt=` filter="url(#gpb_${L.id})"`}
+  body+=`<g data-name="${esc(L.name)}"${L.opacity<1?` opacity="${f2(L.opacity)}"`:''}${flt}${st.length?` style="${st.join(';')}"`:''}>`+L.items.map(it=>`<g data-name="${esc(L.name+' · '+itName(it))}">${itemMarkup(it,true)}</g>`).join('')+'</g>'});
+ return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${d.w}" height="${d.h}" viewBox="0 0 ${d.w} ${d.h}"><defs>${defs}</defs>${body}</svg>`}
+async function gpExport(a,b,onProg){
+ const host=document.createElement('div');host.style.cssText='position:fixed;left:-40000px;top:0;width:8px;height:8px;overflow:hidden;opacity:0;pointer-events:none';document.body.appendChild(host);
+ const GEO='path,rect,circle,ellipse,polygon,polyline,line',SKIP='defs,clipPath,mask,symbol,pattern,marker';
+ const LAY={},BLUR={},notes=new Set(),r2b=v=>Math.round(v*100)/100;
+ const rgba=(c,o)=>{const m=/rgba?\(([^)]+)\)/.exec(c||'');if(!m)return null;const p=m[1].split(/[\s,\/]+/).filter(Boolean).map(parseFloat);const al=(p.length>3?p[3]:1)*o;return al>0?[r2b(p[0]/255*1000)/1000,r2b(p[1]/255*1000)/1000,r2b(p[2]/255*1000)/1000,r2b(al*1000)/1000]:null};
+ const keyOf=(el,root)=>{const k=[];for(let n=el;n&&n!==root;n=n.parentNode)k.push(Array.prototype.indexOf.call(n.parentNode.children,n));return k.reverse()};
+ const isRim=n=>{const mk=n.getAttribute&&n.getAttribute('mask');return !!(mk&&/#rm/.test(mk))};
+ const keepF=S.frame;if(S.doc.frEdit&&typeof frExit==='function')frExit(true);
+ try{for(let f=a;f<=b;f++){
+   host.innerHTML=gpSVGAt(f);const root=host.querySelector('svg'),R=root.getScreenCTM().inverse();
+   const toDoc=n=>R.multiply(n.getScreenCTM());
+   root.querySelectorAll('image,text,use,foreignObject').forEach(n=>{if(!n.closest(SKIP))notes.add(n.tagName==='image'?'immagini e video (restano fuori)':n.tagName==='text'?'testi (restano fuori)':'istanze <use> (restano fuori)')});
+   const els=Array.from(root.querySelectorAll(GEO)).filter(el=>{if(el.closest(SKIP))return false;for(let n=el.parentNode;n&&n!==root;n=n.parentNode)if(isRim(n)){notes.add('rim light (resta fuori)');return false}return true});
+   for(const el of els){const kk=keyOf(el,root),key=kk.join('.');let L=LAY[key];
+    if(!L){let nm=el.getAttribute('data-name');for(let n=el.parentNode;!nm&&n&&n!==root;n=n.parentNode)nm=n.getAttribute&&n.getAttribute('data-name');L=LAY[key]={key,ord:kk,name:nm||el.tagName,blend:'normal',blur:null,frames:[],op:[],_g:null,_o:null}}
+    let vis=true,op=1,blend=null,blurOwner=null;
+    for(let n=el;n&&n!==host;n=n.parentNode){const cs=getComputedStyle(n);if(cs.display==='none'||cs.visibility==='hidden'){vis=false;break}
+     op*=parseFloat(cs.opacity);if(n===root)break;if(!blend&&cs.mixBlendMode&&cs.mixBlendMode!=='normal')blend=cs.mixBlendMode;
+     const fu=n.getAttribute('filter');if(fu){const id=(/url\(["']?#([^"')]+)/.exec(fu)||[])[1],fe=id&&root.querySelector('[id="'+gpCssEsc(id)+'"]'),kids=fe?Array.from(fe.children):[];
+      if(kids.length===1&&kids[0].tagName==='feGaussianBlur'){if(!blurOwner){const sd=(kids[0].getAttribute('stdDeviation')||'0').split(/[\s,]+/).map(parseFloat),m=toDoc(n),sxs=Math.hypot(m.a,m.b),sys=Math.hypot(m.c,m.d);
+        blurOwner={key:keyOf(n,root).join('.'),sx:r2b((sd[0]||0)*sxs),sy:r2b((sd.length>1?sd[1]:sd[0]||0)*sys),name:n.getAttribute('data-name')||(n.querySelector('[data-name]')||n).getAttribute('data-name')||''}}else notes.add('sfocature annidate (si usa la più interna)')}
+      else if(kids.length)notes.add('effetti a filtro diversi dalla sfocatura (bagliore, ombre…)')}
+     if((n.getAttribute('mask')&&!isRim(n))||n.getAttribute('clip-path'))notes.add('maschere e ritagli (restano fuori)')}
+    if(blurOwner){L.blur=blurOwner.key;const B=BLUR[blurOwner.key]||(BLUR[blurOwner.key]={name:blurOwner.name,keys:[]}),lk=B.keys[B.keys.length-1];if(!lk||lk[0]!==f){if(!lk||lk[1]!==blurOwner.sx||lk[2]!==blurOwner.sy)B.keys.push([f,blurOwner.sx,blurOwner.sy])}}
+    if(blend)L.blend=blend;const opv=r2b(op*1000)/1000;if(L._o!==opv){L.op.push([f,opv]);L._o=opv}
+    let ent;if(!vis||op<=0)ent={f,hide:1};
+    else{const cs=getComputedStyle(el),m=toDoc(el),sc=Math.sqrt(Math.abs(m.a*m.d-m.b*m.c)),sh=gpParse(el.tagName==='path'?el.getAttribute('d'):gpPrimD(el));let fill=null,grad=null;
+     if(cs.fill&&cs.fill.indexOf('url(')===0){const id=(/url\(["']?#([^"')]+)/.exec(cs.fill)||[])[1],g=id&&root.querySelector('[id="'+gpCssEsc(id)+'"]');
+      if(g){const st=Array.from(g.querySelectorAll('stop')).map(q=>{const c=getComputedStyle(q);return[parseFloat(q.getAttribute('offset'))||0,rgba(c.stopColor,parseFloat(c.stopOpacity))]});grad={type:g.tagName.replace('Gradient',''),stops:st.map(q=>[q[0],q[1]||[0,0,0,0]])};
+       const vs=st.filter(q=>q[1]);if(vs.length){const acc=[0,0,0,0];vs.forEach(q=>q[1].forEach((v,i)=>acc[i]+=v/vs.length));fill=acc.map(v=>r2b(v*1000)/1000).map((v,i)=>i===3?r2b(v*parseFloat(cs.fillOpacity)*1000)/1000:v)}notes.add('sfumature (diventano un colore medio)')}}
+     else fill=rgba(cs.fill,parseFloat(cs.fillOpacity));
+     const stroke=(cs.stroke&&cs.stroke.indexOf('url(')===0)?null:rgba(cs.stroke,parseFloat(cs.strokeOpacity));if(cs.stroke&&cs.stroke.indexOf('url(')===0)notes.add('contorni con sfumatura (restano fuori)');
+     const sw=stroke?r2b(parseFloat(cs.strokeWidth)*sc):0;if(stroke&&cs.strokeDasharray&&cs.strokeDasharray!=='none')notes.add('contorni tratteggiati (diventano continui)');
+     const subs=sh.map(sp=>[sp.closed?1:0,[].concat(...sp.pts.map(p=>{const P=(x,y)=>[r2b(m.a*x+m.c*y+m.e),r2b(m.b*x+m.d*y+m.f)];return P(p.x,p.y).concat(P(p.ix,p.iy),P(p.ox,p.oy))}))]).filter(q=>q[1].length>=6);
+     ent={f,fill,stroke,sw,rule:cs.fillRule==='evenodd'?'evenodd':'nonzero',cap:cs.strokeLinecap,subs};if(grad)ent.grad=grad}
+    const sig=JSON.stringify(Object.assign({},ent,{f:0}));if(sig!==L._g){L.frames.push(ent);L._g=sig}}
+   const cur=new Set(els.map(e=>keyOf(e,root).join('.')));
+   for(const k in LAY){const L=LAY[k],last=L.frames[L.frames.length-1];if(last&&last.f<f&&!last.hide&&!cur.has(k)){L.frames.push({f,hide:1});L._g=JSON.stringify({f:0,hide:1})}}
+   if(onProg)onProg((f-a+1)/(b-a+1));if((f-a)%6===5)await new Promise(r=>setTimeout(r,0))}}
+ finally{host.remove();S.frame=keepF}
+ const cmp=(x,y)=>{for(let i=0;i<Math.max(x.length,y.length);i++){const d=(x[i]===undefined?-1:x[i])-(y[i]===undefined?-1:y[i]);if(d)return d}return 0};
+ for(const k in BLUR){const B=BLUR[k];if(B.keys.length&&B.keys[0][0]>a)B.keys.unshift([a,0,0])}
+ const layers=Object.values(LAY).sort((p,q)=>cmp(p.ord,q.ord)).map(L=>({key:L.key,name:L.name,blend:L.blend,blur:L.blur,op:L.op,frames:L.frames}));
+ const A=S.doc.anim||{fps:24};
+ return{format:'animati-gp',version:1,app:'ANIMAti',fps:A.fps||24,start:a,end:b,doc:{w:S.doc.w,h:S.doc.h,bg:(S.doc.bg&&S.doc.bg!=='none')?S.doc.bg:null},layers,blurs:BLUR,notes:Array.from(notes)}}
+function gpDialog(){exitMask();try{stopPlay()}catch(_){}try{if(typeof lazyNow==='function')lazyNow()}catch(_){}
+ const A=S.doc.anim||{fps:24,dur:1},last=Math.max(0,(A.dur||1)-1);
+ modal(`<h3>Esporta per Blender</h3><div class="hint">Grease Pencil (.json): forme, colori, opacità, fusione e sfocatura frame per frame. Si importa in Blender con l'add-on di ANIMAti.</div>
+  <div class="r2"><div><label>Da frame</label><input class="txt num" id="gpA" type="number" value="0"></div><div><label>A frame</label><input class="txt num" id="gpB" type="number" value="${last}"></div></div>
+  <div class="hint">${A.fps||24} fps · ${A.dur||1} frame. Nei documenti senza animazione basta il frame 0.</div>
+  <div class="btns"><button class="btn" data-m="no">Annulla</button><button class="btn pri" data-m="ok">Esporta</button></div>`,async v=>{if(v!=='ok')return;
+  let a=Math.round(+$('#gpA').value||0),b=Math.round(+$('#gpB').value||0);if(a>b)[a,b]=[b,a];a=Math.max(0,a);b=Math.max(a,b);
+  const keep=S.frame;toast('Blender: preparo '+(b-a+1)+' frame…',1500);
+  try{const J=await gpExport(a,b);deliver(JSON.stringify(J),fname('_blender.json'),'application/json');
+   toast('Blender: '+J.layers.length+' forme, frame '+J.start+'–'+J.end+(J.notes.length?' · non trasferiti: '+J.notes.join(', '):''),J.notes.length?6000:2500)}
+  catch(e){toast('Export non riuscito: '+e.message)}finally{S.frame=keep;render()}})}
+{const _a=animAct;animAct=function(a){if(a==='exp:gp'){gpDialog();return}return _a(a)}}
+{const _f=FLY.expq;FLY.expq=()=>{const L=_f();const i=L.findIndex(x=>x[0]==='an:exp:png');L.splice(i<0?L.length:i+1,0,['an:exp:gp','exp','Blender · Grease Pencil (.json)']);return L}}
 
 /* ---------- init ---------- */
 $('#bMenu').innerHTML=ic('menu');$('#bUndo').innerHTML=ic('undo');$('#bRedo').innerHTML=ic('redo');$('#bSym').innerHTML=ic('sym');$('#bPanel').innerHTML=ic('sliders');
