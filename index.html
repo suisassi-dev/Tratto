@@ -2023,8 +2023,8 @@ function exportLottie(){exitMask();const A=ADOC(),d=S.doc,layers=[],assets=[];le
     // immagine: livello figlio di un null animato
     const nul={...base,ty:3,nm:itName(it)+' (controllo)'};layers.push({ddd:0,ind:ind++,ty:2,nm:itName(it),refId:id,sr:1,ao:0,ip:0,op:A.dur,st:0,bm,parent:nul.ind,ks:{o:{a:0,k:100},r:{a:0,k:f2(rot)},p:{a:0,k:[f2(m[4]),f2(m[5]),0]},a:{a:0,k:[0,0,0]},s:{a:0,k:[f2(sx*100),f2(sy*100),100]}}});layers.push(nul);continue}
    if(it.type==='mask'){const shapes=[];const fc=it.showFill&&it.mask.style.fill?lShapeGroup({...it.mask,style:{...it.mask.style,stroke:null}},A,false):null;const sc=it.showStroke&&it.mask.style.stroke?lShapeGroup({...it.mask,style:{...it.mask.style,fill:null}},A,false):null;
-    const kids=it.kids.slice().reverse().map(k=>lShapeGroup(k,A,false)).filter(Boolean);const inner=it.fillPos==='over'?[...(fc?[fc]:[]),...kids]:[...kids,...(fc?[fc]:[])];
-    layers.push({...base,ty:4,hasMask:true,masksProperties:it.mask.subs.map(sp=>({inv:false,mode:'a',pt:{a:0,k:lpath(sp)},o:{a:0,k:100},x:{a:0,k:0},nm:'Maschera'})),shapes:inner});if(sc)layers.push({...base,ind:ind++,ty:4,nm:itName(it)+' (tratto)',shapes:[sc]});continue}
+    const kids=it.kids.slice().reverse().map(k=>lShapeGroup(k,A,true)).filter(Boolean);const inner=it.fillPos==='over'?[...(fc?[fc]:[]),...kids]:[...kids,...(fc?[fc]:[])];
+    layers.push({...base,ty:4,hasMask:true,masksProperties:lMaskPts(it.mask).map(pt=>({inv:false,mode:'a',pt,o:{a:0,k:100},x:{a:0,k:0},nm:'Maschera'})),shapes:inner});if(sc)layers.push({...base,ind:ind++,ty:4,nm:itName(it)+' (tratto)',shapes:[sc]});continue}
    {const xl=lExtra(it,base,L,A,assets,()=>ind++);if(xl){layers.push(...xl);continue}}
    const g=lShapeGroup(it,A,true);if(!g)continue;let ef=lBlurEf(it,A);{const le=lLayerBlur(L,A);if(le){const ib=(it.style&&it.style.blur)||0;if(!ef||!(ef.ef[0].v.a))ef=(ib>0&&!le.ef[0].v.a)?lBlurEffect(Math.hypot(le.ef[0].v.k*.3,ib)):le}}
    const rm=it.type==='path'&&it.style.rim;if(rm&&rm.on&&rm.amt>0){const a=rm.ang*Math.PI/180,dx=Math.cos(a)*rm.size,dy=Math.sin(a)*rm.size,sh=sp=>({...sp,pts:sp.pts.map(p=>({...p,x:p.x+dx,y:p.y+dy,ix:p.ix+dx,iy:p.iy+dy,ox:p.ox+dx,oy:p.oy+dy}))});
@@ -2331,6 +2331,22 @@ ${A} .ab[data-act="an:loop"]{margin-left:3px}${A} .atime{padding:0 8px;margin:0 
  document.addEventListener('pointerdown',e=>{const b=e.target.closest&&e.target.closest('.kbd button,.npbox button');if(b)hit(b)},true)}
 // aiuti spenti: nella barra di Anima l'interpolazione resta solo icona
 {const st=document.createElement('style');st.textContent='body.nohints #abar [data-fly="ease"] .lab{display:none}';document.head.appendChild(st)}
+
+// maschere animate: la forma della maschera (keyframe Forma sul suo tracciato) e il contenuto vengono calcolati frame per frame
+{const _b=bakeItem;bakeItem=function(it,f){if(it&&it.type==='mask'&&it.mask){const n={...it,mask:bakeItem(it.mask,f),kids:it.kids.map(k=>bakeItem(k,f))};return hasAnim(it)?_b(n,f):n}return _b(it,f)}}
+// Lottie: forma della maschera animata (pt con keyframe) quando i keyframe hanno lo stesso numero di punti
+function lMaskPts(mp){const ms=mp.ak&&mp.ak.ch.shape;if(ms&&ms.k.length&&ms.k.every(q=>shapeCompat(q.v,ms.k[0].v)))return ms.k[0].v.map((_,si)=>({a:1,k:ms.k.map((q,i)=>{const kf={t:q.f,s:[lpath(q.v[si])]};if(i<ms.k.length-1){if(q.e&&q.e.t==='hold')kf.h=1;else Object.assign(kf,lEase(q.e&&q.e.t==='dyn'?null:q.e))}return kf})}));
+ return mp.subs.map(sp=>({a:0,k:lpath(sp)}))}
+// Anima: accesso alla modifica della maschera (forma e contenuto) e pulsante "Fine maschera" sul canvas
+{const _ap=animPanel;animPanel=function(){let h=_ap();const me=S.doc.maskEdit,it=S.sel.length===1?selItems()[0]:null;let sx='';
+  if(me&&me.kind!=='group')sx=sec('an-mask','Maschera',`<div class="hint">Stai modificando la maschera. Seleziona la sua forma (contorno arancione) e con lo strumento Forma (punti) spostane i punti nei vari frame: si creano i keyframe Forma. Gli oggetti dentro si animano come tutti gli altri.</div><div class="grid g2" style="margin-top:6px"><button class="btn pri" data-act="exitmask">Fine maschera</button><button class="btn" data-act="an:keyshape">Keyframe forma</button></div>`);
+  else if(it&&it.type==='mask')sx=sec('an-mask','Maschera',`<div class="hint">Per animare la forma della maschera o il suo contenuto entra in modifica.</div><button class="btn" style="width:100%;margin-top:6px" data-act="editmask">Modifica forma e contenuto</button>`);
+  if(!sx)return h;const i=h.indexOf('<div class="ptitle">'),j=i<0?0:h.indexOf('</div>',i)+6;return h.slice(0,j)+sx+h.slice(j)}}
+function maskBar(){let b=document.getElementById('maskbar');const me=S.doc.maskEdit;if(!me||S.mode!=='anima'){if(b)b.remove();return}
+ if(!b){b=document.createElement('button');b.id='maskbar';$('#stage').appendChild(b);b.addEventListener('click',()=>{exitMask();updateUI();render()})}
+ b.style.top=document.getElementById('compbar')?'56px':'12px';b.innerHTML=ic(me.kind==='group'?'group':'mask')+'<span>'+(me.kind==='group'?'Fine gruppo':'Fine maschera')+'</span>'}
+{const _u=updateUI;updateUI=function(){_u();maskBar()}}
+{const st=document.createElement('style');st.textContent='#maskbar{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:6;height:36px;border:0;border-radius:18px;background:var(--acc);color:#1a1205;font-weight:600;padding:0 16px 0 10px;display:flex;align-items:center;gap:6px;box-shadow:0 6px 18px rgba(0,0,0,.4)}#maskbar .ic{width:18px;height:18px}';document.head.appendChild(st)}
 
 /* =====================================================================
    FRAMES — animazione a disegni (frame by frame)
@@ -2676,7 +2692,7 @@ function precompose(){if(S.mode==='frames'){toast('Pre-componi da Draw o Anima')
 function compEnter(it){if(!isInst(it))return;const c=compOf(it);if(!c)return;exitMask();if(S.doc.frEdit)frExit(true);stopPlay();
  S.doc.compStack=S.doc.compStack||[];S.doc.compStack.push({cid:c.id,inst:it.id,layers:S.doc.layers,dur:ADOC().dur,frame:S.frame,active:S.activeLayer});
  S.doc.layers=c.layers;ADOC().dur=c.dur||ADOC().dur;S.frame=Math.max(0,Math.min(ADOC().dur-1,instLocal(it,S.frame)??0));S.activeLayer=S.doc.layers[0].id;S.sel=[];S.nsel=[];commit();compBar();toast('Dentro «'+c.name+'»')}
-function compExit(silent){const st=S.doc.compStack;if(!st||!st.length)return false;const top=st.pop();const c=S.doc.comps[top.cid];if(c){c.layers=S.doc.layers;c.dur=ADOC().dur}
+function compExit(silent){const st=S.doc.compStack;if(!st||!st.length)return false;if(S.doc.frEdit&&typeof frExit==='function')frExit(true);if(S.doc.maskEdit)exitMask(true);const top=st.pop();const c=S.doc.comps[top.cid];if(c){c.layers=S.doc.layers;c.dur=ADOC().dur}
  S.doc.layers=top.layers;ADOC().dur=top.dur;S.frame=top.frame;S.activeLayer=top.active;S.sel=top.inst&&find(top.inst)?[top.inst]:[];if(!st.length)delete S.doc.compStack;if(!silent)commit();compBar();return true}
 function compExitAll(){let ch=false;while(S.doc.compStack&&S.doc.compStack.length){compExit(true);ch=true}return ch}
 function unprecompose(it){const c=compOf(it);if(!c)return;const r=find(it.id);if(!r)return;const sp=it.speed||1,st=it.start||0,m=it.m||[1,0,0,1,0,0];const out=[];
@@ -2685,7 +2701,8 @@ function unprecompose(it){const c=compOf(it);if(!c)return;const r=find(it.id);if
 function compBar(){let b=document.getElementById('compbar');const st=S.doc.compStack;if(!st||!st.length){if(b)b.remove();return}if(!b){b=document.createElement('button');b.id='compbar';$('#stage').appendChild(b);b.addEventListener('click',()=>{compExit();updateUI();render()})}
  const c=S.doc.comps[st[st.length-1].cid];b.innerHTML=`${ic('chevup')}<span>Esci da «${esc(c?c.name:'pre-comp')}»</span>`}
 // le esportazioni e i salvataggi lavorano sempre sul documento principale
-{const _x=exitMask;exitMask=function(s){if(compExitAll())updateUI();return _x(s)}}
+// dalla pre-comp si esce solo con il suo pulsante (o salvando/esportando): chiudere una maschera, cambiare modalità o aggiungere un effetto non fa più uscire
+{const _a=act;act=function(a){if(/^(save|expSVG|expPNG|expJPG)$/.test(a)||/^an:exp:/.test(a)){if(compExitAll()){toast('Uscito dalla pre-comp per esportare tutto il documento');updateUI()}}return _a(a)}}
 
 /* ---------- integrazione con le funzioni di base ---------- */
 {const _b=bboxItem;bboxItem=function(it){if(it.type==='inst')return bboxItem(instGroup(it,S.frame,S.mode!=='anima'));if(it.type==='fx')return it.kind==='flare'?{x:it.p.x-40,y:it.p.y-40,w:80,h:80}:{x:0,y:0,w:S.doc.w,h:S.doc.h};return _b(it)}}
@@ -4194,7 +4211,7 @@ function rigBonesFromLayers(){// un osso per livello, dal centro verso l'alto: p
  return h.slice(0,i)+`<button class="btn" data-act="an:rigfromlayers" style="width:100%;margin:8px 0 6px">Crea un osso per ogni livello</button><button class="btn" data-act="an:rigbyname" style="width:100%;margin-bottom:6px">Collega i livelli alle ossa con lo stesso nome</button>`+h.slice(i)}}
 
 // menu ☰: intestazione con logo e versione, Importa / Esporta raggruppati (si aprono sul posto)
-const APPV='v11.8';
+const APPV='v11.9';
 toggleMenu=function(){const m=$('#menu');if(!m.hidden){m.hidden=true;return}
  const I=(a,i,l,ck)=>`<button data-act="${a}">${ic(i)}<span>${l}</span>${ck?`<span class="ck">✓</span>`:''}</button>`,
   G=(k,i,l,body)=>`<button class="mg${MG[k]?' open':''}" data-mg="${k}">${ic(i)}<span>${l}</span><span class="mgc"></span></button><div class="msub"${MG[k]?'':' hidden'}>${body}</div>`;
