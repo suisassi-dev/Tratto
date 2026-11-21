@@ -1,14 +1,37 @@
-// Tratto — service worker: rete prima (aggiornamenti automatici), cache se offline.
-const CACHE = 'animati-v31';
-const FILES = ['./', './index.html', './manifest.webmanifest', './icon-180.png', './icon-192.png', './icon-512.png'];
-self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES))); self.skipWaiting(); });
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim()));
+/* ANIMAti iPad — service worker
+   Strategia: apre SUBITO la copia salvata sull'iPad (anche senza rete) e controlla
+   gli aggiornamenti in background; la nuova versione si usa dall'apertura successiva.
+   Per forzare l'aggiornamento dopo aver caricato un nuovo index.html, cambia VERSIONE. */
+const VERSIONE = 'animati-v12.0';
+const BASE = ['./', './index.html'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(caches.open(VERSIONE).then(c => c.addAll(BASE)).then(() => self.skipWaiting()));
 });
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys()
+      .then(k => Promise.all(k.filter(n => n !== VERSIONE).map(n => caches.delete(n))))
+      .then(() => self.clients.claim())
+  );
+});
+
 self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET' || new URL(e.request.url).origin !== location.origin) return;
+  const req = e.request;
+  if (req.method !== 'GET' || new URL(req.url).origin !== location.origin) return;
+  const isPage = req.mode === 'navigate';
+  const key = isPage ? './index.html' : req;
   e.respondWith(
-    fetch(e.request, { cache: 'no-cache' }).then(r => { const copy = r.clone(); caches.open(CACHE).then(c => c.put(e.request, copy)); return r; })
-      .catch(() => caches.match(e.request, { ignoreSearch: true }).then(r => r || caches.match('./index.html')))
+    caches.open(VERSIONE).then(async cache => {
+      const cached = await cache.match(key, { ignoreSearch: true });
+      // aggiornamento in background (non blocca l'apertura)
+      const rete = fetch(req, { cache: 'no-cache' }).then(r => {
+        if (r && r.ok) cache.put(key, r.clone());
+        return r;
+      }).catch(() => null);
+      if (cached) { e.waitUntil(rete); return cached; }
+      return (await rete) || new Response('Offline', { status: 503 });
+    })
   );
 });
